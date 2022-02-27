@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="author" content="Marcin Benke" />
+  <title>Advanced Functional Programming</title>
+  <style>
+    html {
+      line-height: 1.5;
+      font-family: Georgia, serif;
+      font-size: 20px;
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 1em;
+      }
+    }
+    @media print {
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, 'Lucida Console', Consolas, monospace;
+      font-size: 85%;
+      margin: 0;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      background-color: #1a1a1a;
+      border: none;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    span.underline{text-decoration: underline;}
+    div.column{display: inline-block; vertical-align: top; width: 50%;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Advanced Functional Programming</h1>
+<p class="author">Marcin Benke</p>
+<p class="date">Mar 1, 2022</p>
+</header>
+<meta name="duration" content="80" />
+<h1 id="course-plan">Course plan</h1>
+<ul>
+<li>Types and type classes
+<ul>
+<li>Algebraic types and type classes</li>
+<li>Constructor classes</li>
+<li>Multiparameter classes, functional dependencies</li>
+</ul></li>
+<li>Testing (QuickCheck)</li>
+<li>Dependent types, Agda, Idris, Coq, proving properties (ca 7 weeks)</li>
+<li>Dependent types in Haskell
+<ul>
+<li>Type families, associated types, GADTs</li>
+<li>data kinds, kind polymorphism</li>
+</ul></li>
+<li>Metaprogramming</li>
+<li>Parallel and concurrent programming in Haskell
+<ul>
+<li>Multicore and multiprocessor programming (SMP)</li>
+<li>Concurrency</li>
+<li>Data Parallel Haskell</li>
+</ul></li>
+<li>Project presentations</li>
+</ul>
+<p>Any wishes?</p>
+<h1 id="passing-the-course-zasady-zaliczania">Passing the course (Zasady zaliczania)</h1>
+<ul>
+<li>Lab: fixed Coq project, student-defined simple Haskell project (group projects are encouraged)</li>
+<li>Oral exam, most important part of which is project presentation</li>
+<li>Alternative to Haskell project: presentation on interesting Haskell topics during the lecture (possibly plus lab)
+<ul>
+<li>Anyone interested?</li>
+</ul></li>
+</ul>
+<h1 id="installing-ghc-on-your-machine">Installing GHC on your machine</h1>
+<p>Simplest way - <code>ghcup</code>: https://www.haskell.org/ghcup/ np.</p>
+<pre><code>curl --proto &#39;=https&#39; --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh</code></pre>
+<p>Alternatively you can use <code>stack</code>: http://haskellstack.org np.</p>
+<pre><code>curl -sSL https://get.haskellstack.org/ | sh
+stack setup
+stack ghci</code></pre>
+<p>(but cabal has improved a lot, so there is less reasons to use stack these days)</p>
+<h1 id="functional-languages">Functional languages</h1>
+<ul>
+<li>dynamically typed, strict, impure: e.g. Lisp</li>
+<li>statically typed, strict, impure: e.g. ML</li>
+<li>staticaly typed, lazy, pure: e.g. Haskell</li>
+</ul>
+<p>This course: Haskell, focusing on types.</p>
+<p>Rich type structure distinguishes Haskell among other languages.</p>
+<p>Second part of the course: Coq, Idris where the type structure is arguably even richer.</p>
+<h1 id="types-as-a-specification-language">Types as a specification language</h1>
+<p>A function type often specifies not only its input and output but also relationship between them:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ot">f ::</span> <span class="kw">forall</span> a<span class="op">.</span> a <span class="ot">-&gt;</span> a</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>f x <span class="ot">=</span> <span class="op">?</span></span></code></pre></div>
+<p>If <code>f x</code> gives a result, it must be <code>x</code></p>
+<ul>
+<li><p>Philip Wadler <a href="http://ecee.colorado.edu/ecen5533/fall11/reading/free.pdf">“Theorems for Free”</a></p></li>
+<li><p><code>h :: a -&gt; IO b</code> constructs a computation with possible side effects</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Data.IORef</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="ot">f ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> (<span class="dt">IORef</span> <span class="dt">Int</span>)</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>f i <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">print</span> i</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  r <span class="ot">&lt;-</span> newIORef i</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span> r</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>  r <span class="ot">&lt;-</span> f <span class="dv">42</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>  j <span class="ot">&lt;-</span> readIORef r</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">print</span> j</span></code></pre></div></li>
+</ul>
+<h1 id="types-as-a-specification-language-2">Types as a specification language (2)</h1>
+<p><code>g :: Integer -&gt; Integer</code> may not have side effects visible outside</p>
+<p>It may have local side effects</p>
+<p>Example: Fibonacci numbers in constant memory</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Control.Monad.ST</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Data.STRef</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="ot">fibST ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>fibST n <span class="ot">=</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">if</span> n <span class="op">&lt;</span> <span class="dv">2</span> <span class="kw">then</span> n <span class="kw">else</span> runST fib2 <span class="kw">where</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>      fib2 <span class="ot">=</span>  <span class="kw">do</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>        x <span class="ot">&lt;-</span> newSTRef <span class="dv">0</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>        y <span class="ot">&lt;-</span> newSTRef <span class="dv">1</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>        fib3 n x y</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>      fib3 <span class="dv">0</span> x _ <span class="ot">=</span> readSTRef x</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>      fib3 n x y <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>              x&#39; <span class="ot">&lt;-</span> readSTRef x</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>              y&#39; <span class="ot">&lt;-</span> readSTRef y</span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>              writeSTRef x y&#39;</span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>              writeSTRef y (x&#39;<span class="op">+</span>y&#39;)</span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>              fib3 (n<span class="op">-</span><span class="dv">1</span>) x y</span></code></pre></div>
+<p>How come?</p>
+<pre><code>runST :: (forall s. ST s a) -&gt; a</code></pre>
+<p>The type of <code>runST</code> guarantees that side effects do not leak; <code>fibST</code> is pure.</p>
+<h1 id="types-as-a-design-language">Types as a design language</h1>
+<ul>
+<li>Designing programs using types and <code>undefined</code></li>
+</ul>
+<p>Define CNF formulas as:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">Literal</span> <span class="ot">=</span> <span class="dt">Int</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">Clause</span> <span class="ot">=</span> [<span class="dt">Literal</span>]</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">Form</span> <span class="ot">=</span> [<span class="dt">Clause</span>]</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">Model</span> <span class="ot">=</span> [<span class="dt">Literal</span>]</span></code></pre></div>
+<p>We want to write a simple DPLL (Davis–Putnam–Logemann–Loveland) SAT solver:</p>
+<ol type="1">
+<li>If there’s a unit clause <code>[l]</code>, <code>l</code> must be true - resolve <code>l</code> and continue</li>
+<li>Otherwise choose any literal land split on it: try resolutions with l and its negation</li>
+</ol>
+<p>where resolving for l means simplifying the formula based on its known truth value:</p>
+<pre><code>True  || a = True
+False || a = a
+True  &amp;&amp; b = b</code></pre>
+<h1 id="types-as-a-design-language-2">Types as a design language (2)</h1>
+<p>We can write down this design using types and undefined and later fill in the details</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="ot">dpll ::</span> <span class="dt">Form</span> <span class="ot">-&gt;</span> <span class="dt">Model</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Model</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>dpll [] model <span class="ot">=</span> <span class="dt">Just</span> model   <span class="co">-- empty conjunction trivially satisfiable</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>dpll cs model</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  <span class="op">|</span> [] <span class="ot">`elem`</span> cs <span class="ot">=</span> <span class="dt">Nothing</span>   <span class="co">-- empty disjunction trivially unsatisfiable</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>  <span class="op">|</span> <span class="fu">otherwise</span> <span class="ot">=</span> <span class="fu">maybe</span> split go (findUnit cs)</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>  <span class="co">-- case findUnit cs of Nothing -&gt; split; Just m -&gt; go m</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>  <span class="kw">where</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a><span class="ot">    go ::</span> <span class="dt">Literal</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Model</span></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>    go l <span class="ot">=</span> dpll (resolve l cs) (l <span class="op">:</span> model)</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>    split <span class="ot">=</span> go dlit <span class="op">&lt;|&gt;</span> go (<span class="op">-</span> dlit)</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>    dlit <span class="ot">=</span> anyLiteral cs</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a><span class="ot">anyLiteral ::</span> <span class="dt">Form</span> <span class="ot">-&gt;</span> <span class="dt">Literal</span></span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>anyLiteral <span class="ot">=</span> <span class="fu">undefined</span></span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a><span class="ot">findUnit ::</span> <span class="dt">Form</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Literal</span></span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>findUnit <span class="ot">=</span> <span class="fu">undefined</span></span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a><span class="ot">resolve ::</span> <span class="dt">Literal</span> <span class="ot">-&gt;</span> <span class="dt">Form</span> <span class="ot">-&gt;</span> <span class="dt">Form</span></span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a>resolve <span class="ot">=</span> <span class="fu">undefined</span></span></code></pre></div>
+<h1 id="typed-holes">Typed holes</h1>
+<p>Newer Haskell version allow for typed holes that can be used instead of undefined, e.g. with</p>
+<pre><code>findUnitClauses :: Clauses -&gt; Clauses
+headMaybe :: [a] -&gt; Maybe a
+
+findUnitClause :: Clauses -&gt; Maybe Clause
+findUnitClause  = headMaybe . _</code></pre>
+<p>we get</p>
+<pre><code>   • Found hole: _ :: Clauses -&gt; [Clause]
+    • In the second argument of ‘(.)’, namely ‘_’
+      In the expression: headMaybe . _
+      In an equation for ‘findUnitClause’: findUnitClause = headMaybe . _
+    • Relevant bindings include
+        findUnitClause :: Clauses -&gt; Maybe Clause
+          (bound at /home/ben/var/haskell/sat1/Berger3.hs:38:1)
+      Valid hole fits include
+        findUnitClauses :: Clauses -&gt; Clauses
+          (bound at /home/ben/var/haskell/sat1/Berger3.hs:41:1)
+        cycle :: forall a. [a] -&gt; [a]
+        ...</code></pre>
+<h1 id="types-as-a-programming-language">Types as a programming language</h1>
+<ul>
+<li><p>Functions on types computed at compile time</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Zero</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Succ</span> n</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">One</span>   <span class="ot">=</span> <span class="dt">Succ</span> <span class="dt">Zero</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">Two</span>   <span class="ot">=</span> <span class="dt">Succ</span> <span class="dt">One</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">Three</span> <span class="ot">=</span> <span class="dt">Succ</span> <span class="dt">Two</span></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">Four</span>  <span class="ot">=</span> <span class="dt">Succ</span> <span class="dt">Three</span></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>one   <span class="ot">= undefined ::</span> <span class="dt">One</span></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>two   <span class="ot">= undefined ::</span> <span class="dt">Two</span></span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>three <span class="ot">= undefined ::</span> <span class="dt">Three</span></span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>four  <span class="ot">= undefined ::</span> <span class="dt">Four</span></span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> <span class="dt">Add</span> a b c <span class="op">|</span> a b <span class="ot">-&gt;</span> c <span class="kw">where</span></span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a><span class="ot">  add ::</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> c</span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>  add <span class="ot">=</span> <span class="fu">undefined</span></span>
+<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span>              <span class="dt">Add</span>  <span class="dt">Zero</span>    b  b</span>
+<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Add</span> a b c <span class="ot">=&gt;</span> <span class="dt">Add</span> (<span class="dt">Succ</span> a) b (<span class="dt">Succ</span> c)</span></code></pre></div>
+<pre><code>*Main&gt; :t add three one
+add three one :: Succ (Succ (Succ (Succ Zero)))</code></pre></li>
+</ul>
+<p><strong>Exercise:</strong> extend with multiplication and factorial</p>
+<h1 id="types-as-a-programming-language-2">Types as a programming language (2)</h1>
+<p>Vectors using type classes:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Vec</span><span class="ot"> ::</span> <span class="op">*</span> <span class="ot">-&gt;</span> <span class="op">*</span> <span class="ot">-&gt;</span> <span class="op">*</span> <span class="kw">where</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">VNil</span><span class="ot"> ::</span> <span class="dt">Vec</span> <span class="dt">Zero</span> a</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="ot">  (:&gt;) ::</span> a <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a <span class="ot">-&gt;</span> <span class="dt">Vec</span> (<span class="dt">Succ</span> n) a</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a><span class="ot">vhead ::</span> <span class="dt">Vec</span> (<span class="dt">Succ</span> n) a <span class="ot">-&gt;</span> a</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>vhead (x <span class="op">:&gt;</span> xs) <span class="ot">=</span> x</span></code></pre></div>
+<p><strong>Exercise:</strong> write <code>vtail</code>, <code>vlast</code></p>
+<p>We would like to have</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="ot">vappend ::</span> <span class="dt">Add</span> m n s <span class="ot">=&gt;</span> <span class="dt">Vec</span> m a <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a <span class="ot">-&gt;</span> <span class="dt">Vec</span> s a</span></code></pre></div>
+<p>but here the base type system is too weak</p>
+<h1 id="types-as-a-programming-language-3">Types as a programming language (3)</h1>
+<ul>
+<li><p>Vectors with type families:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Zero</span> <span class="ot">=</span> <span class="dt">Zero</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Suc</span> n <span class="ot">=</span> <span class="dt">Suc</span> n</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="kw">family</span> m <span class="op">:+</span> n</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="kw">instance</span> <span class="dt">Zero</span> <span class="op">:+</span> n <span class="ot">=</span> n</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="kw">instance</span> (<span class="dt">Suc</span> m) <span class="op">:+</span> n <span class="ot">=</span> <span class="dt">Suc</span>(m<span class="op">:+</span>n)</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Vec</span><span class="ot"> ::</span> <span class="op">*</span> <span class="ot">-&gt;</span> <span class="op">*</span> <span class="ot">-&gt;</span> <span class="op">*</span> <span class="kw">where</span></span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>  <span class="dt">VNil</span><span class="ot"> ::</span> <span class="dt">Vec</span> <span class="dt">Zero</span> a</span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a><span class="ot">  (:&gt;) ::</span> a <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a <span class="ot">-&gt;</span> <span class="dt">Vec</span> (<span class="dt">Suc</span> n) a</span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a><span class="ot">vhead ::</span> <span class="dt">Vec</span> (<span class="dt">Suc</span> n) a <span class="ot">-&gt;</span> a</span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a><span class="ot">vappend ::</span> <span class="dt">Vec</span> m a <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a <span class="ot">-&gt;</span> <span class="dt">Vec</span> (m<span class="op">:+</span>n) a</span></code></pre></div></li>
+</ul>
+<h1 id="dependent-types">Dependent types</h1>
+<p>Real type-level programming and proving properties is possible in a language with dependent types, such as Agda or Idris:</p>
+<pre><code>module Data.Vec where
+infixr 5 _∷_
+
+data Vec (A : Set a) : ℕ → Set where
+  []  : Vec A zero
+  _∷_ : ∀ {n} (x : A) (xs : Vec A n) → Vec A (suc n)
+
+_++_ : ∀ {a m n} {A : Set a} → Vec A m → Vec A n → Vec A (m + n)
+[]       ++ ys = ys
+(x ∷ xs) ++ ys = x ∷ (xs ++ ys)
+
+module UsingVectorEquality {s₁ s₂} (S : Setoid s₁ s₂) where
+  xs++[]=xs : ∀ {n} (xs : Vec A n) → xs ++ [] ≈ xs
+  xs++[]=xs []       = []-cong
+  xs++[]=xs (x ∷ xs) = SS.refl ∷-cong xs++[]=xs xs</code></pre>
+<h1 id="a-problem-with-dependent-types">A problem with dependent types</h1>
+<p>While Haskell is sometimes hard to read, dependent types are even easier to overdo:</p>
+<pre><code>  now-or-never : Reflexive _∼_ →
+                 ∀ {k} (x : A ⊥) →
+                 ¬ ¬ ((∃ λ y → x ⇓[ other k ] y) ⊎ x ⇑[ other k ])
+  now-or-never refl x = helper &lt;$&gt; excluded-middle
+    where
+    open RawMonad ¬¬-Monad
+
+    not-now-is-never : (x : A ⊥) → (∄ λ y → x ≳ now y) → x ≳ never
+    not-now-is-never (now x)   hyp with hyp (, now refl)
+    ... | ()
+    not-now-is-never (later x) hyp =
+      later (♯ not-now-is-never (♭ x) (hyp ∘ Prod.map id laterˡ))
+
+    helper : Dec (∃ λ y → x ≳ now y) → _
+    helper (yes ≳now) = inj₁ $ Prod.map id ≳⇒ ≳now
+    helper (no  ≵now) = inj₂ $ ≳⇒ $ not-now-is-never x ≵now</code></pre>
+<p>…even though writing such proofs is fun.</p>
+<h1 id="parallel-haskell">Parallel Haskell</h1>
+<p>Parallel Sudoku solver</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>    [f] <span class="ot">&lt;-</span> getArgs</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>    grids <span class="ot">&lt;-</span> <span class="fu">fmap</span> <span class="fu">lines</span> <span class="op">$</span> <span class="fu">readFile</span> f</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>    runEval (parMap solve grids) <span class="ot">`deepseq`</span> <span class="fu">return</span> ()</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a><span class="ot">parMap ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> <span class="dt">Eval</span> [b]</span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>parMap f [] <span class="ot">=</span> <span class="fu">return</span> []</span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>parMap f (a<span class="op">:</span>as) <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a>   b <span class="ot">&lt;-</span> rpar (f a)</span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a>   bs <span class="ot">&lt;-</span> parMap f as</span>
+<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a>   <span class="fu">return</span> (b<span class="op">:</span>bs)</span>
+<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a><span class="ot">solve ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Grid</span></span></code></pre></div>
+<pre><code>$ ./sudoku3b sudoku17.1000.txt +RTS -N2 -s -RTS
+  TASKS: 4 (1 bound, 3 peak workers (3 total), using -N2)
+  SPARKS: 1000 (1000 converted, 0 overflowed, 0 dud, 0 GC&#39;d, 0 fizzled)
+
+  Total   time    2.84s  (  1.49s elapsed)
+  Productivity  88.9% of total user, 169.6% of total elapsed
+
+-N8: Productivity  78.5% of total user, 569.3% of total elapsed
+N16: Productivity  62.8% of total user, 833.8% of total elapsed
+N32: Productivity  43.5% of total user, 1112.6% of total elapsed</code></pre>
+<h1 id="parallel-fibonacci">Parallel Fibonacci</h1>
+<div class="sourceCode" id="cb21"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="ot">cutoff ::</span> <span class="dt">Int</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>cutoff <span class="ot">=</span> <span class="dv">20</span></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>parFib n <span class="op">|</span> n <span class="op">&lt;</span> cutoff <span class="ot">=</span> fib n</span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>parFib n <span class="ot">=</span> p <span class="ot">`par`</span> q <span class="ot">`pseq`</span> (p <span class="op">+</span> q)</span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">where</span></span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>      p <span class="ot">=</span> parFib <span class="op">$</span> n <span class="op">-</span> <span class="dv">1</span></span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>      q <span class="ot">=</span> parFib <span class="op">$</span> n <span class="op">-</span> <span class="dv">2</span></span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a>fib n <span class="op">|</span> n<span class="op">&lt;</span><span class="dv">2</span> <span class="ot">=</span> n</span>
+<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a>fib n <span class="ot">=</span> fib (n <span class="op">-</span> <span class="dv">1</span>) <span class="op">+</span> fib (n <span class="op">-</span> <span class="dv">2</span>)</span></code></pre></div>
+<pre><code>./parfib +RTS -N60 -s -RTS
+ SPARKS: 118393 (42619 converted, 0 overflowed, 0 dud,
+                 11241 GC&#39;d, 64533 fizzled)
+
+  Total   time   17.91s  (  0.33s elapsed)
+  Productivity  98.5% of total user, 5291.5% of total elapsed
+
+-N60, cutoff=15
+  SPARKS: 974244 (164888 converted, 0 overflowed, 0 dud,
+                  156448 GC&#39;d, 652908 fizzled)
+  Total   time   13.59s  (  0.28s elapsed)
+  Productivity  97.6% of total user, 4746.9% of total elapsed</code></pre>
+<h1 id="data-parallel-haskell">Data Parallel Haskell</h1>
+<div class="sourceCode" id="cb23"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="ot">{-# LANGUAGE ParallelArrays #-}</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="ot">{-# OPTIONS_GHC -fvectorise #-}</span></span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a><span class="kw">module</span> <span class="dt">DotP</span> <span class="kw">where</span></span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="kw">qualified</span> <span class="dt">Prelude</span></span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Data.Array.Parallel</span></span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Data.Array.Parallel.Prelude</span></span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Data.Array.Parallel.Prelude.Double</span> <span class="kw">as</span> <span class="dt">D</span></span>
+<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-10"><a href="#cb23-10" aria-hidden="true" tabindex="-1"></a><span class="ot">dotp_double ::</span> [<span class="op">:</span><span class="dt">Double</span><span class="op">:</span>] <span class="ot">-&gt;</span> [<span class="op">:</span><span class="dt">Double</span><span class="op">:</span>] <span class="ot">-&gt;</span> <span class="dt">Double</span></span>
+<span id="cb23-11"><a href="#cb23-11" aria-hidden="true" tabindex="-1"></a>dotp_double xs ys <span class="ot">=</span> D.sumP [<span class="op">:</span>x <span class="op">*</span> y <span class="op">|</span> x <span class="ot">&lt;-</span> xs <span class="op">|</span> y <span class="ot">&lt;-</span> ys<span class="op">:</span>]</span></code></pre></div>
+<p>Looks like list operations, but works on vectors and “automagically” parallellises to any number of cores (also CUDA)</p>
+<h1 id="types-in-haskell">Types in Haskell</h1>
+<ul>
+<li><p>base types: <code>zeroInt :: Int</code></p></li>
+<li><p>function types: <code>plusInt :: Int -&gt; Int -&gt; Int</code></p></li>
+<li><p>polymorphic types <code>id :: a -&gt; a</code></p>
+<div class="sourceCode" id="cb24"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="ot">{-# LANGUAGE ExplicitForAll #-}</span></span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a><span class="ot">g ::</span> <span class="kw">forall</span> b<span class="op">.</span>b <span class="ot">-&gt;</span> b</span></code></pre></div></li>
+<li><p>constrained types <code>0 :: Num a =&gt; a</code></p></li>
+<li><p>algebraic types</p>
+<div class="sourceCode" id="cb25"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Tree</span> a <span class="ot">=</span> <span class="dt">Leaf</span> <span class="op">|</span> <span class="dt">Node</span> a (<span class="dt">Tree</span> a) (<span class="dt">Tree</span> a)</span></code></pre></div></li>
+<li><p><code>Leaf</code>, <code>Node</code> are *value constructors</p>
+<div class="sourceCode" id="cb26"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Tree</span> a <span class="kw">where</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>     <span class="dt">Leaf</span><span class="ot"> ::</span> <span class="dt">Tree</span> a</span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>     <span class="dt">Node</span><span class="ot"> ::</span> a <span class="ot">-&gt;</span> <span class="dt">Tree</span> a <span class="ot">-&gt;</span> <span class="dt">Tree</span> a <span class="ot">-&gt;</span> <span class="dt">Tree</span> a</span></code></pre></div></li>
+<li><p><code>Tree</code> is a <em>type constructor</em>, an operation on types</p></li>
+<li><p>NB empty types are allowed:</p>
+<div class="sourceCode" id="cb27"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Zero</span></span></code></pre></div></li>
+</ul>
+<h1 id="polymorphic-typing">Polymorphic typing</h1>
+<ul>
+<li>Generalisation:</li>
+</ul>
+<p><span class="math display">\[{\Gamma \vdash e :: t, a \notin FV( \Gamma )}\over {\Gamma \vdash e :: \forall a.t}\]</span></p>
+<p><!--
+Jeśli $\Gamma \vdash e :: t, a \notin FV( \Gamma )$
+
+to $\Gamma \vdash e :: \forall a.t$
+
+  Γ ⊢ e :: t, a∉FV(Γ)
+$$\Gamma \vdash e :: t$$ ,
+ \(a \not\in FV(\Gamma) \) ,
+to $\Gamma \vdash e :: \forall a.t$
+--></p>
+<p>For example</p>
+<p><span class="math display">\[{ { \vdash map :: (a\to b) \to [a] \to [b] } \over
+   { \vdash map :: \forall b. (a\to b) \to [a] \to [b] } } \over
+   { \vdash map :: \forall a. \forall b. (a\to b) \to [a] \to [b] } \]</span></p>
+<p>Note:</p>
+<p><span class="math display">\[ f : a \to b \not \vdash map\; f :: \forall b. [a] \to [b]  \]</span></p>
+<ul>
+<li>Instantiation</li>
+</ul>
+<p><span class="math display">\[ {\Gamma \vdash e :: \forall a.t}\over {\Gamma \vdash e :: t[a:=s]} \]</span></p>
+<h1 id="classes">Classes</h1>
+<ul>
+<li><p>Classes describe properties of types, e.g.</p>
+<div class="sourceCode" id="cb28"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> <span class="dt">Eq</span> a <span class="kw">where</span></span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a><span class="ot">  (==) ::</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Bool</span></span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Eq</span> <span class="dt">Bool</span> <span class="kw">where</span></span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>   <span class="dt">True</span>  <span class="op">==</span> <span class="dt">True</span>  <span class="ot">=</span> <span class="dt">True</span></span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a>   <span class="dt">False</span> <span class="op">==</span> <span class="dt">False</span> <span class="ot">=</span> <span class="dt">True</span></span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a>   _     <span class="op">==</span> _     <span class="ot">=</span> <span class="dt">False</span></span>
+<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-8"><a href="#cb28-8" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> <span class="dt">Eq</span> a <span class="ot">=&gt;</span> <span class="dt">Ord</span> a <span class="kw">where</span> <span class="op">...</span></span></code></pre></div></li>
+<li><p>types can be constrained by class context:</p>
+<div class="sourceCode" id="cb29"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="fu">elem</span><span class="ot"> ::</span> <span class="dt">Eq</span> a <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> <span class="dt">Bool</span></span></code></pre></div></li>
+<li><p>Implementaction</p>
+<ul>
+<li>an instance is translated to a method dictionary (akin to C++ vtable)</li>
+<li>context is translated to an implicit parameter (method dictionary)</li>
+<li>a subclass is translated to a function on method dicts</li>
+</ul></li>
+</ul>
+<h1 id="operations-on-types">Operations on types</h1>
+<ul>
+<li><p>A simple example:</p>
+<div class="sourceCode" id="cb30"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Tree</span> a <span class="ot">=</span> <span class="dt">Leaf</span> <span class="op">|</span> <span class="dt">Node</span> a (<span class="dt">Tree</span> a) (<span class="dt">Tree</span> a)</span></code></pre></div></li>
+<li><p>Type constructors transform types</p></li>
+<li><p>e.g. <code>Tree</code> maps <code>Int</code> to <code>Tree Int</code></p></li>
+<li><p>Higher order functions transform functions</p></li>
+<li><p>Higher order constructors transform type constructors, e.g.</p></li>
+</ul>
+<div class="sourceCode" id="cb31"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="kw">newtype</span> <span class="dt">IdentityT</span> m a <span class="ot">=</span> <span class="dt">IdentityT</span> {<span class="ot"> runIdentityT ::</span> m a }</span></code></pre></div>
+<h1 id="constructor-classes">Constructor classes</h1>
+<ul>
+<li><p>constructor classes describe properties of type constructors:</p>
+<div class="sourceCode" id="cb32"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> <span class="dt">Functor</span> f <span class="kw">where</span></span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a><span class="ot">  fmap ::</span> (a<span class="ot">-&gt;</span>b) <span class="ot">-&gt;</span> f a <span class="ot">-&gt;</span> f b</span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>(<span class="op">&lt;$&gt;</span>) <span class="ot">=</span> <span class="fu">fmap</span></span>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Functor</span> [] <span class="kw">where</span></span>
+<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">fmap</span> <span class="ot">=</span> <span class="fu">map</span></span>
+<span id="cb32-7"><a href="#cb32-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-8"><a href="#cb32-8" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> <span class="dt">Functor</span> f <span class="ot">=&gt;</span> <span class="dt">Pointed</span> f <span class="kw">where</span></span>
+<span id="cb32-9"><a href="#cb32-9" aria-hidden="true" tabindex="-1"></a><span class="ot">   pure ::</span> a <span class="ot">-&gt;</span> f a</span>
+<span id="cb32-10"><a href="#cb32-10" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Pointed</span> [] <span class="kw">where</span></span>
+<span id="cb32-11"><a href="#cb32-11" aria-hidden="true" tabindex="-1"></a>   <span class="fu">pure</span> <span class="ot">=</span> (<span class="op">:</span>[])</span>
+<span id="cb32-12"><a href="#cb32-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-13"><a href="#cb32-13" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> <span class="dt">Pointed</span> f <span class="ot">=&gt;</span> <span class="dt">Applicative</span> f <span class="kw">where</span></span>
+<span id="cb32-14"><a href="#cb32-14" aria-hidden="true" tabindex="-1"></a><span class="ot">  (&lt;*&gt;) ::</span> f(a<span class="ot">-&gt;</span>b) <span class="ot">-&gt;</span> f a <span class="ot">-&gt;</span> f b</span>
+<span id="cb32-15"><a href="#cb32-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-16"><a href="#cb32-16" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Applicative</span> [] <span class="kw">where</span></span>
+<span id="cb32-17"><a href="#cb32-17" aria-hidden="true" tabindex="-1"></a>  fs <span class="op">&lt;*&gt;</span> xs <span class="ot">=</span> <span class="fu">concat</span> <span class="op">$</span> <span class="fu">flip</span> <span class="fu">map</span> fs (<span class="fu">flip</span> <span class="fu">map</span> xs)</span>
+<span id="cb32-18"><a href="#cb32-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-19"><a href="#cb32-19" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> <span class="dt">Applicative</span> m <span class="ot">=&gt;</span> <span class="dt">Monad&#39;</span> m <span class="kw">where</span></span>
+<span id="cb32-20"><a href="#cb32-20" aria-hidden="true" tabindex="-1"></a><span class="ot">  (&gt;&gt;=) ::</span> m a <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> m b) <span class="ot">-&gt;</span> m b</span></code></pre></div></li>
+</ul>
+<!--
+
+    class Pointed f => Applicative f where
+      (<*>) :: f(a->b) -> f a -> f b
+      (*>) :: f a -> f b -> f b
+      x *> y = (flip const) <$> x <*> y
+      (<*) :: f a -> f b -> f a
+      x <* y = const <$> x <*> y
+
+    liftA2 :: Applicative f => (a -> b -> c) -> f a -> f b -> f c
+    liftA2 f a b = f <$> a <*> b
+
+-->
+<h1 id="kinds">Kinds</h1>
+<ul>
+<li><p>Value operations are described by their types</p></li>
+<li><p>Type operations are described by their kinds</p></li>
+<li><p>Types (e.g.. <code>Int</code>, <code>Int -&gt; Bool</code>) are of kind <code>*</code></p></li>
+<li><p>One argument constructors are of type (e.g.. <code>Tree</code>) are of kind <code>* -&gt; *</code></p>
+<div class="sourceCode" id="cb33"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="ot">{-#LANGUAGE KindSignatures, ExplicitForAll #-}</span></span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> <span class="dt">Functor</span> f <span class="ot">=&gt;</span> <span class="dt">Pointed</span> (<span class="ot">f ::</span> <span class="op">*</span> <span class="ot">-&gt;</span> <span class="op">*</span>) <span class="kw">where</span></span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a><span class="ot">    pure ::</span> <span class="kw">forall</span> (<span class="ot">a ::</span> <span class="op">*</span>)<span class="op">.</span>a <span class="ot">-&gt;</span> f a</span></code></pre></div></li>
+<li><p>More complex kinds are possible, e.g. for monad transformers:</p>
+<div class="sourceCode" id="cb34"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> <span class="dt">MonadTrans</span> (<span class="ot">t ::</span> (<span class="op">*</span> <span class="ot">-&gt;</span> <span class="op">*</span>) <span class="ot">-&gt;</span> <span class="op">*</span> <span class="ot">-&gt;</span> <span class="op">*</span>) <span class="kw">where</span></span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a><span class="ot">    lift ::</span> <span class="dt">Monad</span> (<span class="ot">m ::</span> <span class="op">*</span> <span class="ot">-&gt;</span> <span class="op">*</span>) <span class="ot">=&gt;</span> <span class="kw">forall</span> (<span class="ot">a ::</span> <span class="op">*</span>)<span class="op">.</span>m a <span class="ot">-&gt;</span> t m a</span></code></pre></div></li>
+</ul>
+<p>NB spaces are obligatory - <code>::*-&gt;*</code> is one lexem</p>
+<p>Newer Haskell versions allow introducing user kinds - we’ll talk about them later.</p>
+<h1 id="multiparameter-typeclasses">Multiparameter typeclasses</h1>
+<ul>
+<li><p>Sometimes we need to describe a relationship between types rather than just a single type:</p>
+<div class="sourceCode" id="cb35"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="ot">{-#LANGUAGE MultiParamTypeClasses, FlexibleInstances #-}</span></span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> <span class="dt">Iso</span> a b <span class="kw">where</span></span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a><span class="ot">  iso ::</span> a <span class="ot">-&gt;</span> b</span>
+<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a><span class="ot">  osi ::</span> b <span class="ot">-&gt;</span> a</span>
+<span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-6"><a href="#cb35-6" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Iso</span> a a <span class="kw">where</span></span>
+<span id="cb35-7"><a href="#cb35-7" aria-hidden="true" tabindex="-1"></a>  iso <span class="ot">=</span> <span class="fu">id</span></span>
+<span id="cb35-8"><a href="#cb35-8" aria-hidden="true" tabindex="-1"></a>  osi <span class="ot">=</span> <span class="fu">id</span></span>
+<span id="cb35-9"><a href="#cb35-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-10"><a href="#cb35-10" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Iso</span> ((a,b)<span class="ot">-&gt;</span>c) (a<span class="ot">-&gt;</span>b<span class="ot">-&gt;</span>c) <span class="kw">where</span></span>
+<span id="cb35-11"><a href="#cb35-11" aria-hidden="true" tabindex="-1"></a>  iso <span class="ot">=</span> <span class="fu">curry</span></span>
+<span id="cb35-12"><a href="#cb35-12" aria-hidden="true" tabindex="-1"></a>  osi <span class="ot">=</span> <span class="fu">uncurry</span></span>
+<span id="cb35-13"><a href="#cb35-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-14"><a href="#cb35-14" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> (<span class="dt">Iso</span> a b) <span class="ot">=&gt;</span> <span class="dt">Iso</span> [a] [b] <span class="kw">where</span></span>
+<span id="cb35-15"><a href="#cb35-15" aria-hidden="true" tabindex="-1"></a> iso <span class="ot">=</span> <span class="fu">map</span> iso</span>
+<span id="cb35-16"><a href="#cb35-16" aria-hidden="true" tabindex="-1"></a> osi <span class="ot">=</span> <span class="fu">map</span> osi</span></code></pre></div></li>
+<li><p>NB: in the last example <code>iso</code> has a different type on the left than on the right.</p></li>
+<li><p>Exercise: write more instances of <code>Iso</code>, e.g.</p>
+<div class="sourceCode" id="cb36"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> (<span class="dt">Functor</span> f, <span class="dt">Iso</span> a b) <span class="ot">=&gt;</span> <span class="dt">Iso</span> (f a) (f b) <span class="kw">where</span></span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Iso</span> (a<span class="ot">-&gt;</span>b<span class="ot">-&gt;</span>c) (b<span class="ot">-&gt;</span>a<span class="ot">-&gt;</span>c) <span class="kw">where</span></span></code></pre></div></li>
+</ul>
+<h1 id="digression---flexibleinstances">Digression - FlexibleInstances</h1>
+<p>Haskell 2010</p>
+<!--
+An instance declaration introduces an instance of a class. Let class
+cx => C u where { cbody } be a class declaration. The general form of
+the corresponding instance declaration is: instance cx′ => C (T u1 …
+uk) where { d } where k ≥ 0. The type (T u1 … uk) must take the form
+of a type constructor T applied to simple type variables u1, … uk;
+furthermore, T must not be a type synonym, and the ui must all be
+distinct.
+-->
+<ul>
+<li>an instance head must have the form <code>C (T u1 ... uk)</code>, where <code>T</code> is a type constructor defined by a data or newtype declaration and the <code>u_i</code> are distinct type variables</li>
+</ul>
+<!--
+*    and each assertion in the context must have the form C' v, where v is one of the ui.
+-->
+<p>This prohibits instance declarations such as:</p>
+<pre><code>  instance C (a,a) where ...
+  instance C (Int,a) where ...
+  instance C [[a]] where ...</code></pre>
+<p><code>instance Iso a a</code> does not meet these conditions, but it’s easy to see what relation we mean.</p>
+<h1 id="problem-with-muliparameter-type-classes-1">Problem with muliparameter type classes (1)</h1>
+<p>Consider a class of collections, e.g.</p>
+<p><code>BadCollection.hs</code></p>
+<div class="sourceCode" id="cb38"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> <span class="dt">Collection</span> c <span class="kw">where</span></span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a><span class="ot">  insert ::</span> e <span class="ot">-&gt;</span> c <span class="ot">-&gt;</span> c</span>
+<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a><span class="ot">  member ::</span> e <span class="ot">-&gt;</span> c <span class="ot">-&gt;</span> <span class="dt">Bool</span></span>
+<span id="cb38-4"><a href="#cb38-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-5"><a href="#cb38-5" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Collection</span> [a] <span class="kw">where</span></span>
+<span id="cb38-6"><a href="#cb38-6" aria-hidden="true" tabindex="-1"></a>     insert <span class="ot">=</span> (<span class="op">:</span>)</span>
+<span id="cb38-7"><a href="#cb38-7" aria-hidden="true" tabindex="-1"></a>     member <span class="ot">=</span> <span class="fu">elem</span></span></code></pre></div>
+<p>we get an error:</p>
+<pre><code>    Couldn&#39;t match type `e&#39; with `a&#39;
+      `e&#39; is a rigid type variable bound by
+          the type signature for member :: e -&gt; [a] -&gt; Bool
+          at BadCollection.hs:7:6
+      `a&#39; is a rigid type variable bound by
+          the instance declaration
+          at BadCollection.hs:5:22</code></pre>
+<p>Why?</p>
+<h1 id="problem-with-muliparameter-type-classes-2">Problem with muliparameter type classes (2)</h1>
+<div class="sourceCode" id="cb40"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> <span class="dt">Collection</span> c <span class="kw">where</span></span>
+<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a><span class="ot"> insert ::</span> e <span class="ot">-&gt;</span> c <span class="ot">-&gt;</span> c</span>
+<span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a><span class="ot"> member ::</span> e <span class="ot">-&gt;</span> c <span class="ot">-&gt;</span> <span class="dt">Bool</span></span></code></pre></div>
+<p>translates more or less to</p>
+<pre><code>data ColDic c = CD
+ {
+ , insert :: forall e.e -&gt; c -&gt; c
+ , member :: forall e.e -&gt; c -&gt; Bool
+ }</code></pre>
+<p>… this is not what we meant</p>
+<div class="sourceCode" id="cb42"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Collection</span> [a] <span class="kw">where</span></span>
+<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a>   insert <span class="ot">=</span> (<span class="op">:</span>)</span>
+<span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a>   member <span class="ot">=</span> <span class="fu">undefined</span></span></code></pre></div>
+<pre><code>-- (:) :: forall t. t -&gt; [t] -&gt; [t]
+ColList :: forall a. ColDic a
+ColList = \@ a -&gt; CD { insert = (:) @ a, member = undefined }</code></pre>
+<h1 id="problem-with-muliparameter-type-classes-3">Problem with muliparameter type classes (3)</h1>
+<p><!--- `BadCollection2.hs` --> <!---
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleInstances #-}
+--></p>
+<div class="sourceCode" id="cb44"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> <span class="dt">Collection</span> c e <span class="kw">where</span></span>
+<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a><span class="ot">  empty ::</span> c</span>
+<span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a><span class="ot">  insert ::</span> e <span class="ot">-&gt;</span> c <span class="ot">-&gt;</span> c</span>
+<span id="cb44-4"><a href="#cb44-4" aria-hidden="true" tabindex="-1"></a><span class="ot">  member ::</span> e <span class="ot">-&gt;</span> c <span class="ot">-&gt;</span> <span class="dt">Bool</span></span>
+<span id="cb44-5"><a href="#cb44-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb44-6"><a href="#cb44-6" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Eq</span> a <span class="ot">=&gt;</span> <span class="dt">Collection</span> [a] a <span class="kw">where</span></span>
+<span id="cb44-7"><a href="#cb44-7" aria-hidden="true" tabindex="-1"></a>  empty <span class="ot">=</span> []</span>
+<span id="cb44-8"><a href="#cb44-8" aria-hidden="true" tabindex="-1"></a>  insert  <span class="ot">=</span> (<span class="op">:</span>)</span>
+<span id="cb44-9"><a href="#cb44-9" aria-hidden="true" tabindex="-1"></a>  member <span class="ot">=</span> <span class="fu">elem</span></span>
+<span id="cb44-10"><a href="#cb44-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb44-11"><a href="#cb44-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb44-12"><a href="#cb44-12" aria-hidden="true" tabindex="-1"></a>ins2 x y c <span class="ot">=</span> insert y (insert x c)</span>
+<span id="cb44-13"><a href="#cb44-13" aria-hidden="true" tabindex="-1"></a><span class="co">-- ins2 :: (Collection c e, Collection c e1) =&gt; e1 -&gt; e -&gt; c -&gt; c</span></span>
+<span id="cb44-14"><a href="#cb44-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb44-15"><a href="#cb44-15" aria-hidden="true" tabindex="-1"></a><span class="ot">problem1 ::</span> [<span class="dt">Int</span>]</span>
+<span id="cb44-16"><a href="#cb44-16" aria-hidden="true" tabindex="-1"></a>problem1 <span class="ot">=</span> ins2 <span class="dv">1</span> <span class="dv">2</span> []</span>
+<span id="cb44-17"><a href="#cb44-17" aria-hidden="true" tabindex="-1"></a><span class="co">-- No instances for (Collection [Int] e0, Collection [Int] e1)</span></span>
+<span id="cb44-18"><a href="#cb44-18" aria-hidden="true" tabindex="-1"></a><span class="co">-- arising from a use of `ins2&#39;</span></span>
+<span id="cb44-19"><a href="#cb44-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb44-20"><a href="#cb44-20" aria-hidden="true" tabindex="-1"></a>problem2 <span class="ot">=</span> ins2 <span class="ch">&#39;a&#39;</span> <span class="ch">&#39;b&#39;</span> []</span>
+<span id="cb44-21"><a href="#cb44-21" aria-hidden="true" tabindex="-1"></a><span class="co">-- No instance for (Collection [a0] Char)</span></span>
+<span id="cb44-22"><a href="#cb44-22" aria-hidden="true" tabindex="-1"></a><span class="co">--       arising from a use of `ins2&#39;</span></span>
+<span id="cb44-23"><a href="#cb44-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb44-24"><a href="#cb44-24" aria-hidden="true" tabindex="-1"></a><span class="ot">problem3 ::</span> (<span class="dt">Collection</span> c0 <span class="dt">Char</span>, <span class="dt">Collection</span> c0 <span class="dt">Bool</span>) <span class="ot">=&gt;</span> c0 <span class="ot">-&gt;</span> c0</span>
+<span id="cb44-25"><a href="#cb44-25" aria-hidden="true" tabindex="-1"></a>problem3 <span class="ot">=</span> ins2 <span class="dt">True</span> <span class="ch">&#39;a&#39;</span></span>
+<span id="cb44-26"><a href="#cb44-26" aria-hidden="true" tabindex="-1"></a><span class="co">-- Here the problem is that this is type correct, but shouldn&#39;t</span></span></code></pre></div>
+<h1 id="functional-dependencies">Functional dependencies</h1>
+<p>Sometimes in multiparameter typeclasses, one parameter determines another, e.g.</p>
+<div class="sourceCode" id="cb45"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a> <span class="kw">class</span> (<span class="dt">Monad</span> m) <span class="ot">=&gt;</span> <span class="dt">MonadState</span> s m <span class="op">|</span> m <span class="ot">-&gt;</span> s <span class="kw">where</span> <span class="op">...</span></span>
+<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb45-3"><a href="#cb45-3" aria-hidden="true" tabindex="-1"></a> <span class="kw">class</span> <span class="dt">Collects</span> e ce <span class="op">|</span> ce <span class="ot">-&gt;</span> e <span class="kw">where</span></span>
+<span id="cb45-4"><a href="#cb45-4" aria-hidden="true" tabindex="-1"></a><span class="ot">      empty  ::</span> ce</span>
+<span id="cb45-5"><a href="#cb45-5" aria-hidden="true" tabindex="-1"></a><span class="ot">      insert ::</span> e <span class="ot">-&gt;</span> ce <span class="ot">-&gt;</span> ce</span>
+<span id="cb45-6"><a href="#cb45-6" aria-hidden="true" tabindex="-1"></a><span class="ot">      member ::</span> e <span class="ot">-&gt;</span> ce <span class="ot">-&gt;</span> <span class="dt">Bool</span></span></code></pre></div>
+<p>Exercise: verify that <code>Collects</code> solves the problem we had with <code>Collection</code></p>
+<p>Problem: <em>Fundeps are very, very tricky.</em> - SPJ</p>
+<p>More: https://www.microsoft.com/en-us/research/publication/understanding-functional-dependencies-via-constraint-handling-rules/</p>
+<h1 id="reflection---why-not-constructor-classes">Reflection - why not constructor classes?</h1>
+<p>We could try to solve the problem this way:</p>
+<div class="sourceCode" id="cb46"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> <span class="dt">Collection</span> c <span class="kw">where</span></span>
+<span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a><span class="ot">  insert ::</span> e <span class="ot">-&gt;</span> c e <span class="ot">-&gt;</span> c e</span>
+<span id="cb46-3"><a href="#cb46-3" aria-hidden="true" tabindex="-1"></a><span class="ot">  member ::</span> <span class="dt">Eq</span> e <span class="ot">=&gt;</span> e <span class="ot">-&gt;</span> c e<span class="ot">-&gt;</span> <span class="dt">Bool</span></span>
+<span id="cb46-4"><a href="#cb46-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb46-5"><a href="#cb46-5" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Collection</span> [] <span class="kw">where</span></span>
+<span id="cb46-6"><a href="#cb46-6" aria-hidden="true" tabindex="-1"></a>     insert x xs <span class="ot">=</span> x<span class="op">:</span>xs</span>
+<span id="cb46-7"><a href="#cb46-7" aria-hidden="true" tabindex="-1"></a>     member <span class="ot">=</span> <span class="fu">elem</span></span></code></pre></div>
+<p>but this does not allow to solve the problem with the state monad:</p>
+<div class="sourceCode" id="cb47"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a> <span class="kw">class</span> (<span class="dt">Monad</span> m) <span class="ot">=&gt;</span> <span class="dt">MonadState</span> s m <span class="op">|</span> m <span class="ot">-&gt;</span> s <span class="kw">where</span></span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a><span class="ot">   get ::</span> m s</span>
+<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a><span class="ot">   put ::</span> s <span class="ot">-&gt;</span> m ()</span></code></pre></div>
+<p>the state type <code>s</code> is not a parameter of <code>m</code></p>
+<h1 id="fundeps-are-very-very-tricky">Fundeps are very very tricky</h1>
+<div class="sourceCode" id="cb48"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> <span class="dt">Mul</span> a b c <span class="op">|</span> a b <span class="ot">-&gt;</span> c <span class="kw">where</span></span>
+<span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a><span class="ot">  (*) ::</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> c</span>
+<span id="cb48-3"><a href="#cb48-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb48-4"><a href="#cb48-4" aria-hidden="true" tabindex="-1"></a><span class="kw">newtype</span> <span class="dt">Vec</span> a <span class="ot">=</span> <span class="dt">Vec</span> [a]</span>
+<span id="cb48-5"><a href="#cb48-5" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Functor</span> <span class="dt">Vec</span> <span class="kw">where</span></span>
+<span id="cb48-6"><a href="#cb48-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">fmap</span> f (<span class="dt">Vec</span> as) <span class="ot">=</span> <span class="dt">Vec</span> <span class="op">$</span> <span class="fu">map</span> f as</span>
+<span id="cb48-7"><a href="#cb48-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb48-8"><a href="#cb48-8" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Mul</span> a b c <span class="ot">=&gt;</span> <span class="dt">Mul</span> a (<span class="dt">Vec</span> b) (<span class="dt">Vec</span> c) <span class="kw">where</span></span>
+<span id="cb48-9"><a href="#cb48-9" aria-hidden="true" tabindex="-1"></a>  a <span class="op">*</span> b <span class="ot">=</span> <span class="fu">fmap</span> (a<span class="op">*</span>) b</span>
+<span id="cb48-10"><a href="#cb48-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb48-11"><a href="#cb48-11" aria-hidden="true" tabindex="-1"></a>f t x y <span class="ot">=</span> <span class="kw">if</span> t <span class="kw">then</span>  x <span class="op">*</span> (<span class="dt">Vec</span> [y]) <span class="kw">else</span> y</span></code></pre></div>
+<p>What is the type of <code>f</code>? Let <code>x::a</code>, <code>y::b</code>.</p>
+<p>Then the result type of <code>f</code> is <code>b</code> and we need an instance of <code>Mul a (Vec b) b</code></p>
+<p>Now <code>a b -&gt; c</code> implies <code>b ~ Vec c</code> for some <code>c</code>, so we are looking for an instance</p>
+<pre><code>Mul a (Vec (Vec c)) (Vec c)</code></pre>
+<p>applying the rule <code>Mul a b c =&gt; Mul a (Vec b) (Vec c)</code> leads to <code>Mul a (Vec c) c</code>.</p>
+<p>…and so on</p>
+<h1 id="lets-try">Let’s try</h1>
+<div class="sourceCode" id="cb50"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a>Mul1.hs<span class="op">:</span><span class="dv">19</span><span class="op">:</span><span class="dv">22</span><span class="op">:</span> <span class="fu">error</span><span class="op">:</span></span>
+<span id="cb50-2"><a href="#cb50-2" aria-hidden="true" tabindex="-1"></a>    • <span class="dt">Reduction</span> stack overflow; size <span class="ot">=</span> <span class="dv">201</span></span>
+<span id="cb50-3"><a href="#cb50-3" aria-hidden="true" tabindex="-1"></a>      <span class="dt">When</span> simplifying the following <span class="kw">type</span><span class="op">:</span> <span class="dt">Mul</span> a0 (<span class="dt">Vec</span> (<span class="dt">Vec</span> c)) (<span class="dt">Vec</span> c)</span>
+<span id="cb50-4"><a href="#cb50-4" aria-hidden="true" tabindex="-1"></a>    • <span class="dt">In</span> the expression<span class="op">:</span> x <span class="op">*</span> (<span class="dt">Vec</span> [y])</span>
+<span id="cb50-5"><a href="#cb50-5" aria-hidden="true" tabindex="-1"></a>      <span class="dt">In</span> the expression<span class="op">:</span> <span class="kw">if</span> b <span class="kw">then</span> x <span class="op">*</span> (<span class="dt">Vec</span> [y]) <span class="kw">else</span> y</span>
+<span id="cb50-6"><a href="#cb50-6" aria-hidden="true" tabindex="-1"></a>      <span class="dt">In</span> an equation for ‘f’<span class="op">:</span> f b x y <span class="ot">=</span> <span class="kw">if</span> b <span class="kw">then</span> x <span class="op">*</span> (<span class="dt">Vec</span> [y]) <span class="kw">else</span> y</span>
+<span id="cb50-7"><a href="#cb50-7" aria-hidden="true" tabindex="-1"></a>   <span class="op">|</span></span>
+<span id="cb50-8"><a href="#cb50-8" aria-hidden="true" tabindex="-1"></a><span class="dv">19</span> <span class="op">|</span> f b x y <span class="ot">=</span> <span class="kw">if</span> b <span class="kw">then</span>  x <span class="op">*</span> (<span class="dt">Vec</span> [y]) <span class="kw">else</span> y</span>
+<span id="cb50-9"><a href="#cb50-9" aria-hidden="true" tabindex="-1"></a>   <span class="op">|</span>                      <span class="op">^^^^^^^^^^^^^</span></span></code></pre></div>
+<p>(we need to use UndecidableInstances, to make GHC try - this example shows what is ‘Undecidable’).</p>
+<h1 id="associated-types">Associated types</h1>
+<div class="sourceCode" id="cb51"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a><span class="ot">{-# LANGUAGE TypeFamilies #-}</span></span>
+<span id="cb51-2"><a href="#cb51-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> <span class="dt">Collection</span> c <span class="kw">where</span></span>
+<span id="cb51-3"><a href="#cb51-3" aria-hidden="true" tabindex="-1"></a>      <span class="kw">type</span> <span class="dt">Elem</span><span class="ot"> c ::</span> <span class="op">*</span></span>
+<span id="cb51-4"><a href="#cb51-4" aria-hidden="true" tabindex="-1"></a><span class="ot">      empty ::</span> c</span>
+<span id="cb51-5"><a href="#cb51-5" aria-hidden="true" tabindex="-1"></a><span class="ot">      insert ::</span> <span class="dt">Elem</span> c <span class="ot">-&gt;</span> c <span class="ot">-&gt;</span> c</span>
+<span id="cb51-6"><a href="#cb51-6" aria-hidden="true" tabindex="-1"></a><span class="ot">      member ::</span> <span class="dt">Elem</span> c <span class="ot">-&gt;</span> c <span class="ot">-&gt;</span> <span class="dt">Bool</span></span>
+<span id="cb51-7"><a href="#cb51-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-8"><a href="#cb51-8" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Eq</span> a <span class="ot">=&gt;</span> <span class="dt">Collection</span> [a] <span class="kw">where</span></span>
+<span id="cb51-9"><a href="#cb51-9" aria-hidden="true" tabindex="-1"></a>  <span class="kw">type</span> <span class="dt">Elem</span> [a] <span class="ot">=</span> a</span>
+<span id="cb51-10"><a href="#cb51-10" aria-hidden="true" tabindex="-1"></a>  empty <span class="ot">=</span> []</span>
+<span id="cb51-11"><a href="#cb51-11" aria-hidden="true" tabindex="-1"></a>  insert  <span class="ot">=</span> (<span class="op">:</span>)</span>
+<span id="cb51-12"><a href="#cb51-12" aria-hidden="true" tabindex="-1"></a>  member <span class="ot">=</span> <span class="fu">elem</span></span>
+<span id="cb51-13"><a href="#cb51-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-14"><a href="#cb51-14" aria-hidden="true" tabindex="-1"></a><span class="ot">ins2 ::</span> <span class="dt">Collection</span> c <span class="ot">=&gt;</span> <span class="dt">Elem</span> c <span class="ot">-&gt;</span> <span class="dt">Elem</span> c <span class="ot">-&gt;</span> c <span class="ot">-&gt;</span> c</span>
+<span id="cb51-15"><a href="#cb51-15" aria-hidden="true" tabindex="-1"></a>ins2 x y c <span class="ot">=</span> insert y (insert x c)</span>
+<span id="cb51-16"><a href="#cb51-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-17"><a href="#cb51-17" aria-hidden="true" tabindex="-1"></a><span class="ot">noproblem1 ::</span> [<span class="dt">Int</span>]</span>
+<span id="cb51-18"><a href="#cb51-18" aria-hidden="true" tabindex="-1"></a>noproblem1 <span class="ot">=</span> ins2 (<span class="dv">1</span><span class="ot">::</span><span class="dt">Int</span>) (<span class="dv">2</span><span class="ot">::</span><span class="dt">Int</span>) empty</span>
+<span id="cb51-19"><a href="#cb51-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-20"><a href="#cb51-20" aria-hidden="true" tabindex="-1"></a><span class="ot">noproblem2 ::</span> [<span class="dt">Char</span>]</span>
+<span id="cb51-21"><a href="#cb51-21" aria-hidden="true" tabindex="-1"></a>noproblem2 <span class="ot">=</span> ins2 <span class="ch">&#39;a&#39;</span> <span class="ch">&#39;b&#39;</span> empty</span></code></pre></div>
+<h1 id="type-families">Type families</h1>
+<p>Type families are functions on types</p>
+<div class="sourceCode" id="cb52"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a><span class="ot">{-# LANGUAGE TypeFamilies #-}</span></span>
+<span id="cb52-2"><a href="#cb52-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb52-3"><a href="#cb52-3" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Zero</span> <span class="ot">=</span> <span class="dt">Zero</span></span>
+<span id="cb52-4"><a href="#cb52-4" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Suc</span> n <span class="ot">=</span> <span class="dt">Suc</span> n</span>
+<span id="cb52-5"><a href="#cb52-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb52-6"><a href="#cb52-6" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="kw">family</span> m <span class="op">:+</span> n</span>
+<span id="cb52-7"><a href="#cb52-7" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="kw">instance</span> <span class="dt">Zero</span> <span class="op">:+</span> n <span class="ot">=</span> n</span>
+<span id="cb52-8"><a href="#cb52-8" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="kw">instance</span> (<span class="dt">Suc</span> m) <span class="op">:+</span> n <span class="ot">=</span> <span class="dt">Suc</span>(m<span class="op">:+</span>n)</span>
+<span id="cb52-9"><a href="#cb52-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb52-10"><a href="#cb52-10" aria-hidden="true" tabindex="-1"></a><span class="ot">vhead ::</span> <span class="dt">Vec</span> (<span class="dt">Suc</span> n) a <span class="ot">-&gt;</span> a</span>
+<span id="cb52-11"><a href="#cb52-11" aria-hidden="true" tabindex="-1"></a><span class="ot">vappend ::</span> <span class="dt">Vec</span> m a <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a <span class="ot">-&gt;</span> <span class="dt">Vec</span> (m<span class="op">:+</span>n) a</span></code></pre></div>
+<p>We’ll talk about them systematically when we talk about dependent types in Haskell</p>
+</body>
+</html>
