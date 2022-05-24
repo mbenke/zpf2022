@@ -1,0 +1,81 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.34.4.
+--
+-- see: https://github.com/sol/hpack
+
+name:           zpf-par
+version:        0.0.0
+build-type:     Simple
+
+executable badfib
+  main-is: badfib.hs
+  other-modules:
+      Paths_zpf_par
+  ghc-options: -O2 -threaded -rtsopts -eventlog
+  build-depends:
+      array
+    , base
+    , deepseq
+    , parallel
+  default-language: Haskell2010
+
+executable badfib2
+  main-is: parfib2.hs
+  other-modules:
+      Paths_zpf_par
+  ghc-options: -O2 -threaded -rtsopts -eventlog
+  build-depends:
+      array
+    , base
+    , deepseq
+    , parallel
+  default-language: Haskell2010
+
+executable parfib
+  main-is: parfib.hs
+  other-modules:
+      Paths_zpf_par
+  ghc-options: -O2 -threaded -rtsopts -eventlog
+  build-depends:
+      array
+    , base
+    , deepseq
+    , parallel
+  default-language: Haskell2010
+
+executable sudoku1
+  main-is: sudoku1.hs
+  other-modules:
+      Sudoku
+  ghc-options: -O2 -threaded -rtsopts -eventlog
+  build-depends:
+      array
+    , base
+    , deepseq
+    , parallel
+  default-language: Haskell2010
+
+executable sudoku2
+  main-is: sudoku2.hs
+  other-modules:
+      Sudoku
+  ghc-options: -O2 -threaded -rtsopts -eventlog
+  build-depends:
+      array
+    , base
+    , deepseq
+    , parallel
+  default-language: Haskell2010
+
+executable sudoku3b
+  main-is: sudoku3b.hs
+  other-modules:
+      Sudoku
+  ghc-options: -O2 -threaded -rtsopts -eventlog
+  build-depends:
+      array
+    , base
+    , deepseq
+    , parallel
+  default-language: Haskell2010

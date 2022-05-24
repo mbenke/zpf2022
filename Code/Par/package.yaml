@@ -1,0 +1,30 @@
+name: zpf-par
+
+ghc-options:
+  - -O2
+  - -threaded
+  - -rtsopts
+  - -eventlog
+  
+dependencies:
+  - array
+  - base
+  - deepseq
+  - parallel
+
+executables:
+  sudoku1:
+    main: sudoku1.hs
+    other-modules: Sudoku
+  sudoku2:
+    main: sudoku2.hs
+    other-modules: Sudoku
+  sudoku3b:
+    main: sudoku3b.hs
+    other-modules: Sudoku
+  parfib:
+    main: parfib.hs
+  badfib2:
+    main: parfib2.hs
+  badfib:
+    main: badfib.hs
