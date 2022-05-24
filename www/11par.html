@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="author" content="Marcin Benke" />
+  <meta name="dcterms.date" content="2022-05-24" />
+  <title>Advanced Functional Programming</title>
+  <style>
+    html {
+      line-height: 1.5;
+      font-family: Georgia, serif;
+      font-size: 20px;
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 1em;
+      }
+    }
+    @media print {
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, 'Lucida Console', Consolas, monospace;
+      font-size: 85%;
+      margin: 0;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      background-color: #1a1a1a;
+      border: none;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    span.underline{text-decoration: underline;}
+    div.column{display: inline-block; vertical-align: top; width: 50%;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Advanced Functional Programming</h1>
+<p class="subtitle">Parallelism and Concurrency</p>
+<p class="author">Marcin Benke</p>
+<p class="date">May 24, 2022</p>
+</header>
+<h1 id="parallelism-vs-concurrency">Parallelism vs concurrency</h1>
+<p>``A <em>parallel</em> program is one that uses a multiplicity of computational hardware (e.g. multiple processor cores) in order to perform computation more quickly. Different parts of the computation are delegated to different processors that execute at the same time (in parallel), so that results may be delivered earlier than if the computation had been performed sequentially.</p>
+<p>In contrast, <em>concurrency</em> is a program-structuring technique in which there are multiple threads of control. Notionally the threads of control execute “at the same time”; that is, the user sees their effects interleaved. Whether they actually execute at the same time or not is an implementation detail; a concurrent program can execute on a single processor through interleaved execution, or on multiple physical processors.’’</p>
+<p>— <a href="https://simonmar.github.io/pages/pcph.html">Simon Marlow, <em>Parallel and Concurrent Programming in Haskell</em></a></p>
+<p>(recommended reading, free to read online; NB ignore the “Start Your Free Trial” nags)</p>
+<p>TL;DR:</p>
+<ul>
+<li>concurrent - result may depend on how the control threads interleave</li>
+<li>parallel - same result independently of interleavings</li>
+</ul>
+<h1 id="haskell-parallelism">Haskell parallelism</h1>
+<ul>
+<li>Parallel programs in Haskell are <em>deterministic</em></li>
+<li>The same pure program gives the same answer on 1 and N cores</li>
+<li>Programs can be debugged on 1 core</li>
+<li>No risk of deadlock or race conditions</li>
+<li>No need to worry about thread communication and synchronisation.</li>
+</ul>
+<h1 id="evaluation">Evaluation</h1>
+<p>Before discussing parallel evaluation, let’s look at Haskell evaluation in general</p>
+<pre><code>&gt; let x = 1+2::Int
+&gt; :sprint x
+x = _
+&gt; x
+3
+&gt; :sprint x
+x = 3</code></pre>
+<p>NB do not omit <code>::Int</code> lest you get misled.</p>
+<p>The <code>:sprint</code> command prints expression without evaluating; <code>_</code> means “unevaluated” (thunk).</p>
+<figure>
+<img src="plusThunk.png" title="a thunk" alt="thunk" /><figcaption aria-hidden="true">thunk</figcaption>
+</figure>
+<h1 id="sharing">Sharing</h1>
+<pre><code>&gt; let {x = 1+2::Int; y = (x,x) }
+&gt; :sprint y
+y = (_,_)
+&gt; fst y
+3
+&gt; :sprint vv
+vv = (3,3)</code></pre>
+<p>Evaluating <code>fst vv</code> evaluated <code>x</code> which was both first and second component (was shared)</p>
+<figure>
+<img src="sharing.png" title="Sharing example" alt="Sharing" /><figcaption aria-hidden="true">Sharing</figcaption>
+</figure>
+<h1 id="forcing-evaluation---seq">Forcing evaluation - seq</h1>
+<pre><code>&gt; let x = 1+2 :: Int
+&gt; let y = x+1
+&gt; :sprint x
+x = _
+&gt; :sprint y
+y = _
+&gt; seq y ()
+()
+&gt; :sprint y
+y = 4
+&gt; :sprint x
+x = 3</code></pre>
+<p>We may think of <code>seq a b</code> as <em>sequentially</em> evaluating <code>a</code> then returning <code>b</code>.</p>
+<p>A more precise description is that <code>seq a b</code> introduces a data dependency between <code>a</code> and its result (<code>b</code>): when the latter value is evaluated, <code>a</code> must be evaluated as well.</p>
+<p>OTOH it may happen that none of them is needed/evaluated, e.g.</p>
+<pre><code>&gt; const 42 (undefined `seq` [1..])
+42</code></pre>
+<h1 id="normalisation-and-normal-forms">Normalisation and normal forms</h1>
+<ul>
+<li>Normal Form - there are no redexes</li>
+<li>Head Normal Form - no redexes in the head, i.e. <code>\x1...xn -&gt; xN1...Nk</code></li>
+<li>Weak Head Normal Form - <code>xN1...Nk</code> or</li>
+</ul>
+<h1 id="whnf---shallow-evaluation">WHNF - shallow evaluation</h1>
+<p><code>seq</code> evaluates to so called Weak Head Normal Form - more or less up to first constructor:</p>
+<pre><code>Prelude&gt; let xs = map (+1) [1..10] :: [Int]
+Prelude&gt; :sprint xs
+xs = _
+Prelude&gt; seq xs ()
+()
+Prelude&gt; :sprint xs
+xs = _ : _</code></pre>
+<p>BTW, similar thing happens when evaluating <code>case</code>:</p>
+<pre><code>Prelude&gt; let xs = map (+1) [1..10] :: [Int]
+Prelude&gt; case xs of { [] -&gt; (); _:_ -&gt; () }
+()
+Prelude&gt; :sprint xs
+xs = _ : _</code></pre>
+<p>We will discuss deep evaluation (normal form) later.</p>
+<h1 id="parallel-evaluation---par">Parallel evaluation - <code>par</code></h1>
+<p><code>Control.Parallel.par</code> is supplied by the <code>parallel</code> package.</p>
+<p><code>par</code> and <code>seq</code> have much in common. The function par let you start a computation in parallel and seq forces a computation to actually take place</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ot">par ::</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> b</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="fu">seq</span><span class="ot"> ::</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> b</span></code></pre></div>
+<ul>
+<li><code>seq a b</code> forces evaluation of <code>a</code> and returns b</li>
+<li><code>par a b</code> initiates evaluation of <code>a</code> and returns <code>b</code> immediatly, not waiting until computation finishes</li>
+</ul>
+<pre><code>&gt; import Control.Parallel
+&gt; let n = length [1..10^9]
+&gt; par n ()
+()
+&gt; :sprint n
+n = _
+-- wait 10 seconds
+&gt; :sprint n
+n = 1000000000</code></pre>
+<ul>
+<li>by itself <code>par</code> evaluates shallowly:</li>
+</ul>
+<pre><code>&gt; let xs = map (+1) [1..10] :: [Int]
+&gt; par xs ()
+()
+&gt; :sprint xs
+xs = _ : _</code></pre>
+<h1 id="par-seq-and-pseq"><code>par</code>, <code>seq</code> and <code>pseq</code></h1>
+<p><code>seq</code> and <code>pseq</code> are almost equivalent, but differ in their runtime behaviour in a subtle way: <code>seq</code> can evaluate its arguments in either order, but <code>pseq</code> is required to evaluate its first argument before its second, which makes it more suitable for controlling the evaluation order in conjunction with <code>par</code>.</p>
+<p>Consider</p>
+<pre><code>(a `par` b) `pseq` (a + b)</code></pre>
+<p>in this example we want to fully compute a and b (in parallel) before adding them.</p>
+<h1 id="the-evaluation-order-monad">The Evaluation-order Monad</h1>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- Control.Parallel.Strategies</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Eval</span> a</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Monad</span> <span class="dt">Eval</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a><span class="ot">runEval ::</span> <span class="dt">Eval</span> a <span class="ot">-&gt;</span> a</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a><span class="ot">rseq ::</span> a <span class="ot">-&gt;</span> <span class="dt">Eval</span> a  <span class="co">-- &quot;eval argument, wait for result&quot;</span></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a><span class="ot">rpar ::</span> a <span class="ot">-&gt;</span> <span class="dt">Eval</span> a  <span class="co">-- &quot;my argument can be evaluated in parallel&quot;</span></span></code></pre></div>
+<p>Note:</p>
+<ul>
+<li>the argument to rpar should be a thunk, otherwise nothing happens, because there is no work to perform in parallel.</li>
+</ul>
+<p><code>Eval</code> is basically just a strict identity monad:</p>
+<pre><code>data Eval a = Done a
+
+runEval :: Eval a -&gt; a
+runEval (Done x) = x
+
+instance Monad Eval where
+  return x = Done x
+  Done x &gt;&gt;= k = k x   -- Note: pattern &#39;Done x&#39; makes &#39;&gt;&gt;=&#39; strict</code></pre>
+<p>Hence <code>rseq</code> and <code>rpar</code> guide the evaluation order, but the computed value is the same it would be without them.</p>
+<h1 id="deepseq-friends">deepseq &amp; friends</h1>
+<p>deepseq: fully evaluates the first argument, before returning the second.</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">seq</span><span class="ot"> ::</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> b</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="co">-- Control.DeepSeq</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> <span class="dt">NFData</span> a <span class="kw">where</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="ot">    rnf ::</span> a <span class="ot">-&gt;</span> ()</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a><span class="co">-- rnf should reduce its argument to normal form</span></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a><span class="co">-- (that is, fully evaluate all sub-components),</span></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a><span class="co">-- and then return &#39;()&#39;</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a><span class="ot">deepseq ::</span> <span class="dt">NFData</span> a <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> b</span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>deepseq a b <span class="ot">=</span> rnf a <span class="ot">`seq`</span> b</span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a><span class="ot">force ::</span>  <span class="dt">NFData</span> a <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> a</span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>force x <span class="ot">=</span> deepseq x x</span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a><span class="co">-- Control.Exception</span></span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a><span class="co">-- Forces its argument to be evaluated to weak head normal form</span></span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a><span class="co">-- when the resultant IO action is executed.</span></span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a><span class="ot">evaluate ::</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> a</span></code></pre></div>
+<h1 id="deepseq-friends-1">deepseq &amp; friends</h1>
+<p><code>seq</code> forces ``shallow’’ evaluation (just the root)</p>
+<p><code>deepseq</code> forces the whole tree up to the leaves.</p>
+<pre><code>&gt; let x = [undefined] :: [Int] in x `seq` length x
+1
+
+&gt; let x = [undefined] :: [Int] in x `deepseq` length x
+*** Exception: Prelude.undefined</code></pre>
+<p>Of course the forcing happens only when <code>deepseq</code> itself is evaluated</p>
+<pre><code>&gt; let x = undefined::Int
+&gt; let y = deepseq x () in 42
+42
+&gt; :sprint x
+x = _</code></pre>
+<h1 id="sudoku">Sudoku</h1>
+<p>An example with lots of computation: solving Sudoku</p>
+<p>Every line of input contains an instance of the problem</p>
+<p>Sequential program:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>    [f] <span class="ot">&lt;-</span> getArgs</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>    grids <span class="ot">&lt;-</span> <span class="fu">fmap</span> <span class="fu">lines</span> <span class="op">$</span> <span class="fu">readFile</span> f</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">print</span> <span class="op">$</span> <span class="fu">length</span> <span class="op">$</span> <span class="fu">filter</span> isJust <span class="op">$</span> <span class="fu">map</span> solve grids</span></code></pre></div>
+<pre><code>$ ghc -O2 -threaded sudoku1.hs
+$ ./sudoku1 sudoku17.1000.txt +RTS -s
+  TASKS: 3 (1 bound, 2 peak workers (2 total), using -N1)
+  SPARKS: 0 (0 converted, 0 overflowed, 0 dud, 0 GC&#39;d, 0 fizzled)
+
+  Total   time    2.53s  (  2.56s elapsed)</code></pre>
+<h1 id="multicore">Multicore?</h1>
+<pre><code>$ ghc -O2 -threaded sudoku1.hs
+$ ./sudoku1 sudoku17.1000.txt +RTS -s
+  TASKS: 3 (1 bound, 2 peak workers (2 total), using -N1)
+  SPARKS: 0 (0 converted, 0 overflowed, 0 dud, 0 GC&#39;d, 0 fizzled)
+
+  Total   time    2.53s  (  2.56s elapsed)</code></pre>
+<p>We can specify the number of threads using -N</p>
+<pre><code>$ ./sudoku1 sudoku17.1000.txt +RTS -s -N16
+  TASKS: 18 (1 bound, 17 peak workers (17 total), using -N16)
+  SPARKS: 0 (0 converted, 0 overflowed, 0 dud, 0 GC&#39;d, 0 fizzled)
+
+  Total   time   16.84s  (  4.09s elapsed)</code></pre>
+<p>Our program works slower - we unnecessarily start N-1 additional threads that only get in the way.</p>
+<h1 id="a-parallel-program">A parallel program</h1>
+<div class="sourceCode" id="cb20"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Control.Parallel.Strategies</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="ot">main ::</span> <span class="dt">IO</span> ()</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>    [f] <span class="ot">&lt;-</span> getArgs</span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>    grids <span class="ot">&lt;-</span> <span class="fu">fmap</span> <span class="fu">lines</span> <span class="op">$</span> <span class="fu">readFile</span> f</span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">let</span> (as,bs) <span class="ot">=</span> <span class="fu">splitAt</span> (<span class="fu">length</span> grids <span class="ot">`div`</span> <span class="dv">2</span>) grids</span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">print</span> (<span class="fu">length</span> (runEval (work as bs)))</span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a>work as bs <span class="ot">=</span>  <span class="kw">do</span></span>
+<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a>       a <span class="ot">&lt;-</span> rpar (force (<span class="fu">map</span> solve as))</span>
+<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a>       b <span class="ot">&lt;-</span> rpar (force (<span class="fu">map</span> solve bs))</span>
+<span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a>       <span class="fu">return</span> (<span class="fu">filter</span> isJust (a<span class="op">++</span>b))</span></code></pre></div>
+<p>We create two light threads, in GHC called ``sparks’’ (these are not OS threads).</p>
+<h1 id="results">Results</h1>
+<pre><code>$ ghc -O2 -rtsopts -threaded --make sudoku2.hs
+$ ./sudoku2 sudoku17.1000.txt +RTS -N2 -s -RTS
+
+  TASKS: 4 (1 bound, 3 peak workers (3 total), using -N2)
+  SPARKS: 2 (1 converted, 0 overflowed, 0 dud, 0 GC&#39;d, 1 fizzled)
+
+  Total   time    2.73s  (  1.77s elapsed)</code></pre>
+<p>Better, but we are still unable to use the whole power:</p>
+<pre><code>./sudoku2 sudoku17.1000.txt +RTS -N16 -s -RTS
+
+  TASKS: 18 (1 bound, 17 peak workers (17 total), using -N16)
+  SPARKS: 2 (1 converted, 0 overflowed, 0 dud, 0 GC&#39;d, 1 fizzled)
+
+  Total   time   15.12s  (  3.19s elapsed)</code></pre>
+<h1 id="sparks">Sparks</h1>
+<ul>
+<li><p>A new spark is created with each use of <code>rpar</code> (and put in the spark pool)</p></li>
+<li><p>Whenever the system has a free computational unit (processor, core), it allocates it a new spark from the pool (“convert”)</p></li>
+<li><p>Computational unit - Haskelll Execution Context (HEC)</p></li>
+<li><p>One unit always occupied by the main thread.</p></li>
+</ul>
+<p>Spark creation may fail due to</p>
+<ul>
+<li><p>pool overflow</p></li>
+<li><p>expression in WHNF already (dud)</p></li>
+</ul>
+<h1 id="spark-pool">Spark pool</h1>
+<p>sparks in the pool may be</p>
+<ul>
+<li><p>“converted” (allocated a HEC)</p></li>
+<li><p>evaluated out of order (fizzle)</p></li>
+<li><p>garbage collected (GC)</p></li>
+</ul>
+<h1 id="section"></h1>
+<figure>
+<img src="spark-lifecycle800.png" title="Life cycle of a spark" alt="spark lifecycle" /><figcaption aria-hidden="true">spark lifecycle</figcaption>
+</figure>
+<h1 id="sudoku1-vs-sudoku2">sudoku1 vs sudoku2</h1>
+<pre><code>$ ./sudoku1 sudoku17.1000.txt +RTS -s
+  TASKS: 3 (1 bound, 2 peak workers (2 total), using -N1)
+  SPARKS: 0 (0 converted, 0 overflowed, 0 dud, 0 GC&#39;d, 0 fizzled)
+
+  Total   time    2.53s  (  2.56s elapsed)</code></pre>
+<pre><code>$ ./sudoku2 sudoku17.1000.txt +RTS -N2 -s -RTS
+
+  TASKS: 4 (1 bound, 3 peak workers (3 total), using -N2)
+  SPARKS: 2 (1 converted, 0 overflowed, 0 dud, 0 GC&#39;d, 1 fizzled)
+
+  Total   time    2.73s  (  1.77s elapsed)</code></pre>
+<p>Better, but still far from ideal.</p>
+<h1 id="threadscope">Threadscope</h1>
+<ul>
+<li>A tool to analyse threaded program execution</li>
+<li>can be built from source, but easiest to use binaries - see https://hackage.haskell.org/package/threadscope</li>
+<li><code>ghc -eventlog</code></li>
+<li>executing program <code>prog</code> yields <code>prog.eventlog</code></li>
+</ul>
+<pre><code>$ stack ghc -- -O2 -threaded -eventlog sudoku2.hs
+$ ./sudoku2 sudoku17.1000.txt +RTS -N2 -ls
+$ threadscope sudoku2.eventlog &amp;</code></pre>
+<h1 id="threadscope---sudoku2">Threadscope - sudoku2</h1>
+<p><img src="sudoku2.png" title="sudoku2.eventlog" /></p>
+<p>Two work units of unequal size - some time wasted.</p>
+<p>We need better work allocation (granularity).</p>
+<h1 id="dynamic-work-allocation">Dynamic work allocation</h1>
+<p>Parallel map: process list elements in parallel</p>
+<div class="sourceCode" id="cb26"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="ot">parMap ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> <span class="dt">Eval</span> [b]</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>parMap f [] <span class="ot">=</span> <span class="fu">return</span> []</span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>parMap f (a<span class="op">:</span>as) <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>   b <span class="ot">&lt;-</span> rpar (f a)</span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a>   bs <span class="ot">&lt;-</span> parMap f as</span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>   <span class="fu">return</span> (b<span class="op">:</span>bs)</span></code></pre></div>
+<p>Evaluation:</p>
+<div class="sourceCode" id="cb27"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>    runEval (parMap solve grids)</span></code></pre></div>
+<p>NB no need to use <code>force</code> here - evaluating first constructor (<code>Nothing</code>/<code>Just</code>) is enough</p>
+<h1 id="parmap---results-on-students">parMap - results (on students)</h1>
+<p>More efficient, easier to scale (we can use -N4, -N8 now)</p>
+<pre><code>$ ./sudoku3b sudoku17.1000.txt +RTS -N1 -s 2&gt;&amp;1 | grep Total
+  Total   time    3.497s  (  3.551s elapsed)
+
+$ ./sudoku3b sudoku17.1000.txt +RTS -N2 -s 2&gt;&amp;1 | grep Total
+  Total   time    5.143s  (  2.642s elapsed)
+
+$ ./sudoku3b sudoku17.1000.txt +RTS -N4 -s 2&gt;&amp;1 | grep Total
+  Total   time    5.167s  (  1.364s elapsed)
+
+$ ./sudoku3b sudoku17.1000.txt +RTS -N8 -s 2&gt;&amp;1 | grep Total
+  Total   time    5.317s  (  0.755s elapsed)
+
+$ ./sudoku3b sudoku17.1000.txt +RTS -N16 -s 2&gt;&amp;1 | grep Total
+  Total   time    5.943s  (  0.487s elapsed)</code></pre>
+<p>BTW <code>-N</code> without argument uses all capabilities, try it, but not on students:</p>
+<pre><code>$ ./sudoku3b sudoku17.1000.txt +RTS -N
+sudoku3b: failed to create OS thread: Cannot allocate memory</code></pre>
+<h1 id="threadscope---sudoku3--n2">Threadscope - sudoku3 -N2</h1>
+<p><img src="sudoku3.png" title="sudoku3.eventlog" /></p>
+<h1 id="threadscope---sudoku3--n8">Threadscope - sudoku3 -N8</h1>
+<p><img src="sudoku3-N8.png" title="sudoku3-N8.eventlog" /></p>
+<h1 id="strategies">Strategies</h1>
+<p>Additional abstraction layer built upon the <code>Eval</code> monad</p>
+<div class="sourceCode" id="cb30"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">Strategy</span> a <span class="ot">=</span> a <span class="ot">-&gt;</span> <span class="dt">Eval</span> a</span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a><span class="ot">r0 ::</span> <span class="dt">Strategy</span> a</span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>r0 x <span class="ot">=</span> <span class="fu">return</span> x</span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a><span class="ot">rseq ::</span> <span class="dt">Strategy</span> a</span>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>rseq x <span class="ot">=</span> x <span class="ot">`pseq`</span> <span class="fu">return</span> x</span>
+<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a><span class="ot">rpar ::</span> <span class="dt">Strategy</span> a</span>
+<span id="cb30-9"><a href="#cb30-9" aria-hidden="true" tabindex="-1"></a>rpar x <span class="ot">=</span> x <span class="ot">`par`</span> <span class="fu">return</span> x</span>
+<span id="cb30-10"><a href="#cb30-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-11"><a href="#cb30-11" aria-hidden="true" tabindex="-1"></a><span class="ot">rdeepseq ::</span> <span class="dt">NFData</span> a <span class="ot">=&gt;</span> <span class="dt">Strategy</span> a</span>
+<span id="cb30-12"><a href="#cb30-12" aria-hidden="true" tabindex="-1"></a>rdeepseq <span class="ot">=</span> rnf x <span class="ot">`pseq`</span> <span class="fu">return</span> x</span>
+<span id="cb30-13"><a href="#cb30-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-14"><a href="#cb30-14" aria-hidden="true" tabindex="-1"></a><span class="ot">using ::</span> a <span class="ot">-&gt;</span> <span class="dt">Strategy</span> a <span class="ot">-&gt;</span> a</span>
+<span id="cb30-15"><a href="#cb30-15" aria-hidden="true" tabindex="-1"></a>x <span class="ot">`using`</span> s <span class="ot">=</span> runEval (s x)</span></code></pre></div>
+<p>The advantage is that <code>using s</code> can be removed (almost) without changing semantics (at worst, the program will be ``more defined’’)</p>
+<h1 id="parallel-list-processing">Parallel list processing</h1>
+<div class="sourceCode" id="cb31"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>parMap f xs <span class="ot">=</span> <span class="fu">map</span> f xs <span class="ot">`using`</span> parList rseq</span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a><span class="co">-- Control.Parallel.Strategies</span></span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a><span class="ot">parList ::</span> <span class="dt">Strategy</span> a <span class="ot">-&gt;</span> <span class="dt">Strategy</span> [a]</span>
+<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a>parList strat [] <span class="ot">=</span> <span class="fu">return</span> []</span>
+<span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a>parList strat (x<span class="op">:</span>xs) <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb31-7"><a href="#cb31-7" aria-hidden="true" tabindex="-1"></a>    x&#39; <span class="ot">&lt;-</span> rpar (x <span class="ot">`using`</span> strat)</span>
+<span id="cb31-8"><a href="#cb31-8" aria-hidden="true" tabindex="-1"></a>    xs&#39; <span class="ot">&lt;-</span> parList strat xs</span>
+<span id="cb31-9"><a href="#cb31-9" aria-hidden="true" tabindex="-1"></a>    <span class="fu">return</span> (x&#39;<span class="op">:</span>xs)</span></code></pre></div>
+<p>The reason <code>using</code> works at all is that Haskell is lazy</p>
+<p><code>map f xs</code> creates a thunk</p>
+<pre><code>x `using` s = runEval (s x)
+
+parMap f xs
+= map f xs `using` parList rseq
+= runEval (parList rseq (map f xs))
+~ case (map f xs) of
+    [] -&gt; [];
+    (y:ys) -&gt; runEval $ do ...</code></pre>
+<h1 id="cautionary-note">Cautionary note</h1>
+<p>Although the sparks are really cheap, one should not create too many of them</p>
+<div class="sourceCode" id="cb33"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>parFib n <span class="op">|</span> n <span class="op">&lt;</span> <span class="dv">2</span> <span class="ot">=</span> n</span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>parFib n <span class="ot">=</span> p <span class="ot">`par`</span> q <span class="ot">`pseq`</span> (p <span class="op">+</span> q)</span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">where</span></span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a>      p <span class="ot">=</span> parFib <span class="op">$</span> n <span class="op">-</span> <span class="dv">1</span></span>
+<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a>      q <span class="ot">=</span> parFib <span class="op">$</span> n <span class="op">-</span> <span class="dv">2</span></span>
+<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-7"><a href="#cb33-7" aria-hidden="true" tabindex="-1"></a><span class="ot">main ::</span> <span class="dt">IO</span> ()</span>
+<span id="cb33-8"><a href="#cb33-8" aria-hidden="true" tabindex="-1"></a>main <span class="ot">=</span> <span class="fu">print</span> <span class="op">$</span> parFib <span class="dv">40</span></span></code></pre></div>
+<pre><code>@azor:
+./badfib +RTS -N2 -s -RTS
+  SPARKS: 165597322 (16 converted, 14860689 overflowed, 0 dud,
+                     150628741 GC&#39;d, 107876 fizzled)
+  Total   time    7.18s  (  3.65s elapsed)
+  Productivity  71.8% of total user, 141.5% of total elapsed
+
+N60:
+ SPARKS: 190193153 (61919 converted, 2556576 overflowed, 0 dud,
+                    140401503 GC&#39;d, 47173155 fizzled)
+  Total   time   65.95s  (  1.28s elapsed)
+  Productivity  47.8% of total user, 2461.5% of total elapsed</code></pre>
+<h1 id="spark-lifecycle">Spark lifecycle</h1>
+<figure>
+<img src="spark-lifecycle800.png" title="Life cycle of a spark" alt="spark lifecycle" /><figcaption aria-hidden="true">spark lifecycle</figcaption>
+</figure>
+<h1 id="better">Better</h1>
+<div class="sourceCode" id="cb35"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="ot">cutoff ::</span> <span class="dt">Int</span></span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>cutoff <span class="ot">=</span> <span class="dv">20</span></span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a>parFib n <span class="op">|</span> n <span class="op">&lt;</span> cutoff <span class="ot">=</span> fib n</span>
+<span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a>parFib n <span class="ot">=</span> p <span class="ot">`par`</span> q <span class="ot">`pseq`</span> (p <span class="op">+</span> q)</span>
+<span id="cb35-6"><a href="#cb35-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">where</span></span>
+<span id="cb35-7"><a href="#cb35-7" aria-hidden="true" tabindex="-1"></a>      p <span class="ot">=</span> parFib <span class="op">$</span> n <span class="op">-</span> <span class="dv">1</span></span>
+<span id="cb35-8"><a href="#cb35-8" aria-hidden="true" tabindex="-1"></a>      q <span class="ot">=</span> parFib <span class="op">$</span> n <span class="op">-</span> <span class="dv">2</span></span>
+<span id="cb35-9"><a href="#cb35-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-10"><a href="#cb35-10" aria-hidden="true" tabindex="-1"></a>fib n <span class="op">|</span> n<span class="op">&lt;</span><span class="dv">2</span> <span class="ot">=</span> n</span>
+<span id="cb35-11"><a href="#cb35-11" aria-hidden="true" tabindex="-1"></a>fib n <span class="ot">=</span> fib (n <span class="op">-</span> <span class="dv">1</span>) <span class="op">+</span> fib (n <span class="op">-</span> <span class="dv">2</span>)</span></code></pre></div>
+<pre><code>./parfib +RTS -N60 -s -RTS
+ SPARKS: 118393 (42619 converted, 0 overflowed, 0 dud,
+                 11241 GC&#39;d, 64533 fizzled)
+
+  Total   time   17.91s  (  0.33s elapsed)
+  Productivity  98.5% of total user, 5291.5% of total elapsed
+
+-N60, cutoff=15
+  SPARKS: 974244 (164888 converted, 0 overflowed, 0 dud,
+                  156448 GC&#39;d, 652908 fizzled)
+  Total   time   13.59s  (  0.28s elapsed)
+  Productivity  97.6% of total user, 4746.9% of total elapsed</code></pre>
+<h1 id="exercise">Exercise</h1>
+<ul>
+<li><p>Rewrite parFib using the <code>Eval</code> monad</p></li>
+<li><p>Ditto using Strategies</p></li>
+<li><p>Check what cutoff values are best for different parallelism factors</p></li>
+<li><p>Try out other strategies</p></li>
+</ul>
+<h1 id="threadscope-1">Threadscope</h1>
+<pre><code>$ ghc -O2 -threaded -eventlog --make badfib.hs
+$ ./badfib +RTS -N2 -ls
+$ ~/.cabal/bin/threadscope badfib.eventlog</code></pre>
+<figure>
+<img src="badfib.png" title="Threadscope" alt="threadscope:badfib" /><figcaption aria-hidden="true">threadscope:badfib</figcaption>
+</figure>
+<h1 id="threadscope-2">Threadscope</h1>
+<pre><code>$ ghc -O2 -threaded -eventlog --make parfib.hs
+$ ./parfib +RTS -N2 -ls
+$ ~/.cabal/bin/threadscope parfib.eventlog</code></pre>
+<figure>
+<img src="parfib.png" title="Threadscope" alt="threadscope:badfib" /><figcaption aria-hidden="true">threadscope:badfib</figcaption>
+</figure>
+<h1 id="exercise-1">Exercise</h1>
+<p>Write a function putting n queens on n*n chessboard</p>
+<ul>
+<li><p>sequential (see e.g. <code>Code/queens.hs</code>)</p></li>
+<li><p>parallel</p></li>
+<li><p>examine the execution on thradscope and consider resizing the work units</p></li>
+</ul>
+<h1 id="the-end">The end</h1>
+<div class="sourceCode" id="cb39"><pre class="sourceCode haskell"><code class="sourceCode haskell"></code></pre></div>
+</body>
+</html>
