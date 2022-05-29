@@ -1,0 +1,55 @@
+name: zpf-concur
+
+dependencies:
+  - base
+  - array
+  - bytestring
+  - stm
+  - monad-par
+  - parallel
+  - time
+  - HTTP
+  - network-uri
+
+executables:
+  fork:
+    main: fork.hs
+  geturls1:
+    main: geturls1.hs
+    other-modules: GetURL
+  geturls2:
+    main: geturls2.hs
+    other-modules: GetURL
+  geturls3:
+    main: geturls3.hs
+    other-modules: GetURL, TimeIt
+  geturls4:
+    main: geturls4.hs
+    other-modules: GetHTTPS, TimeIt
+    dependencies:
+      - http-client
+      - http-client-tls
+  stm1:
+    main: stm1.hs
+  delay:
+    main: delay.hs
+  IORef0:
+    main: IORef0.hs
+  IORef1:
+    main: IORef1.hs
+  IORef2:
+    main: IORef2.hs
+  IORef3:
+    main: IORef3.hs
+  IORef4:
+    main: IORef4.hs
+  parmonad:
+    main: parmonad.hs
+  parnetwork:
+    main: parnetwork.hs
+  sudoku-par2:
+    main: sudoku-par2.hs
+    other-modules: Sudoku
+  sudoku-par3:
+    main: sudoku-par3.hs
+    other-modules: Sudoku
