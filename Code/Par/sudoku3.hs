@@ -10,14 +10,12 @@ main :: IO ()
 main = do
     [f] <- getArgs
     grids <- fmap lines $ readFile f
-    runEval (parMap solve grids) `deepseq` return ()
+    -- runEval (parMap solve grids) `deepseq` return ()
     -- let solutions = runEval (parMap solve grids)
-    -- print (length (filter isJust solutions))
-
+    print  . length  . filter isJust . runEval $ parMap solve grids
 parMap :: (a -> b) -> [a] -> Eval [b]
 parMap f [] = return []
 parMap f (a:as) = do
    b <- rpar (f a)
    bs <- parMap f as
    return (b:bs)
-

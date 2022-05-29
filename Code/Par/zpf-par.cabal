@@ -68,6 +68,18 @@ executable sudoku2
     , parallel
   default-language: Haskell2010
 
+executable sudoku3
+  main-is: sudoku3.hs
+  other-modules:
+      Sudoku
+  ghc-options: -O2 -threaded -rtsopts -eventlog
+  build-depends:
+      array
+    , base
+    , deepseq
+    , parallel
+  default-language: Haskell2010
+
 executable sudoku3b
   main-is: sudoku3b.hs
   other-modules:
