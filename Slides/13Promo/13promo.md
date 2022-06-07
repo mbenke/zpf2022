@@ -662,7 +662,7 @@ vtake3 SZ     _ _ = V0
 vtake3 (SS m) n (x:>xs) = x :> vtake3 m n xs
 ```
 
-**Uwaga:** `k` is a kind variable, hence the need for `PolyKinds`
+**Note:** `k` is a kind variable, hence the need for `PolyKinds`
 
 # Back to the future or another take on vtake1
 

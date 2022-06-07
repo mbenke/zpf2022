@@ -582,7 +582,7 @@ Amount 10.0
 <span id="cb50-8"><a href="#cb50-8" aria-hidden="true" tabindex="-1"></a><span class="ot">vtake3 ::</span> <span class="dt">SNat</span> m <span class="ot">-&gt;</span> <span class="dt">Proxy</span> n <span class="ot">-&gt;</span> <span class="dt">Vec</span> (m <span class="op">:+</span> n) a <span class="ot">-&gt;</span> <span class="dt">Vec</span> m a</span>
 <span id="cb50-9"><a href="#cb50-9" aria-hidden="true" tabindex="-1"></a>vtake3 <span class="dt">SZ</span>     _ _ <span class="ot">=</span> <span class="dt">V0</span></span>
 <span id="cb50-10"><a href="#cb50-10" aria-hidden="true" tabindex="-1"></a>vtake3 (<span class="dt">SS</span> m) n (x<span class="op">:&gt;</span>xs) <span class="ot">=</span> x <span class="op">:&gt;</span> vtake3 m n xs</span></code></pre></div>
-<p><strong>Uwaga:</strong> <code>k</code> is a kind variable, hence the need for <code>PolyKinds</code></p>
+<p><strong>Note:</strong> <code>k</code> is a kind variable, hence the need for <code>PolyKinds</code></p>
 </div>
 <div id="back-to-the-future-or-another-take-on-vtake1" class="slide section level1">
 <h1>Back to the future or another take on vtake1</h1>
