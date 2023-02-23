@@ -1,7 +1,7 @@
 ---
 title: Advanced Functional Programming
 author:  Marcin Benke
-date: Mar 1, 2022
+date: Feb 28, 2023
 ---
 
 <meta name="duration" content="80" />
@@ -33,7 +33,7 @@ Any wishes?
 
 # Installing GHC on your machine
 
-Simplest way - `ghcup`: https://www.haskell.org/ghcup/ np.
+Simplest way - `ghcup`: `https://www.haskell.org/ghcup/` np.
 
 ```
 curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh
@@ -140,19 +140,19 @@ The type of `runST` guarantees that side effects do not leak;
 Define CNF formulas as:
 
 ``` haskell
-type Literal = Int
-type Clause = [Literal]
-type Form = [Clause]
-type Model = [Literal]
+type Literal = Int       -- variable id
+type Clause = [Literal]  -- disjunction of literals
+type Form = [Clause]     -- conjunction of clauses
+type Model = [Literal]   -- true literals
 ```
 
 We want to write a simple DPLL (Davis–Putnam–Logemann–Loveland) SAT solver:
 
 
 1. If there's a unit clause `[l]`, `l` must be true - resolve `l` and continue
-2. Otherwise choose any literal land split on it: try resolutions with l and its negation
+2. Otherwise choose any literal `l` and split on it: try resolutions with `l` and its negation
 
-where resolving for l means simplifying the formula based on its known truth value:
+where resolving for `l` means simplifying the formula based on its known truth value:
 
 ```
 True  || a = True

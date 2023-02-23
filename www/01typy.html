@@ -217,7 +217,7 @@
 <header id="title-block-header">
 <h1 class="title">Advanced Functional Programming</h1>
 <p class="author">Marcin Benke</p>
-<p class="date">Mar 1, 2022</p>
+<p class="date">Feb 28, 2023</p>
 </header>
 <meta name="duration" content="80" />
 <h1 id="course-plan">Course plan</h1>
@@ -255,7 +255,7 @@
 </ul></li>
 </ul>
 <h1 id="installing-ghc-on-your-machine">Installing GHC on your machine</h1>
-<p>Simplest way - <code>ghcup</code>: https://www.haskell.org/ghcup/ np.</p>
+<p>Simplest way - <code>ghcup</code>: <code>https://www.haskell.org/ghcup/</code> np.</p>
 <pre><code>curl --proto &#39;=https&#39; --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh</code></pre>
 <p>Alternatively you can use <code>stack</code>: http://haskellstack.org np.</p>
 <pre><code>curl -sSL https://get.haskellstack.org/ | sh
@@ -321,16 +321,16 @@ stack ghci</code></pre>
 <li>Designing programs using types and <code>undefined</code></li>
 </ul>
 <p>Define CNF formulas as:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">Literal</span> <span class="ot">=</span> <span class="dt">Int</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">Clause</span> <span class="ot">=</span> [<span class="dt">Literal</span>]</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">Form</span> <span class="ot">=</span> [<span class="dt">Clause</span>]</span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">Model</span> <span class="ot">=</span> [<span class="dt">Literal</span>]</span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">Literal</span> <span class="ot">=</span> <span class="dt">Int</span>       <span class="co">-- variable id</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">Clause</span> <span class="ot">=</span> [<span class="dt">Literal</span>]  <span class="co">-- disjunction of literals</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">Form</span> <span class="ot">=</span> [<span class="dt">Clause</span>]     <span class="co">-- conjunction of clauses</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">Model</span> <span class="ot">=</span> [<span class="dt">Literal</span>]   <span class="co">-- true literals</span></span></code></pre></div>
 <p>We want to write a simple DPLL (Davis–Putnam–Logemann–Loveland) SAT solver:</p>
 <ol type="1">
 <li>If there’s a unit clause <code>[l]</code>, <code>l</code> must be true - resolve <code>l</code> and continue</li>
-<li>Otherwise choose any literal land split on it: try resolutions with l and its negation</li>
+<li>Otherwise choose any literal <code>l</code> and split on it: try resolutions with <code>l</code> and its negation</li>
 </ol>
-<p>where resolving for l means simplifying the formula based on its known truth value:</p>
+<p>where resolving for <code>l</code> means simplifying the formula based on its known truth value:</p>
 <pre><code>True  || a = True
 False || a = a
 True  &amp;&amp; b = b</code></pre>
