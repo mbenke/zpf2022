@@ -214,6 +214,7 @@ instance (Iso a b) => Iso [a] [b] where
     instance (Monad m, Iso a b) => Iso (m a) (m b) where ...
     ~~~~
 
+<!--
 # Fundeps are very very tricky
 
 Define
@@ -236,3 +237,4 @@ f t x y = if t then  x * (Vec [y]) else y
 ~~~~
 
 and watch it explode ;)
+-->
