@@ -1,4 +1,4 @@
-## "Advanced Functional Programming" course materials, MIMUW 2021/22
+## "Advanced Functional Programming" course materials, MIMUW 2022/23
 
 * Generated Lecture notes in the www subdir, source in Slides
 * Generating lecture notes and slides needs pandoc
