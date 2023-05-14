@@ -186,6 +186,18 @@ where `fib 20` is computed at compilation time.
 
 # Splicing structure trees into a program (2)
 
+Splicing and quoting can be interleaved:
+
+```
+> $(let x = [| 2 + 3 |] in [| 2 + $(x) |])
+7
+
+> runQ $ let x = [| 2 + 3 |] in [| 2 + $(x) |]
+InfixE (Just (LitE (IntegerL 2))) (VarE GHC.Num.+) (Just (InfixE (Just (LitE (IntegerL 2))) (VarE GHC.Num.+) (Just (LitE (IntegerL 3)))))
+
+```
+# Splicing structure trees into a program (3)
+
 ```
 > runQ [| succ 1 |]
 AppE (VarE GHC.Enum.succ) (LitE (IntegerL 1))
