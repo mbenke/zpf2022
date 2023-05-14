@@ -92,7 +92,7 @@
   <p class="author">
 Marcin Benke
   </p>
-  <p class="date">Mar 8, 2022</p>
+  <p class="date">Mar 7, 2023</p>
 </div>
 <div class="slide section level1">
 
@@ -352,11 +352,7 @@ True
 <span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a><span class="co">-- | `sized` builds a generator from a size-indexed generator family</span></span>
 <span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a><span class="ot">sized ::</span> (<span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Gen</span> a) <span class="ot">-&gt;</span> <span class="dt">Gen</span> a</span>
-<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a>sized fgen <span class="ot">=</span> <span class="dt">Gen</span> (\n r <span class="ot">-&gt;</span> <span class="kw">let</span> <span class="dt">Gen</span> m <span class="ot">=</span> fgen n <span class="kw">in</span> m n r)</span>
-<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a><span class="co">-- | `resize` builds a constant size generator</span></span>
-<span id="cb21-13"><a href="#cb21-13" aria-hidden="true" tabindex="-1"></a><span class="ot">resize ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Gen</span> a <span class="ot">-&gt;</span> <span class="dt">Gen</span> a</span>
-<span id="cb21-14"><a href="#cb21-14" aria-hidden="true" tabindex="-1"></a>resize n (<span class="dt">Gen</span> m) <span class="ot">=</span> <span class="dt">Gen</span> (\_ r <span class="ot">-&gt;</span> m n r)</span></code></pre></div>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a>sized fgen <span class="ot">=</span> <span class="dt">Gen</span> (\n r <span class="ot">-&gt;</span> <span class="kw">let</span> <span class="dt">Gen</span> m <span class="ot">=</span> fgen n <span class="kw">in</span> m n r)</span></code></pre></div>
 </div>
 <div id="better-arbitrary-for-tree" class="slide section level1">
 <h1>Better <code>Arbitrary</code> for <code>Tree</code></h1>
@@ -461,10 +457,10 @@ Falsifiable, after 0 tests:</code></pre>
 <h1>Running tests</h1>
 <div class="sourceCode" id="cb28"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="ot">generate ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">StdGen</span> <span class="ot">-&gt;</span> <span class="dt">Gen</span> a <span class="ot">-&gt;</span> a</span>
 <span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a><span class="ot">tests ::</span> <span class="dt">Gen</span> <span class="dt">Result</span> <span class="ot">-&gt;</span> <span class="dt">StdGen</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</span>
-<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>tests gen rnd0 ntest nfail</span>
-<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a>  <span class="op">|</span> ntest <span class="op">==</span> configMaxTest <span class="ot">=</span> <span class="kw">do</span> done <span class="st">&quot;OK, passed&quot;</span> ntest</span>
-<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a>  <span class="op">|</span> nfail <span class="op">==</span> configMaxFail <span class="ot">=</span> <span class="kw">do</span> done <span class="st">&quot;Arguments exhausted after&quot;</span> ntest</span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a><span class="ot">tests ::</span> <span class="dt">Config</span> <span class="ot">-&gt;</span> <span class="dt">Gen</span> <span class="dt">Result</span> <span class="ot">-&gt;</span> <span class="dt">StdGen</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>tests c gen rnd0 ntest nfail</span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a>  <span class="op">|</span> ntest <span class="op">==</span> configMaxTest c <span class="ot">=</span> <span class="kw">do</span> done <span class="st">&quot;OK, passed&quot;</span> ntest</span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a>  <span class="op">|</span> nfail <span class="op">==</span> configMaxFail c <span class="ot">=</span> <span class="kw">do</span> done <span class="st">&quot;Arguments exhausted after&quot;</span> ntest</span>
 <span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a>  <span class="op">|</span> <span class="fu">otherwise</span>               <span class="ot">=</span></span>
 <span id="cb28-8"><a href="#cb28-8" aria-hidden="true" tabindex="-1"></a>         <span class="kw">case</span> ok result <span class="kw">of</span></span>
 <span id="cb28-9"><a href="#cb28-9" aria-hidden="true" tabindex="-1"></a>           <span class="dt">Nothing</span>    <span class="ot">-&gt;</span></span>
@@ -478,29 +474,30 @@ Falsifiable, after 0 tests:</code></pre>
 <span id="cb28-17"><a href="#cb28-17" aria-hidden="true" tabindex="-1"></a>                   <span class="op">++</span> <span class="fu">unlines</span> (arguments result)</span>
 <span id="cb28-18"><a href="#cb28-18" aria-hidden="true" tabindex="-1"></a>                    )</span>
 <span id="cb28-19"><a href="#cb28-19" aria-hidden="true" tabindex="-1"></a>     <span class="kw">where</span></span>
-<span id="cb28-20"><a href="#cb28-20" aria-hidden="true" tabindex="-1"></a>      result      <span class="ot">=</span> generate (configSize ntest) rnd2 gen</span>
+<span id="cb28-20"><a href="#cb28-20" aria-hidden="true" tabindex="-1"></a>      result      <span class="ot">=</span> generate (configSize c ntest) rnd2 gen</span>
 <span id="cb28-21"><a href="#cb28-21" aria-hidden="true" tabindex="-1"></a>      (rnd1,rnd2) <span class="ot">=</span> split rnd0</span></code></pre></div>
-<p><code>configSize n</code> determines data size for test <code>n</code></p>
+<p><code>configSize n</code> determines data size for test <code>n</code> (default: <code>n+3/2</code>)</p>
 </div>
 <div id="forall" class="slide section level1">
 <h1>forAll</h1>
 <div class="sourceCode" id="cb29"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- | `evaluate` extracts a generator from the `Testable` instance</span></span>
-<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a><span class="ot">evaluate ::</span> <span class="dt">Testable</span> a <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Gen</span> <span class="dt">Result</span></span>
-<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>evaluate a <span class="ot">=</span> gen <span class="kw">where</span> <span class="dt">Prop</span> gen <span class="ot">=</span> property a</span>
-<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a><span class="ot">forAll ::</span> (<span class="dt">Show</span> a, <span class="dt">Testable</span> b) <span class="ot">=&gt;</span> <span class="dt">Gen</span> a <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Property</span></span>
-<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a>forAll gen body <span class="ot">=</span> <span class="dt">Prop</span> <span class="op">$</span></span>
-<span id="cb29-7"><a href="#cb29-7" aria-hidden="true" tabindex="-1"></a>  <span class="kw">do</span> a   <span class="ot">&lt;-</span> gen               <span class="co">-- gen :: Gen a</span></span>
-<span id="cb29-8"><a href="#cb29-8" aria-hidden="true" tabindex="-1"></a>     res <span class="ot">&lt;-</span> evaluate (body a) <span class="co">-- body a :: b</span></span>
-<span id="cb29-9"><a href="#cb29-9" aria-hidden="true" tabindex="-1"></a>     <span class="fu">return</span> (argument a res)</span>
-<span id="cb29-10"><a href="#cb29-10" aria-hidden="true" tabindex="-1"></a> <span class="kw">where</span></span>
-<span id="cb29-11"><a href="#cb29-11" aria-hidden="true" tabindex="-1"></a>  argument a res <span class="ot">=</span> res{ arguments <span class="ot">=</span> <span class="fu">show</span> a <span class="op">:</span> arguments res }</span>
-<span id="cb29-12"><a href="#cb29-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a><span class="co">-- Property = Prop (Gen Result)</span></span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a><span class="ot">evaluate ::</span> <span class="dt">Testable</span> a <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Gen</span> <span class="dt">Result</span></span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>evaluate a <span class="ot">=</span> gen <span class="kw">where</span> <span class="dt">Prop</span> gen <span class="ot">=</span> property a</span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a><span class="ot">forAll ::</span> (<span class="dt">Show</span> a, <span class="dt">Testable</span> b) <span class="ot">=&gt;</span> <span class="dt">Gen</span> a <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Property</span></span>
+<span id="cb29-7"><a href="#cb29-7" aria-hidden="true" tabindex="-1"></a>forAll gen body <span class="ot">=</span> <span class="dt">Prop</span> <span class="op">$</span></span>
+<span id="cb29-8"><a href="#cb29-8" aria-hidden="true" tabindex="-1"></a>  <span class="kw">do</span> a   <span class="ot">&lt;-</span> gen               <span class="co">-- gen :: Gen a</span></span>
+<span id="cb29-9"><a href="#cb29-9" aria-hidden="true" tabindex="-1"></a>     res <span class="ot">&lt;-</span> evaluate (body a) <span class="co">-- body a :: b</span></span>
+<span id="cb29-10"><a href="#cb29-10" aria-hidden="true" tabindex="-1"></a>     <span class="fu">return</span> (argument a res)</span>
+<span id="cb29-11"><a href="#cb29-11" aria-hidden="true" tabindex="-1"></a> <span class="kw">where</span></span>
+<span id="cb29-12"><a href="#cb29-12" aria-hidden="true" tabindex="-1"></a>  argument a res <span class="ot">=</span> res{ arguments <span class="ot">=</span> <span class="fu">show</span> a <span class="op">:</span> arguments res }</span>
 <span id="cb29-13"><a href="#cb29-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb29-14"><a href="#cb29-14" aria-hidden="true" tabindex="-1"></a>propAddCom1,<span class="ot"> propAddCom2 ::</span> <span class="dt">Property</span></span>
-<span id="cb29-15"><a href="#cb29-15" aria-hidden="true" tabindex="-1"></a>propAddCom1 <span class="ot">=</span>  forAll (chooseInt (<span class="op">-</span><span class="dv">100</span>,<span class="dv">100</span>)) (\x <span class="ot">-&gt;</span> x <span class="op">+</span> <span class="dv">1</span> <span class="op">==</span> <span class="dv">1</span> <span class="op">+</span> x)</span>
-<span id="cb29-16"><a href="#cb29-16" aria-hidden="true" tabindex="-1"></a>propAddCom2 <span class="ot">=</span>  forAll int (\x <span class="ot">-&gt;</span> forAll int (\y <span class="ot">-&gt;</span> x <span class="op">+</span> y <span class="op">==</span> y <span class="op">+</span> x)) <span class="kw">where</span></span>
-<span id="cb29-17"><a href="#cb29-17" aria-hidden="true" tabindex="-1"></a>  int <span class="ot">=</span> chooseInt (<span class="op">-</span><span class="dv">100</span>,<span class="dv">100</span>)</span></code></pre></div>
+<span id="cb29-14"><a href="#cb29-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-15"><a href="#cb29-15" aria-hidden="true" tabindex="-1"></a>propAddCom1,<span class="ot"> propAddCom2 ::</span> <span class="dt">Property</span></span>
+<span id="cb29-16"><a href="#cb29-16" aria-hidden="true" tabindex="-1"></a>propAddCom1 <span class="ot">=</span>  forAll (chooseInt (<span class="op">-</span><span class="dv">100</span>,<span class="dv">100</span>)) (\x <span class="ot">-&gt;</span> x <span class="op">+</span> <span class="dv">1</span> <span class="op">==</span> <span class="dv">1</span> <span class="op">+</span> x)</span>
+<span id="cb29-17"><a href="#cb29-17" aria-hidden="true" tabindex="-1"></a>propAddCom2 <span class="ot">=</span>  forAll int (\x <span class="ot">-&gt;</span> forAll int (\y <span class="ot">-&gt;</span> x <span class="op">+</span> y <span class="op">==</span> y <span class="op">+</span> x)) <span class="kw">where</span></span>
+<span id="cb29-18"><a href="#cb29-18" aria-hidden="true" tabindex="-1"></a>  int <span class="ot">=</span> chooseInt (<span class="op">-</span><span class="dv">100</span>,<span class="dv">100</span>)</span></code></pre></div>
 <pre><code>&gt;&gt;&gt; check $ forAll (chooseInt (-100,100)) (\x -&gt; x + 0 == x)
 OK, passed 100 tests
 &gt;&gt;&gt; check $ forAll (chooseInt (-100,100)) (\x -&gt; x + 1 == x)

@@ -2,7 +2,7 @@
 title: Advanced Functional Programming
 subtitle: Testing
 author:  Marcin Benke
-date: Mar 8, 2022
+date: Mar 7, 2023
 ---
 
 <meta name="duration" content="80" />
@@ -337,10 +337,6 @@ chooseInt1 bounds = Gen $ \n r  -> fst (randomR bounds r)
 -- | `sized` builds a generator from a size-indexed generator family
 sized :: (Int -> Gen a) -> Gen a
 sized fgen = Gen (\n r -> let Gen m = fgen n in m n r)
-
--- | `resize` builds a constant size generator
-resize :: Int -> Gen a -> Gen a
-resize n (Gen m) = Gen (\_ r -> m n r)
 ~~~~
 
 # Better `Arbitrary` for `Tree`
@@ -464,10 +460,10 @@ Falsifiable, after 0 tests:
 ~~~~ {.haskell}
 generate :: Int -> StdGen -> Gen a -> a
 
-tests :: Gen Result -> StdGen -> Int -> Int -> IO ()
-tests gen rnd0 ntest nfail
-  | ntest == configMaxTest = do done "OK, passed" ntest
-  | nfail == configMaxFail = do done "Arguments exhausted after" ntest
+tests :: Config -> Gen Result -> StdGen -> Int -> Int -> IO ()
+tests c gen rnd0 ntest nfail
+  | ntest == configMaxTest c = do done "OK, passed" ntest
+  | nfail == configMaxFail c = do done "Arguments exhausted after" ntest
   | otherwise               =
          case ok result of
            Nothing    ->
@@ -481,16 +477,17 @@ tests gen rnd0 ntest nfail
                    ++ unlines (arguments result)
                     )
      where
-      result      = generate (configSize ntest) rnd2 gen
+      result      = generate (configSize c ntest) rnd2 gen
       (rnd1,rnd2) = split rnd0
 ~~~~
 
-`configSize n` determines data size for test `n`
+`configSize n` determines data size for test `n` (default: `n+3/2`)
 
 # forAll
 
 ~~~~ {.haskell}
 -- | `evaluate` extracts a generator from the `Testable` instance
+-- Property = Prop (Gen Result)
 evaluate :: Testable a => a -> Gen Result
 evaluate a = gen where Prop gen = property a
 
