@@ -2,7 +2,7 @@
 title: Advanced Functional Programming
 subtitle: Metaprogramming - Template Haskell, Quasiquotation
 author:  Marcin Benke
-date: May 17, 2022
+date: May 16, 2023
 ---
 
 # Metaprogramming - Template Haskell
@@ -90,8 +90,6 @@ We can do some experiments in GHCi (following this [tutorial](https://web.archiv
 
 ```
 $ ghci -XTemplateHaskell
-# or using stack:
-# stack ghci --ghci-options -XTemplateHaskell
 
 > :m +Language.Haskell.TH
 > runQ [| \x -> 1 |]
@@ -106,7 +104,7 @@ data Exp
   = VarE Name
   | ConE Name
   | LitE Lit
-...
+  ...
   	-- Defined in ‘Language.Haskell.TH.Syntax’
 
 > runQ [| \x -> x + 1 |]  >>= putStrLn . print
@@ -204,11 +202,13 @@ but:
     Probable cause: ‘succ’ is applied to too few arguments
     In the first argument of ‘VarE’, namely ‘succ’
     In the first argument of ‘AppE’, namely ‘(VarE succ)’
+
+> :t VarE
+VarE :: Name -> Exp
+
 > $(return (AppE (VarE "GHC.Enum.succ") (LitE (IntegerL 1))))
 <interactive>: error:
     • Couldn't match expected type ‘Name’ with actual type ‘[Char]’
-> :t VarE
-VarE :: Name -> Exp
 ```
 
 `VarE` needs a `Name`
@@ -252,7 +252,11 @@ data Dec                               -- declaration
 
 Let us now try to build such a definition ourselves.
 
-Note that we need to use two modules, since definitions to be run during compilation have to be imported from a different module --- the code to be run needs to be compiled first.
+# Stage restriction
+
+Note that we need to use two modules,<br />
+since definitions to be run during compilation have to be imported from a different module<br />
+--- the code to be run needs to be compiled first.
 
 Otherwise you may see an error like
 
@@ -297,6 +301,7 @@ main = print $ p1 (1,2)
 
 ``` {.haskell}
 import Build1
+import Language.Haskell.TH
 
 $(build_p1)
 
@@ -356,10 +361,10 @@ build_p1 :: Q [Dec]
 build_p1 = do
   let p1 = mkName "p1"
   a <- newName "a"
-  b <- newName "b"
+  b <- newName "a"
   return
     [ FunD p1
-             [ Clause [TupP [VarP a,VarP b]] (NormalB (VarE a)) []
+             [ Clause [TupP [VarP a, VarP b]] (NormalB (VarE a)) []
              ]
     ]
 ```
@@ -378,7 +383,7 @@ main = print $ p1 (1,2)
 
 # Typical TH use
 
-Let us define all projections for large (say 16-) tuples.
+Let us define all projections for large (say 8-) tuples.
 Writing this by hand is no fun, but TH helps avoid the boilerplate.
 
 Here we start by pairs, but extending it to larger tuples is a simple exercise.
@@ -523,6 +528,7 @@ Let's start with a simple data type and parser for arithmetic expressions
 {-# LANGUAGE DeriveDataTypeable #-}
 
 data Expr = EInt Int
+  | EVar Var
   | EAdd Expr Expr
   | ESub Expr Expr
   | EMul Expr Expr
@@ -572,6 +578,12 @@ testExpr = parse pExpr "testExpr" "1+2*3"
 simpl :: Expr -> Expr
 simpl (EAdd (EInt 0) x) = x
 ```
+
+wouldn't it be nice to be able to write this instead:
+``` { .haskell }
+simpl (0 + x) = x
+```
+
 
 # Building test cases with TH
 
@@ -677,7 +689,7 @@ This seems like a lot of boilerplate,
 luckily we can save us some work use facilities for generic programming provided by
 [Data.Data](http://hackage.haskell.org/package/base/docs/Data-Data.html)
 combined with the Template Haskell function
-[dataToExpQ](http://hackage.haskell.org/package/template-haskell-2.14.0.0/docs/Language-Haskell-TH-Syntax.html#v:dataToExpQ),
+[`dataToExpQ`](http://hackage.haskell.org/package/template-haskell-2.14.0.0/docs/Language-Haskell-TH-Syntax.html#v:dataToExpQ),
 
 ``` haskell
  exprToExpQ =  dataToExpQ (const Nothing) exp
@@ -813,6 +825,11 @@ quoteExprPat s = do
   pos <- getPosition
   exp <- Expr.parseExpr pos s
   dataToPatQ (const Nothing `extQ` antiExprPat) exp
+
+antiExprPat :: Expr -> Maybe (Q Pat)
+antiExprPat (EMetaVar v) = Just $ varP (mkName v)
+antiExprPat _ = Nothing
+
 ```
 
 What are the "extensions"?
@@ -912,18 +929,8 @@ eval (EInt n) = n
 ```
 $(tupleFromList 8) [1..8] == (1,2,3,4,5,6,7,8)
 ```
-* Extend the expression simplifier with more rules.
-* Add antiquotation to `quoteExprExp`
 
-* Extend the expression quasiquoter to handle metavariables for
-  numeric constants, allowing to implement simplification rules like
-
-```
-simpl [expr|$int:n$ + $int:m$|] = [expr| $int:m+n$ |]
-```
-(you are welcome to invent your own syntax in place of `$int: ... $`)
-
-* write a `matrix` quasiquoter such that
+* W rite a `matrix` quasiquoter such that
 
 ```
 *MatrixSplice> :{
@@ -936,4 +943,15 @@ simpl [expr|$int:n$ + $int:m$|] = [expr| $int:m+n$ |]
 ```
 
 be careful with blank lines!
+
+* Extend the expression simplifier with more rules.
+
+* Extend the expression quasiquoter to handle metavariables for
+  numeric constants, allowing to implement simplification rules like
+
+```
+simpl [expr|$int:n$ + $int:m$|] = [expr| $int:m+n$ |]
+```
+
+(you are welcome to invent your own syntax in place of `$int: ... $`)
 

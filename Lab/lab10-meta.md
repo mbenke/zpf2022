@@ -37,7 +37,7 @@ write a `matrix` quasiquoter such that
 
 be careful with blank lines!
 
-# Quasiquotation
+# Quasiquotation 2
 * Extend the expression simplifier with more rules.
 
 * Extend the expression quasiquoter to handle metavariables for
