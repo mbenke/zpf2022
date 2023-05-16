@@ -192,8 +192,20 @@ Splicing and quoting can be interleaved:
 > $(let x = [| 2 + 3 |] in [| 2 + $(x) |])
 7
 
-> runQ $ let x = [| 2 + 3 |] in [| 2 + $(x) |]
-InfixE (Just (LitE (IntegerL 2))) (VarE GHC.Num.+) (Just (InfixE (Just (LitE (IntegerL 2))) (VarE GHC.Num.+) (Just (LitE (IntegerL 3)))))
+> runQ (let x = [| 2 + 3 |] in [| 2 + $(x) |]) >>= putStrLn . pprint
+2 GHC.Num.+ (2 GHC.Num.+ 3)
+```
+
+This allows to unroll recursion at comptime:
+
+```
+power 0 = [| const 1 |]
+power n = [| \k -> k * $(power (n-1)) k |]
+
+-- power 5 ~ \k -> k * k * k * k * k * 1
+
+-- > $(power 5) 2
+-- 32
 
 ```
 # Splicing structure trees into a program (3)
@@ -258,7 +270,7 @@ So far, we have been building expressions, but we can build patterns, declaratio
 ``` {.haskell}
 data Clause = Clause [Pat] Body [Dec]  -- f pats = b where decs
 data Dec                               -- declaration
-  = FunD Name [Clause]        
+  = FunD Name [Clause]
   ...
 ```
 
@@ -687,7 +699,7 @@ exprToExpQ (EDiv e1 e2) = convertBinE "EDiv" e1 e2
 
 convertBinE s e1 e2 = do
   e1' <- exprToExpQ e1
-  e2' <- exprToExpQ e2  
+  e2' <- exprToExpQ e2
   return $ ConE (mkName s) $$ e1' $$ e2'
 
 ($$) = AppE  -- TH AST node for application
@@ -966,4 +978,3 @@ simpl [expr|$int:n$ + $int:m$|] = [expr| $int:m+n$ |]
 ```
 
 (you are welcome to invent your own syntax in place of `$int: ... $`)
-
