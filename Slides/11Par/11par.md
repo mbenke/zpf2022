@@ -2,7 +2,7 @@
 title: Advanced Functional Programming
 subtitle: Parallelism and Concurrency
 author:  Marcin Benke
-date: May 24, 2022
+date: May 23, 2023
 ---
 
 # Parallelism vs concurrency
@@ -78,10 +78,13 @@ Evaluating `fst vv` evaluated `x` which was both first and second component (was
 # Forcing evaluation - seq
 
 ```
-> let x = 1+2 :: Int
-> let y = x+1
+> let {x = 1+2::Int; y = x+1 }
 > :sprint x
 x = _
+> :sprint y
+y = _
+> const () y
+()
 > :sprint y
 y = _
 > seq y ()
@@ -105,8 +108,8 @@ OTOH it may happen that none of them is needed/evaluated, e.g.
 # Normalisation and normal forms
 
 * Normal Form - there are no redexes
-* Head Normal Form - no redexes in the head, i.e. `\x1...xn -> xN1...Nk`
-* Weak Head Normal Form - `xN1...Nk` or 
+* Head Normal Form - no redexes in the head, i.e. `\x1...xn -> cN1...Nk`
+* Weak Head Normal Form - `cN1...Nk` or a lambda
 
 # WHNF - shallow evaluation
 
@@ -147,16 +150,16 @@ seq :: a -> b -> b
 ```
 
 * `seq a b` forces evaluation of `a` and returns b
-* `par a b` initiates evaluation of `a` and returns `b` immediatly, not waiting until computation finishes
+* `par a b` initiates evaluation of `a` and returns `b` immediately, not waiting until computation finishes
 
 ```
 > import Control.Parallel
-> let n = length [1..10^9]
-> par n ()
+> let n = length [1..5*10^8]
+> par n ()    -- returns immediately
 ()
 > :sprint n
 n = _
--- wait 10 seconds
+-- wait a few seconds
 > :sprint n
 n = 1000000000
 ```
@@ -238,11 +241,6 @@ deepseq a b = rnf a `seq` b
 
 force ::  NFData a => a -> a
 force x = deepseq x x
-
--- Control.Exception
--- Forces its argument to be evaluated to weak head normal form
--- when the resultant IO action is executed.
-evaluate :: a -> IO a
 ~~~~
 
 # deepseq & friends
@@ -562,13 +560,11 @@ main = print $ parFib 40
   SPARKS: 165597322 (16 converted, 14860689 overflowed, 0 dud,
                      150628741 GC'd, 107876 fizzled)
   Total   time    7.18s  (  3.65s elapsed)
-  Productivity  71.8% of total user, 141.5% of total elapsed
 
 N60:
  SPARKS: 190193153 (61919 converted, 2556576 overflowed, 0 dud,
                     140401503 GC'd, 47173155 fizzled)
   Total   time   65.95s  (  1.28s elapsed)
-  Productivity  47.8% of total user, 2461.5% of total elapsed
 ~~~~
 
 # Spark lifecycle
@@ -598,13 +594,11 @@ fib n = fib (n - 1) + fib (n - 2)
                  11241 GC'd, 64533 fizzled)
 
   Total   time   17.91s  (  0.33s elapsed)
-  Productivity  98.5% of total user, 5291.5% of total elapsed
 
 -N60, cutoff=15
   SPARKS: 974244 (164888 converted, 0 overflowed, 0 dud,
                   156448 GC'd, 652908 fizzled)
   Total   time   13.59s  (  0.28s elapsed)
-  Productivity  97.6% of total user, 4746.9% of total elapsed
 ~~~~
 
 # Exercise
@@ -616,27 +610,6 @@ fib n = fib (n - 1) + fib (n - 2)
 * Check what cutoff values are best for different parallelism factors
 
 * Try out other strategies
-
-# Threadscope
-
-~~~~
-$ ghc -O2 -threaded -eventlog --make badfib.hs
-$ ./badfib +RTS -N2 -ls
-$ ~/.cabal/bin/threadscope badfib.eventlog
-~~~~
-
-![threadscope:badfib](badfib.png "Threadscope")
-
-# Threadscope
-
-~~~~
-$ ghc -O2 -threaded -eventlog --make parfib.hs
-$ ./parfib +RTS -N2 -ls
-$ ~/.cabal/bin/threadscope parfib.eventlog
-~~~~
-
-![threadscope:badfib](parfib.png "Threadscope")
-
 
 # Exercise
 
@@ -653,3 +626,25 @@ Write a function putting n queens on n*n chessboard
 ~~~~ {.haskell}
 
 ~~~~
+
+# Threadscope - badfib
+
+~~~~
+$ ghc -O2 -threaded -eventlog --make badfib.hs
+$ ./badfib +RTS -N2 -ls
+$ ~/.cabal/bin/threadscope badfib.eventlog
+~~~~
+
+![threadscope:badfib](badfib.png "Threadscope")
+
+# Threadscope - parfib
+
+~~~~
+$ ghc -O2 -threaded -eventlog --make parfib.hs
+$ ./parfib +RTS -N2 -ls
+$ ~/.cabal/bin/threadscope parfib.eventlog
+~~~~
+
+![threadscope:badfib](parfib.png "Threadscope")
+
+

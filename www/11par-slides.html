@@ -7,7 +7,7 @@
   <meta http-equiv="Content-Style-Type" content="text/css" />
   <meta name="generator" content="pandoc" />
   <meta name="author" content="Marcin Benke" />
-  <meta name="date" content="2022-05-24" />
+  <meta name="date" content="2023-05-23" />
   <title>Advanced Functional Programming</title>
   <style type="text/css">
     code{white-space: pre-wrap;}
@@ -92,7 +92,7 @@
   <p class="author">
 Marcin Benke
   </p>
-  <p class="date">May 24, 2022</p>
+  <p class="date">May 23, 2023</p>
 </div>
 <div id="parallelism-vs-concurrency" class="slide section level1">
 <h1>Parallelism vs concurrency</h1>
@@ -150,10 +150,13 @@ vv = (3,3)</code></pre>
 </div>
 <div id="forcing-evaluation---seq" class="slide section level1">
 <h1>Forcing evaluation - seq</h1>
-<pre><code>&gt; let x = 1+2 :: Int
-&gt; let y = x+1
+<pre><code>&gt; let {x = 1+2::Int; y = x+1 }
 &gt; :sprint x
 x = _
+&gt; :sprint y
+y = _
+&gt; const () y
+()
 &gt; :sprint y
 y = _
 &gt; seq y ()
@@ -172,8 +175,8 @@ x = 3</code></pre>
 <h1>Normalisation and normal forms</h1>
 <ul>
 <li>Normal Form - there are no redexes</li>
-<li>Head Normal Form - no redexes in the head, i.e. <code>\x1...xn -&gt; xN1...Nk</code></li>
-<li>Weak Head Normal Form - <code>xN1...Nk</code> or</li>
+<li>Head Normal Form - no redexes in the head, i.e. <code>\x1...xn -&gt; cN1...Nk</code></li>
+<li>Weak Head Normal Form - <code>cN1...Nk</code> or a lambda</li>
 </ul>
 </div>
 <div id="whnf---shallow-evaluation" class="slide section level1">
@@ -202,15 +205,15 @@ xs = _ : _</code></pre>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="fu">seq</span><span class="ot"> ::</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> b</span></code></pre></div>
 <ul>
 <li><code>seq a b</code> forces evaluation of <code>a</code> and returns b</li>
-<li><code>par a b</code> initiates evaluation of <code>a</code> and returns <code>b</code> immediatly, not waiting until computation finishes</li>
+<li><code>par a b</code> initiates evaluation of <code>a</code> and returns <code>b</code> immediately, not waiting until computation finishes</li>
 </ul>
 <pre><code>&gt; import Control.Parallel
-&gt; let n = length [1..10^9]
-&gt; par n ()
+&gt; let n = length [1..5*10^8]
+&gt; par n ()    -- returns immediately
 ()
 &gt; :sprint n
 n = _
--- wait 10 seconds
+-- wait a few seconds
 &gt; :sprint n
 n = 1000000000</code></pre>
 <ul>
@@ -268,12 +271,7 @@ instance Monad Eval where
 <span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>deepseq a b <span class="ot">=</span> rnf a <span class="ot">`seq`</span> b</span>
 <span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a><span class="ot">force ::</span>  <span class="dt">NFData</span> a <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> a</span>
-<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>force x <span class="ot">=</span> deepseq x x</span>
-<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a><span class="co">-- Control.Exception</span></span>
-<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a><span class="co">-- Forces its argument to be evaluated to weak head normal form</span></span>
-<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a><span class="co">-- when the resultant IO action is executed.</span></span>
-<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a><span class="ot">evaluate ::</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> a</span></code></pre></div>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>force x <span class="ot">=</span> deepseq x x</span></code></pre></div>
 </div>
 <div id="deepseq-friends-1" class="slide section level1">
 <h1>deepseq &amp; friends</h1>
@@ -519,13 +517,11 @@ parMap f xs
   SPARKS: 165597322 (16 converted, 14860689 overflowed, 0 dud,
                      150628741 GC&#39;d, 107876 fizzled)
   Total   time    7.18s  (  3.65s elapsed)
-  Productivity  71.8% of total user, 141.5% of total elapsed
 
 N60:
  SPARKS: 190193153 (61919 converted, 2556576 overflowed, 0 dud,
                     140401503 GC&#39;d, 47173155 fizzled)
-  Total   time   65.95s  (  1.28s elapsed)
-  Productivity  47.8% of total user, 2461.5% of total elapsed</code></pre>
+  Total   time   65.95s  (  1.28s elapsed)</code></pre>
 </div>
 <div id="spark-lifecycle" class="slide section level1">
 <h1>Spark lifecycle</h1>
@@ -552,13 +548,11 @@ N60:
                  11241 GC&#39;d, 64533 fizzled)
 
   Total   time   17.91s  (  0.33s elapsed)
-  Productivity  98.5% of total user, 5291.5% of total elapsed
 
 -N60, cutoff=15
   SPARKS: 974244 (164888 converted, 0 overflowed, 0 dud,
                   156448 GC&#39;d, 652908 fizzled)
-  Total   time   13.59s  (  0.28s elapsed)
-  Productivity  97.6% of total user, 4746.9% of total elapsed</code></pre>
+  Total   time   13.59s  (  0.28s elapsed)</code></pre>
 </div>
 <div id="exercise" class="slide section level1">
 <h1>Exercise</h1>
@@ -568,26 +562,6 @@ N60:
 <li><p>Check what cutoff values are best for different parallelism factors</p></li>
 <li><p>Try out other strategies</p></li>
 </ul>
-</div>
-<div id="threadscope-1" class="slide section level1">
-<h1>Threadscope</h1>
-<pre><code>$ ghc -O2 -threaded -eventlog --make badfib.hs
-$ ./badfib +RTS -N2 -ls
-$ ~/.cabal/bin/threadscope badfib.eventlog</code></pre>
-<div class="figure">
-<img src="badfib.png" title="Threadscope" alt="" />
-<p class="caption">threadscope:badfib</p>
-</div>
-</div>
-<div id="threadscope-2" class="slide section level1">
-<h1>Threadscope</h1>
-<pre><code>$ ghc -O2 -threaded -eventlog --make parfib.hs
-$ ./parfib +RTS -N2 -ls
-$ ~/.cabal/bin/threadscope parfib.eventlog</code></pre>
-<div class="figure">
-<img src="parfib.png" title="Threadscope" alt="" />
-<p class="caption">threadscope:badfib</p>
-</div>
 </div>
 <div id="exercise-1" class="slide section level1">
 <h1>Exercise</h1>
@@ -600,7 +574,27 @@ $ ~/.cabal/bin/threadscope parfib.eventlog</code></pre>
 </div>
 <div id="the-end" class="slide section level1">
 <h1>The end</h1>
-<div class="sourceCode" id="cb39"><pre class="sourceCode haskell"><code class="sourceCode haskell"></code></pre></div>
+<div class="sourceCode" id="cb37"><pre class="sourceCode haskell"><code class="sourceCode haskell"></code></pre></div>
+</div>
+<div id="threadscope---badfib" class="slide section level1">
+<h1>Threadscope - badfib</h1>
+<pre><code>$ ghc -O2 -threaded -eventlog --make badfib.hs
+$ ./badfib +RTS -N2 -ls
+$ ~/.cabal/bin/threadscope badfib.eventlog</code></pre>
+<div class="figure">
+<img src="badfib.png" title="Threadscope" alt="" />
+<p class="caption">threadscope:badfib</p>
+</div>
+</div>
+<div id="threadscope---parfib" class="slide section level1">
+<h1>Threadscope - parfib</h1>
+<pre><code>$ ghc -O2 -threaded -eventlog --make parfib.hs
+$ ./parfib +RTS -N2 -ls
+$ ~/.cabal/bin/threadscope parfib.eventlog</code></pre>
+<div class="figure">
+<img src="parfib.png" title="Threadscope" alt="" />
+<p class="caption">threadscope:badfib</p>
+</div>
 </div>
 </body>
 </html>
