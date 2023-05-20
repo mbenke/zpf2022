@@ -360,7 +360,7 @@ instance Quasi IO</code></pre>
 <pre><code>power 0 = [| const 1 |]
 power n = [| \k -&gt; k * $(power (n-1)) k |]
 
--- power 5 ~ \k -&gt; k * k * k * k * k
+-- power 5 ~ \k -&gt; k * k * k * k * k * 1
 
 -- &gt; $(power 5) 2
 -- 32
@@ -405,7 +405,7 @@ mkName :: String -&gt; Name
 <p><code>FunD</code> etc - see <a href="https://hackage.haskell.org/package/template-haskell-2.16.0.0/docs/Language-Haskell-TH.html#g:18">documentation</a>.</p>
 <div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Clause</span> <span class="ot">=</span> <span class="dt">Clause</span> [<span class="dt">Pat</span>] <span class="dt">Body</span> [<span class="dt">Dec</span>]  <span class="co">-- f pats = b where decs</span></span>
 <span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Dec</span>                               <span class="co">-- declaration</span></span>
-<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>  <span class="ot">=</span> <span class="dt">FunD</span> <span class="dt">Name</span> [<span class="dt">Clause</span>]        </span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>  <span class="ot">=</span> <span class="dt">FunD</span> <span class="dt">Name</span> [<span class="dt">Clause</span>]</span>
 <span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>  <span class="op">...</span></span></code></pre></div>
 <p>Let us now try to build such a definition ourselves.</p>
 <h1 id="stage-restriction">Stage restriction</h1>
@@ -676,7 +676,7 @@ data QuasiQuoter
 <span id="cb48-7"><a href="#cb48-7" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb48-8"><a href="#cb48-8" aria-hidden="true" tabindex="-1"></a>convertBinE s e1 e2 <span class="ot">=</span> <span class="kw">do</span></span>
 <span id="cb48-9"><a href="#cb48-9" aria-hidden="true" tabindex="-1"></a>  e1&#39; <span class="ot">&lt;-</span> exprToExpQ e1</span>
-<span id="cb48-10"><a href="#cb48-10" aria-hidden="true" tabindex="-1"></a>  e2&#39; <span class="ot">&lt;-</span> exprToExpQ e2  </span>
+<span id="cb48-10"><a href="#cb48-10" aria-hidden="true" tabindex="-1"></a>  e2&#39; <span class="ot">&lt;-</span> exprToExpQ e2</span>
 <span id="cb48-11"><a href="#cb48-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span> <span class="op">$</span> <span class="dt">ConE</span> (mkName s) <span class="op">$$</span> e1&#39; <span class="op">$$</span> e2&#39;</span>
 <span id="cb48-12"><a href="#cb48-12" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb48-13"><a href="#cb48-13" aria-hidden="true" tabindex="-1"></a>(<span class="op">$$</span>) <span class="ot">=</span> <span class="dt">AppE</span>  <span class="co">-- TH AST node for application</span></span></code></pre></div>
