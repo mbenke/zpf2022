@@ -2,7 +2,7 @@
 title: Advanced Functional Programming
 subtitle: The Pleasure and Pain of Dependent Types in Haskell
 author:  Marcin Benke
-date: June 6, 2022
+date: June 6, 2023
 ---
 
 <meta name="duration" content="80" />
@@ -317,7 +317,7 @@ class Add (a::Nat) (b::Nat) (c::Nat)  where
 instance Add Z b b
 instance Add a b c => Add (S a) b (S c)
 
-vappend :: (Add m n r) => Vec m a -> Vec n a -> Vec s a
+vappend :: (Add m n r) => Vec m a -> Vec n a -> Vec r a
 vappend V0 ys = ys
 ```
 
@@ -389,7 +389,7 @@ more precisely, we would like
 vreplicate2 :: (n::Nat) -> a -> Vec n a
 ```
 
-...but `n::Nat` has no inhabitants
+...but `n::Nat` has no inhabitants (other than $\bot$)
 
 *Exercise:* try your own ideas for `vreplicate`
 
@@ -437,7 +437,7 @@ But `Nat` is not precise enough; it's like `[a]` - no size checking.
 Idea: create a representant of every element of kind Nat
 
 ``` {.haskell}
--- SNat n ~~ Vec n ()
+-- SNat n ≃ Vec n ()
 data SNat (n::Nat) where
   SZ :: SNat Z
   SS :: SNat n -> SNat (S n)
@@ -521,6 +521,8 @@ vchop SZ xs = (V0, xs)
 vchop (SS m) (x:>xs) = (x:>ys, zs) where
   (ys,zs) = vchop m xs
 ```
+
+TH generates singletons `Sing n`, type family `Plus`.
 
 # vreplicate
 

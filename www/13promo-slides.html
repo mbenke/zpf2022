@@ -7,7 +7,7 @@
   <meta http-equiv="Content-Style-Type" content="text/css" />
   <meta name="generator" content="pandoc" />
   <meta name="author" content="Marcin Benke" />
-  <meta name="date" content="2022-06-06" />
+  <meta name="date" content="2023-06-06" />
   <title>Advanced Functional Programming</title>
   <style type="text/css">
     code{white-space: pre-wrap;}
@@ -82,6 +82,7 @@
   </style>
   <link rel="stylesheet" type="text/css" media="screen, projection, print"
     href="https://www.w3.org/Talks/Tools/Slidy2/styles/slidy.css" />
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
   <script src="https://www.w3.org/Talks/Tools/Slidy2/scripts/slidy.js"
     charset="utf-8" type="text/javascript"></script>
 </head>
@@ -92,7 +93,7 @@
   <p class="author">
 Marcin Benke
   </p>
-  <p class="date">June 6, 2022</p>
+  <p class="date">June 6, 2023</p>
 </div>
 <div class="slide section level1">
 
@@ -343,7 +344,7 @@ Amount 10.0
 <span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Add</span> <span class="dt">Z</span> b b</span>
 <span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Add</span> a b c <span class="ot">=&gt;</span> <span class="dt">Add</span> (<span class="dt">S</span> a) b (<span class="dt">S</span> c)</span>
 <span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a><span class="ot">vappend ::</span> (<span class="dt">Add</span> m n r) <span class="ot">=&gt;</span> <span class="dt">Vec</span> m a <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a <span class="ot">-&gt;</span> <span class="dt">Vec</span> s a</span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a><span class="ot">vappend ::</span> (<span class="dt">Add</span> m n r) <span class="ot">=&gt;</span> <span class="dt">Vec</span> m a <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a <span class="ot">-&gt;</span> <span class="dt">Vec</span> r a</span>
 <span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a>vappend <span class="dt">V0</span> ys <span class="ot">=</span> ys</span></code></pre></div>
 <p>alas…</p>
 <pre><code>error: …
@@ -390,7 +391,7 @@ Amount 10.0
 <span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>                      <span class="co">--  Actual type:   Vec &#39;Z a</span></span></code></pre></div>
 <p>more precisely, we would like</p>
 <div class="sourceCode" id="cb29"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="ot">vreplicate2 ::</span> (<span class="ot">n::</span><span class="dt">Nat</span>) <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a</span></code></pre></div>
-<p>…but <code>n::Nat</code> has no inhabitants</p>
+<p>…but <code>n::Nat</code> has no inhabitants (other than <span class="math inline">\(\bot\)</span>)</p>
 <p><em>Exercise:</em> try your own ideas for <code>vreplicate</code></p>
 <p>Before we implement <code>vreplicate</code> let us look at some other functions.</p>
 </div>
@@ -424,7 +425,7 @@ Amount 10.0
 <p>Using a vector is an overkill, we need just its length.</p>
 <p>But <code>Nat</code> is not precise enough; it’s like <code>[a]</code> - no size checking.</p>
 <p>Idea: create a representant of every element of kind Nat</p>
-<div class="sourceCode" id="cb33"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- SNat n ~~ Vec n ()</span></span>
+<div class="sourceCode" id="cb33"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- SNat n ≃ Vec n ()</span></span>
 <span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">SNat</span> (<span class="ot">n::</span><span class="dt">Nat</span>) <span class="kw">where</span></span>
 <span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">SZ</span><span class="ot"> ::</span> <span class="dt">SNat</span> <span class="dt">Z</span></span>
 <span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">SS</span><span class="ot"> ::</span> <span class="dt">SNat</span> n <span class="ot">-&gt;</span> <span class="dt">SNat</span> (<span class="dt">S</span> n)</span>
@@ -490,6 +491,7 @@ Amount 10.0
 <span id="cb38-15"><a href="#cb38-15" aria-hidden="true" tabindex="-1"></a>vchop <span class="dt">SZ</span> xs <span class="ot">=</span> (<span class="dt">V0</span>, xs)</span>
 <span id="cb38-16"><a href="#cb38-16" aria-hidden="true" tabindex="-1"></a>vchop (<span class="dt">SS</span> m) (x<span class="op">:&gt;</span>xs) <span class="ot">=</span> (x<span class="op">:&gt;</span>ys, zs) <span class="kw">where</span></span>
 <span id="cb38-17"><a href="#cb38-17" aria-hidden="true" tabindex="-1"></a>  (ys,zs) <span class="ot">=</span> vchop m xs</span></code></pre></div>
+<p>TH generates singletons <code>Sing n</code>, type family <code>Plus</code>.</p>
 </div>
 <div id="vreplicate" class="slide section level1">
 <h1>vreplicate</h1>
