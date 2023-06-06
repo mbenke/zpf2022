@@ -9,7 +9,7 @@ date: June 6, 2023
 
 # Plan
 
-[Hasochism - The Pleasure and Pain of Dependently Typed Haskell Programming](http://homepages.inf.ed.ac.uk/slindley/papers/hasochism.pdf)
+[Hasochism - The Pleasure and Pain of Dependently Typed Haskell Programming](http://homepages.inf.ed.ac.uk/slindley/papers/hasochism.pdf) [Lindley, McBride 2013]
 
 1. Kinds
 2. GADT - [https://en.wikibooks.org/wiki/Haskell/GADT](https://en.wikibooks.org/wiki/Haskell/GADT)
