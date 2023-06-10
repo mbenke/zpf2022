@@ -4,7 +4,7 @@ Sala 4050
 09:15	mm429570	Wyostrzanie obrazów
 09:35	tn429575	Automatic Differentiation
 
-Sala 2145
+Sala 2045
 10:20	jb385150	JSON serialization using Template Haskell
 10:40	sk418280	Template Haskell – proste wstawki imperatywne
 11:00	pb429141	Przeszukiwanie nieskonczonych struktur w skonczonym czasie
