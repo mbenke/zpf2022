@@ -1,0 +1,6 @@
+
+Sala 2041
+ 9:00 bk418339 Prosta gra sieciowa demonstrująca mechanizmy współbieżności w Haskellu
+ 9:20 kr418382 Tetris via SAT-solver
+ 9:40 wp418383,
+      kb406092 Mandelbrot set animation
