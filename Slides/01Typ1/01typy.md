@@ -1,7 +1,7 @@
 ---
 title: Advanced Functional Programming
 author:  Marcin Benke
-date: Feb 28, 2023
+date: Feb 27, 2024
 ---
 
 <meta name="duration" content="80" />
@@ -39,7 +39,7 @@ Simplest way - `ghcup`: `https://www.haskell.org/ghcup/` np.
 curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh
 ```
 
-Alternatively you can use `stack`: http://haskellstack.org np.
+Alternatively you can use `stack`: http://haskellstack.org e.g.
 
 ```
 curl -sSL https://get.haskellstack.org/ | sh

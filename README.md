@@ -1,4 +1,4 @@
-## "Advanced Functional Programming" course materials, MIMUW 2022/23
+## "Advanced Functional Programming" course materials, MIMUW 2023/24
 
 * Generated Lecture notes in the www subdir, source in Slides
 * Generating lecture notes and slides needs pandoc
@@ -26,10 +26,10 @@ export PATH=$(stack path --local-bin):$PATH
 On students, using stack is not advised, but you can try using system GHC:
 
 ~~~~
-export STACK="/home/students/inf/PUBLIC/MRJP/Stack/stack --system-ghc --resolver lts-16.31"
-$STACK setup
+export STACK="/home/students/inf/PUBLIC/MRJP/Stack/stack --system-ghc"
+$STACK setup  --resolver lts-19.33
 $STACK config set system-ghc --global true
-$STACK config set resolver lts-16.31
+$STACK config set resolver lts-19.33
 $STACK upgrade --force-download  # or cp stack executable to your path
 #  ...
 #  Should I try to perform the file copy using sudo? This may fail
