@@ -348,7 +348,7 @@ Parallel Sudoku solver
 main = do
     [f] <- getArgs
     grids <- fmap lines $ readFile f
-    runEval (parMap solve grids) `deepseq` return ()
+    print  . length  . filter isJust . runEval $ parMap solve grids
 
 parMap :: (a -> b) -> [a] -> Eval [b]
 parMap f [] = return []
@@ -361,18 +361,13 @@ solve :: String -> Maybe Grid
 ~~~~
 
 ~~~~
-$ ./sudoku3b sudoku17.1000.txt +RTS -N2 -s -RTS
-  TASKS: 4 (1 bound, 3 peak workers (3 total), using -N2)
-  SPARKS: 1000 (1000 converted, 0 overflowed, 0 dud, 0 GC'd, 0 fizzled)
-
-  Total   time    2.84s  (  1.49s elapsed)
-  Productivity  88.9% of total user, 169.6% of total elapsed
-
--N8: Productivity  78.5% of total user, 569.3% of total elapsed
-N16: Productivity  62.8% of total user, 833.8% of total elapsed
-N32: Productivity  43.5% of total user, 1112.6% of total elapsed
+$ cabal exec sudoku3 -- problems.txt +RTS -s -N1
+-N1:  Total   time    1.608s  (  1.611s elapsed)
+-N2:  Total   time    2.379s  (  1.230s elapsed)
+-N4:  Total   time    2.181s  (  0.590s elapsed)
 ~~~~
 
+<!--
 # Parallel Fibonacci
 
 ~~~~ {.haskell}
@@ -423,7 +418,7 @@ dotp_double xs ys = D.sumP [:x * y | x <- xs | y <- ys:]
 
 Looks like list operations, but works on vectors and "automagically"
 parallellises to any number of cores (also CUDA)
-
+-->
 
 # Types in Haskell
 
