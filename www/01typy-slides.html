@@ -733,78 +733,93 @@ ColList = \@ a -&gt; CD { insert = (:) @ a, member = undefined }</code></pre>
 <span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a><span class="ot">   get ::</span> m s</span>
 <span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a><span class="ot">   put ::</span> s <span class="ot">-&gt;</span> m ()</span></code></pre></div>
 <p>the state type <code>s</code> is not a parameter of <code>m</code></p>
-</div>
-<div id="fundeps-are-very-very-tricky" class="slide section level1">
-<h1>Fundeps are very very tricky</h1>
-<div class="sourceCode" id="cb45"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> <span class="dt">Mul</span> a b c <span class="op">|</span> a b <span class="ot">-&gt;</span> c <span class="kw">where</span></span>
-<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a><span class="ot">  (*) ::</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> c</span>
-<span id="cb45-3"><a href="#cb45-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb45-4"><a href="#cb45-4" aria-hidden="true" tabindex="-1"></a><span class="kw">newtype</span> <span class="dt">Vec</span> a <span class="ot">=</span> <span class="dt">Vec</span> [a]</span>
-<span id="cb45-5"><a href="#cb45-5" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Functor</span> <span class="dt">Vec</span> <span class="kw">where</span></span>
-<span id="cb45-6"><a href="#cb45-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">fmap</span> f (<span class="dt">Vec</span> as) <span class="ot">=</span> <span class="dt">Vec</span> <span class="op">$</span> <span class="fu">map</span> f as</span>
-<span id="cb45-7"><a href="#cb45-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb45-8"><a href="#cb45-8" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Mul</span> a b c <span class="ot">=&gt;</span> <span class="dt">Mul</span> a (<span class="dt">Vec</span> b) (<span class="dt">Vec</span> c) <span class="kw">where</span></span>
-<span id="cb45-9"><a href="#cb45-9" aria-hidden="true" tabindex="-1"></a>  a <span class="op">*</span> b <span class="ot">=</span> <span class="fu">fmap</span> (a<span class="op">*</span>) b</span>
-<span id="cb45-10"><a href="#cb45-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb45-11"><a href="#cb45-11" aria-hidden="true" tabindex="-1"></a>f t x y <span class="ot">=</span> <span class="kw">if</span> t <span class="kw">then</span>  x <span class="op">*</span> (<span class="dt">Vec</span> [y]) <span class="kw">else</span> y</span></code></pre></div>
-<p>What is the type of <code>f</code>? Let <code>x::a</code>, <code>y::b</code>.</p>
-<p>Then the result type of <code>f</code> is <code>b</code> and we need an instance of <code>Mul a (Vec b) b</code></p>
-<p>Now <code>a b -&gt; c</code> implies <code>b ~ Vec c</code> for some <code>c</code>, so we are looking for an instance</p>
-<pre><code>Mul a (Vec (Vec c)) (Vec c)</code></pre>
-<p>applying the rule <code>Mul a b c =&gt; Mul a (Vec b) (Vec c)</code> leads to <code>Mul a (Vec c) c</code>.</p>
-<p>…and so on</p>
-</div>
-<div id="lets-try" class="slide section level1">
-<h1>Let’s try</h1>
-<div class="sourceCode" id="cb47"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a>Mul1.hs<span class="op">:</span><span class="dv">19</span><span class="op">:</span><span class="dv">22</span><span class="op">:</span> <span class="fu">error</span><span class="op">:</span></span>
-<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a>    • <span class="dt">Reduction</span> stack overflow; size <span class="ot">=</span> <span class="dv">201</span></span>
-<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a>      <span class="dt">When</span> simplifying the following <span class="kw">type</span><span class="op">:</span> <span class="dt">Mul</span> a0 (<span class="dt">Vec</span> (<span class="dt">Vec</span> c)) (<span class="dt">Vec</span> c)</span>
-<span id="cb47-4"><a href="#cb47-4" aria-hidden="true" tabindex="-1"></a>    • <span class="dt">In</span> the expression<span class="op">:</span> x <span class="op">*</span> (<span class="dt">Vec</span> [y])</span>
-<span id="cb47-5"><a href="#cb47-5" aria-hidden="true" tabindex="-1"></a>      <span class="dt">In</span> the expression<span class="op">:</span> <span class="kw">if</span> b <span class="kw">then</span> x <span class="op">*</span> (<span class="dt">Vec</span> [y]) <span class="kw">else</span> y</span>
-<span id="cb47-6"><a href="#cb47-6" aria-hidden="true" tabindex="-1"></a>      <span class="dt">In</span> an equation for ‘f’<span class="op">:</span> f b x y <span class="ot">=</span> <span class="kw">if</span> b <span class="kw">then</span> x <span class="op">*</span> (<span class="dt">Vec</span> [y]) <span class="kw">else</span> y</span>
-<span id="cb47-7"><a href="#cb47-7" aria-hidden="true" tabindex="-1"></a>   <span class="op">|</span></span>
-<span id="cb47-8"><a href="#cb47-8" aria-hidden="true" tabindex="-1"></a><span class="dv">19</span> <span class="op">|</span> f b x y <span class="ot">=</span> <span class="kw">if</span> b <span class="kw">then</span>  x <span class="op">*</span> (<span class="dt">Vec</span> [y]) <span class="kw">else</span> y</span>
-<span id="cb47-9"><a href="#cb47-9" aria-hidden="true" tabindex="-1"></a>   <span class="op">|</span>                      <span class="op">^^^^^^^^^^^^^</span></span></code></pre></div>
-<p>(we need to use UndecidableInstances, to make GHC try - this example shows what is ‘Undecidable’).</p>
+<!--
+# Fundeps are very very tricky
+
+~~~~ {.haskell}
+class Mul a b c | a b -> c where
+  (*) :: a -> b -> c
+
+newtype Vec a = Vec [a]
+instance Functor Vec where
+  fmap f (Vec as) = Vec $ map f as
+
+instance Mul a b c => Mul a (Vec b) (Vec c) where
+  a * b = fmap (a*) b
+
+f t x y = if t then  x * (Vec [y]) else y
+~~~~
+
+What is the type of `f`? Let `x::a`, `y::b`.
+
+Then the result type of `f` is `b` and we need an instance of `Mul a (Vec b) b`
+
+Now  `a b -> c` implies `b ~ Vec c` for some `c`, so we are looking for an instance
+
+~~~~
+Mul a (Vec (Vec c)) (Vec c)
+~~~~
+
+applying the rule `Mul a b c => Mul a (Vec b) (Vec c)` leads to `Mul a (Vec c) c`.
+
+...and so on
+
+
+# Let's try
+
+~~~~ {.haskell}
+Mul1.hs:19:22: error:
+    • Reduction stack overflow; size = 201
+      When simplifying the following type: Mul a0 (Vec (Vec c)) (Vec c)
+    • In the expression: x * (Vec [y])
+      In the expression: if b then x * (Vec [y]) else y
+      In an equation for ‘f’: f b x y = if b then x * (Vec [y]) else y
+   |
+19 | f b x y = if b then  x * (Vec [y]) else y
+   |                      ^^^^^^^^^^^^^
+~~~~
+
+(we need to use UndecidableInstances, to make GHC try - this example shows what is 'Undecidable').
+-->
 </div>
 <div id="associated-types" class="slide section level1">
 <h1>Associated types</h1>
-<div class="sourceCode" id="cb48"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a><span class="ot">{-# LANGUAGE TypeFamilies #-}</span></span>
-<span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> <span class="dt">Collection</span> c <span class="kw">where</span></span>
-<span id="cb48-3"><a href="#cb48-3" aria-hidden="true" tabindex="-1"></a>      <span class="kw">type</span> <span class="dt">Elem</span><span class="ot"> c ::</span> <span class="op">*</span></span>
-<span id="cb48-4"><a href="#cb48-4" aria-hidden="true" tabindex="-1"></a><span class="ot">      empty ::</span> c</span>
-<span id="cb48-5"><a href="#cb48-5" aria-hidden="true" tabindex="-1"></a><span class="ot">      insert ::</span> <span class="dt">Elem</span> c <span class="ot">-&gt;</span> c <span class="ot">-&gt;</span> c</span>
-<span id="cb48-6"><a href="#cb48-6" aria-hidden="true" tabindex="-1"></a><span class="ot">      member ::</span> <span class="dt">Elem</span> c <span class="ot">-&gt;</span> c <span class="ot">-&gt;</span> <span class="dt">Bool</span></span>
-<span id="cb48-7"><a href="#cb48-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb48-8"><a href="#cb48-8" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Eq</span> a <span class="ot">=&gt;</span> <span class="dt">Collection</span> [a] <span class="kw">where</span></span>
-<span id="cb48-9"><a href="#cb48-9" aria-hidden="true" tabindex="-1"></a>  <span class="kw">type</span> <span class="dt">Elem</span> [a] <span class="ot">=</span> a</span>
-<span id="cb48-10"><a href="#cb48-10" aria-hidden="true" tabindex="-1"></a>  empty <span class="ot">=</span> []</span>
-<span id="cb48-11"><a href="#cb48-11" aria-hidden="true" tabindex="-1"></a>  insert  <span class="ot">=</span> (<span class="op">:</span>)</span>
-<span id="cb48-12"><a href="#cb48-12" aria-hidden="true" tabindex="-1"></a>  member <span class="ot">=</span> <span class="fu">elem</span></span>
-<span id="cb48-13"><a href="#cb48-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb48-14"><a href="#cb48-14" aria-hidden="true" tabindex="-1"></a><span class="ot">ins2 ::</span> <span class="dt">Collection</span> c <span class="ot">=&gt;</span> <span class="dt">Elem</span> c <span class="ot">-&gt;</span> <span class="dt">Elem</span> c <span class="ot">-&gt;</span> c <span class="ot">-&gt;</span> c</span>
-<span id="cb48-15"><a href="#cb48-15" aria-hidden="true" tabindex="-1"></a>ins2 x y c <span class="ot">=</span> insert y (insert x c)</span>
-<span id="cb48-16"><a href="#cb48-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb48-17"><a href="#cb48-17" aria-hidden="true" tabindex="-1"></a><span class="ot">noproblem1 ::</span> [<span class="dt">Int</span>]</span>
-<span id="cb48-18"><a href="#cb48-18" aria-hidden="true" tabindex="-1"></a>noproblem1 <span class="ot">=</span> ins2 (<span class="dv">1</span><span class="ot">::</span><span class="dt">Int</span>) (<span class="dv">2</span><span class="ot">::</span><span class="dt">Int</span>) empty</span>
-<span id="cb48-19"><a href="#cb48-19" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb48-20"><a href="#cb48-20" aria-hidden="true" tabindex="-1"></a><span class="ot">noproblem2 ::</span> [<span class="dt">Char</span>]</span>
-<span id="cb48-21"><a href="#cb48-21" aria-hidden="true" tabindex="-1"></a>noproblem2 <span class="ot">=</span> ins2 <span class="ch">&#39;a&#39;</span> <span class="ch">&#39;b&#39;</span> empty</span></code></pre></div>
+<div class="sourceCode" id="cb45"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="ot">{-# LANGUAGE TypeFamilies #-}</span></span>
+<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> <span class="dt">Collection</span> c <span class="kw">where</span></span>
+<span id="cb45-3"><a href="#cb45-3" aria-hidden="true" tabindex="-1"></a>      <span class="kw">type</span> <span class="dt">Elem</span><span class="ot"> c ::</span> <span class="op">*</span></span>
+<span id="cb45-4"><a href="#cb45-4" aria-hidden="true" tabindex="-1"></a><span class="ot">      empty ::</span> c</span>
+<span id="cb45-5"><a href="#cb45-5" aria-hidden="true" tabindex="-1"></a><span class="ot">      insert ::</span> <span class="dt">Elem</span> c <span class="ot">-&gt;</span> c <span class="ot">-&gt;</span> c</span>
+<span id="cb45-6"><a href="#cb45-6" aria-hidden="true" tabindex="-1"></a><span class="ot">      member ::</span> <span class="dt">Elem</span> c <span class="ot">-&gt;</span> c <span class="ot">-&gt;</span> <span class="dt">Bool</span></span>
+<span id="cb45-7"><a href="#cb45-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb45-8"><a href="#cb45-8" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Eq</span> a <span class="ot">=&gt;</span> <span class="dt">Collection</span> [a] <span class="kw">where</span></span>
+<span id="cb45-9"><a href="#cb45-9" aria-hidden="true" tabindex="-1"></a>  <span class="kw">type</span> <span class="dt">Elem</span> [a] <span class="ot">=</span> a</span>
+<span id="cb45-10"><a href="#cb45-10" aria-hidden="true" tabindex="-1"></a>  empty <span class="ot">=</span> []</span>
+<span id="cb45-11"><a href="#cb45-11" aria-hidden="true" tabindex="-1"></a>  insert  <span class="ot">=</span> (<span class="op">:</span>)</span>
+<span id="cb45-12"><a href="#cb45-12" aria-hidden="true" tabindex="-1"></a>  member <span class="ot">=</span> <span class="fu">elem</span></span>
+<span id="cb45-13"><a href="#cb45-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb45-14"><a href="#cb45-14" aria-hidden="true" tabindex="-1"></a><span class="ot">ins2 ::</span> <span class="dt">Collection</span> c <span class="ot">=&gt;</span> <span class="dt">Elem</span> c <span class="ot">-&gt;</span> <span class="dt">Elem</span> c <span class="ot">-&gt;</span> c <span class="ot">-&gt;</span> c</span>
+<span id="cb45-15"><a href="#cb45-15" aria-hidden="true" tabindex="-1"></a>ins2 x y c <span class="ot">=</span> insert y (insert x c)</span>
+<span id="cb45-16"><a href="#cb45-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb45-17"><a href="#cb45-17" aria-hidden="true" tabindex="-1"></a><span class="ot">noproblem1 ::</span> [<span class="dt">Int</span>]</span>
+<span id="cb45-18"><a href="#cb45-18" aria-hidden="true" tabindex="-1"></a>noproblem1 <span class="ot">=</span> ins2 (<span class="dv">1</span><span class="ot">::</span><span class="dt">Int</span>) (<span class="dv">2</span><span class="ot">::</span><span class="dt">Int</span>) empty</span>
+<span id="cb45-19"><a href="#cb45-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb45-20"><a href="#cb45-20" aria-hidden="true" tabindex="-1"></a><span class="ot">noproblem2 ::</span> [<span class="dt">Char</span>]</span>
+<span id="cb45-21"><a href="#cb45-21" aria-hidden="true" tabindex="-1"></a>noproblem2 <span class="ot">=</span> ins2 <span class="ch">&#39;a&#39;</span> <span class="ch">&#39;b&#39;</span> empty</span></code></pre></div>
 </div>
 <div id="type-families" class="slide section level1">
 <h1>Type families</h1>
 <p>Type families are functions on types</p>
-<div class="sourceCode" id="cb49"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a><span class="ot">{-# LANGUAGE TypeFamilies #-}</span></span>
-<span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-3"><a href="#cb49-3" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Zero</span> <span class="ot">=</span> <span class="dt">Zero</span></span>
-<span id="cb49-4"><a href="#cb49-4" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Suc</span> n <span class="ot">=</span> <span class="dt">Suc</span> n</span>
-<span id="cb49-5"><a href="#cb49-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-6"><a href="#cb49-6" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="kw">family</span> m <span class="op">:+</span> n</span>
-<span id="cb49-7"><a href="#cb49-7" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="kw">instance</span> <span class="dt">Zero</span> <span class="op">:+</span> n <span class="ot">=</span> n</span>
-<span id="cb49-8"><a href="#cb49-8" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="kw">instance</span> (<span class="dt">Suc</span> m) <span class="op">:+</span> n <span class="ot">=</span> <span class="dt">Suc</span>(m<span class="op">:+</span>n)</span>
-<span id="cb49-9"><a href="#cb49-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb49-10"><a href="#cb49-10" aria-hidden="true" tabindex="-1"></a><span class="ot">vhead ::</span> <span class="dt">Vec</span> (<span class="dt">Suc</span> n) a <span class="ot">-&gt;</span> a</span>
-<span id="cb49-11"><a href="#cb49-11" aria-hidden="true" tabindex="-1"></a><span class="ot">vappend ::</span> <span class="dt">Vec</span> m a <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a <span class="ot">-&gt;</span> <span class="dt">Vec</span> (m<span class="op">:+</span>n) a</span></code></pre></div>
+<div class="sourceCode" id="cb46"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a><span class="ot">{-# LANGUAGE TypeFamilies #-}</span></span>
+<span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb46-3"><a href="#cb46-3" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Zero</span> <span class="ot">=</span> <span class="dt">Zero</span></span>
+<span id="cb46-4"><a href="#cb46-4" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Suc</span> n <span class="ot">=</span> <span class="dt">Suc</span> n</span>
+<span id="cb46-5"><a href="#cb46-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb46-6"><a href="#cb46-6" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="kw">family</span> m <span class="op">:+</span> n</span>
+<span id="cb46-7"><a href="#cb46-7" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="kw">instance</span> <span class="dt">Zero</span> <span class="op">:+</span> n <span class="ot">=</span> n</span>
+<span id="cb46-8"><a href="#cb46-8" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="kw">instance</span> (<span class="dt">Suc</span> m) <span class="op">:+</span> n <span class="ot">=</span> <span class="dt">Suc</span>(m<span class="op">:+</span>n)</span>
+<span id="cb46-9"><a href="#cb46-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb46-10"><a href="#cb46-10" aria-hidden="true" tabindex="-1"></a><span class="ot">vhead ::</span> <span class="dt">Vec</span> (<span class="dt">Suc</span> n) a <span class="ot">-&gt;</span> a</span>
+<span id="cb46-11"><a href="#cb46-11" aria-hidden="true" tabindex="-1"></a><span class="ot">vappend ::</span> <span class="dt">Vec</span> m a <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a <span class="ot">-&gt;</span> <span class="dt">Vec</span> (m<span class="op">:+</span>n) a</span></code></pre></div>
 <p>We’ll talk about them systematically when we talk about dependent types in Haskell</p>
 </div>
 </body>

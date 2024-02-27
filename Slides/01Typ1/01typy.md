@@ -807,6 +807,7 @@ but this does not allow to solve the problem with the state monad:
 
 the state type `s` is not a parameter of `m`
 
+<!--
 # Fundeps are very very tricky
 
 ~~~~ {.haskell}
@@ -853,6 +854,7 @@ Mul1.hs:19:22: error:
 ~~~~
 
 (we need to use UndecidableInstances, to make GHC try - this example shows what is 'Undecidable').
+-->
 
 # Associated types
 
