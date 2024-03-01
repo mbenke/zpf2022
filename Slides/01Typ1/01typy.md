@@ -481,6 +481,8 @@ Note:
 
 $$ f : a \to b \not \vdash map\; f :: \forall b. [a] \to [b]  $$
 
+Another example: what's the type of `let y = x in y` in the environment $x::\alpha$?
+
 * Instantiation
 
 $$ {\Gamma \vdash e :: \forall a.t}\over {\Gamma \vdash e :: t[a:=s]} $$
