@@ -2,7 +2,7 @@
 title: Advanced Functional Programming
 subtitle: Testing
 author:  Marcin Benke
-date: Mar 7, 2023
+date: Mar 5, 2024
 ---
 
 <meta name="duration" content="80" />
@@ -64,7 +64,7 @@ Haddock (<http://haskell.org/haddock>) is a commonly used Haskell documentation 
 The sequence `{-|`  or `-- |` (space is important) starts a comment block, which is passed to documentation
 
 ``` haskell
--- |The 'square' function squares an integer.
+-- | The 'square' function squares an integer.
 -- It takes one argument, of type 'Int'.
 square :: Int -> Int
 square x = x * x
@@ -73,6 +73,7 @@ square x = x * x
 ```
 $ haddock --html Square.hs
 ```
+
 # HUnit
 Unit tests are a common practice in many languages
 
@@ -178,6 +179,9 @@ True
 True
 *Main> prop_permute prop_idempotent [1..10]
   C-c C-cInterrupted.
+
+prop_permute' prop xs = forAll (permutations xs) prop
+  where forAll = flip all
 ~~~~
 
 # QuickCheck
@@ -227,11 +231,15 @@ instance Testable Bool where...
 instance (Arbitrary a, Show a, Testable b) => Testable (a -> b) where
   property f = forAll arbitrary f
 
+-- forAll :: (Show a, Testable b) => Gen a -> (a -> b) -> Property
+
 class Arbitrary a where
   arbitrary   :: Gen a
 
 instance Monad Gen where ...
 ~~~~
+
+`Gen` is a monad: `Gen t` is a computation producing `t` (possibly using random generators).
 
 # Random number generation
 
@@ -270,6 +278,8 @@ main = do
 
 
 # Random object generation
+
+`Gen` is a monad: `Gen t` is a computation producing `t` (possibly using random generators).
 
 ~~~~ {.haskell}
 choose :: (Int,Int) -> Gen Int   -- uniform over a range
@@ -346,11 +356,11 @@ instance Arbitrary a => Arbitrary (Tree a) where
     arbitrary = sized arbTree
 
 -- arbTree n generates a tree of size < n
-arbTree 0 = liftM Leaf arbitrary
+arbTree 0 = Leaf <$> arbitrary
 arbTree n = frequency
-        [(1, liftM Leaf arbitrary)
-        ,(4, liftM2 Branch (arbTree (div n 2))(arbTree (div n 2)))
-        --   liftM2 Branch g g where g = arbTree (div n 2)
+        [(1, Leaf <$> arbitrary)
+        ,(4, Branch <$> arbTree (div n 2) <*> arbTree (div n 2)
+        --   Branch <$> g <*> g where g = arbTree (div n 2)
         ]
 ~~~~
 
@@ -388,12 +398,14 @@ choose bounds = (fst . randomR bounds) <$> rand
 class Arbitrary a where
   arbitrary :: Gen a
 
+-- randomly choose one of the elements
 elements :: [a] -> Gen a
 elements xs = (xs !!) <$> choose (0, length xs - 1)
 
 vector :: Arbitrary a => Int -> Gen [a]
 vector n = sequence [ arbitrary | i <- [1..n] ]
 -- sequence :: Monad m => [m a] -> m [a]
+
 instance Arbitrary () where
   arbitrary = return ()
 
@@ -411,9 +423,9 @@ instance Arbitrary Int where
 
 A test can have one of three outcomes:
 
-* Just True - success
-* Just False - failure  (plus counterexample)
-* Nothing - inconclusive, data not fitting for the test
+* `Just True` - success
+* `Just False` - failure  (plus counterexample)
+* `Nothing` - inconclusive, data not fitting for the test
 
 ~~~~ {.haskell}
 data Result = Result { ok :: Maybe Bool, arguments :: [String] }
@@ -429,7 +441,7 @@ newtype Property
 
 # Testable
 
-To test something, we need a `Result` generator
+To test something, we need a `Result` generator (i.e. `Property`)
 
 ~~~~ {.haskell}
 class Testable a where
@@ -454,6 +466,7 @@ OK, passed 100 tests
 *SimpleCheck1> check False
 Falsifiable, after 0 tests:
 ~~~~
+(`False` has a trivial counterexample)
 
 # Running tests
 
@@ -462,8 +475,8 @@ generate :: Int -> StdGen -> Gen a -> a
 
 tests :: Config -> Gen Result -> StdGen -> Int -> Int -> IO ()
 tests c gen rnd0 ntest nfail
-  | ntest == configMaxTest c = do done "OK, passed" ntest
-  | nfail == configMaxFail c = do done "Arguments exhausted after" ntest
+  | ntest == configMaxTest c = done "OK, passed" ntest
+  | nfail == configMaxFail c = done "Arguments exhausted after" ntest
   | otherwise               =
          case ok result of
            Nothing    ->
@@ -481,7 +494,7 @@ tests c gen rnd0 ntest nfail
       (rnd1,rnd2) = split rnd0
 ~~~~
 
-`configSize n` determines data size for test `n` (default: `n+3/2`)
+`configSize n` determines data size for test `n` (default: `n/2+3`)
 
 # forAll
 
@@ -509,12 +522,12 @@ propAddCom2 =  forAll int (\x -> forAll int (\y -> x + y == y + x)) where
 ~~~~
 >>> check $ forAll (chooseInt (-100,100)) (\x -> x + 0 == x)
 OK, passed 100 tests
->>> check $ forAll (chooseInt (-100,100)) (\x -> x + 1 == x)
+>>> check $ forAll (arbitrary::Gen Int) (\x -> x + 1 == x)
 Falsifiable, after 0 tests:
--22
+1
 ~~~~
 
-# Functions and implication
+# Functions
 
 Given `forAll`, functions are surprisingly easy:
 
@@ -524,7 +537,13 @@ instance (Arbitrary a, Show a, Testable b) => Testable (a -> b) where
 
 propAddCom3 :: Int -> Int -> Bool
 propAddCom3 x y = x + y == y + x
+
+-- instance Testable Bool
+-- instance Testable (Int -> Bool)
+-- instance Testable (Int -> (Int -> Bool))
 ~~~~
+
+# Implication (conditional tests)
 
 Implication: test q, providing data satisfies p
 
@@ -550,7 +569,7 @@ Falsifiable, after 0 tests:
 -2
 ~~~~
 
-<!-- 
+<!--
 # Generating functions
 
 We can test functions, but to test higher-order functons we need to generate random functions.
@@ -680,7 +699,7 @@ prop_insert1 x xs = ordered (insert x xs)
 prop_insert2 x xs = ordered xs ==> ordered (insert x xs)
 
 >>> quickCheck prop_insert2
-*** Gave up! Passed only 43 tests.
+*** Gave up! Passed only 75 tests; 1000 discarded tests.
 ~~~~
 
 Probability that a random list is ordered is small...
@@ -726,6 +745,7 @@ OrderedInts [-63,-15,37]
 OrderedInts [-122,-53,-47,-43,-21,-19,29,53]
 ~~~~
 
+<!--
 # doctest + QuickCheck
 
 ~~~~ {.haskell}
@@ -755,6 +775,7 @@ Run from outside a project, using implicit global project config
 Using resolver: lts-9.21 from implicit global project's config file: /Users/ben/.stack/global/stack.yaml
 Examples: 5  Tried: 5  Errors: 0  Failures: 0
 ```
+-->
 
 # Running all tests in a module
 
