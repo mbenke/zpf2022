@@ -1,6 +1,11 @@
+-- #!/usr/bin/env cabal
+{- cabal:
+build-depends:
+  base ^>=4.16.0.0,
+  random ^>=1.2,
+-}
 module SimpleCheck1 where
 import Control.Monad(ap)
-import Control.Applicative
 import System.Random
   ( StdGen       -- :: *
   , newStdGen    -- :: IO StdGen
@@ -27,7 +32,7 @@ resize :: Int -> Gen a -> Gen a
 resize n (Gen m) = Gen (\_ r -> m n r)
 
 instance Monad Gen where
-  return a = Gen $ \n r -> a
+  return = pure
   Gen m >>= k = Gen $ \n r0 ->
     let (r1,r2) = split r0
         Gen m'  = k (m n r1)
@@ -37,7 +42,7 @@ instance Functor Gen where
   fmap f m = m >>= return . f        
 
 instance Applicative Gen where
-  pure = return
+  pure a = Gen $ \n r -> a
   (<*>) = ap
 
 rand :: Gen StdGen
@@ -159,8 +164,8 @@ check prop = do
   
 tests :: Gen Result -> StdGen -> Int -> Int -> IO () 
 tests gen rnd0 ntest nfail 
-  | ntest == configMaxTest = do done "OK, passed" ntest
-  | nfail == configMaxFail = do done "Arguments exhausted after" ntest
+  | ntest == configMaxTest = done "OK, passed" ntest
+  | nfail == configMaxFail = done "Arguments exhausted after" ntest
   | otherwise               =
       do putStr (configEvery  ntest (arguments result))
          case ok result of
@@ -183,10 +188,13 @@ done :: String -> Int  -> IO ()
 done mesg ntest  =
   do putStrLn ( mesg ++ " " ++ show ntest ++ " tests" )
 
-
+configMaxTest, configMaxFail :: Int
 configMaxTest = 100
 configMaxFail = 500
+configSize   :: Int -> Int
 configSize    = (+ 3) . (`div` 2)
+
+configEvery  :: Int -> [String] -> String 
 configEvery   = \n args -> let s = show n in s ++ [ '\b' | _ <- s ]
 
 

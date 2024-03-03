@@ -1,3 +1,8 @@
+{- cabal:
+build-depends:
+  base ^>=4.16.0.0,
+  random ^>=1.2,
+-}
 module SimpleCheck where
 import System.Random
   ( StdGen       -- :: *
@@ -19,7 +24,6 @@ newtype Gen a
   = Gen (Int -> StdGen -> a)
 
 instance Monad Gen where
-  return a = Gen $ \n r -> a
   Gen m >>= k = Gen $ \n r0 ->
     let (r1,r2) = split r0
         Gen m'  = k (m n r1)

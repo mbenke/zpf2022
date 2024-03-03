@@ -19,12 +19,16 @@ split []       = ([],[])
 split [x]      = ([x],[])
 split (x:y:zs) = (x:xs,y:ys)
   where (xs,ys) = split zs
-        
-sort = mergeSort ((<=) :: Int -> Int -> Bool)         
 
-prop_idempotent xs = 
+sort = mergeSort ((<=) :: Int -> Int -> Bool)
+
+prop_idempotent xs =
     sort (sort xs) == sort xs
-    
+
 prop_permute :: ([a] -> Bool) -> [a] -> Bool
 prop_permute prop = all prop . permutations
-    
+
+forAll :: [a] -> (a->Bool) -> Bool
+forAll = flip all
+
+prop_permute' prop xs = forAll (permutations xs) prop where forAll = flip all

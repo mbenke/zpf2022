@@ -1,3 +1,9 @@
+{- cabal:
+build-depends:
+  base >=4.1,
+  random >=1.2,
+  QuickCheck >= 2.0
+-}
 module Tree3 where
 import Test.QuickCheck
 import Control.Monad
