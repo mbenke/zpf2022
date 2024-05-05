@@ -1,10 +1,12 @@
  -- {- # LANGUAGE TemplateHaskell #-}
 module Build3 where
 import Language.Haskell.TH
+import Language.Haskell.TH.Syntax(Quote)
 
 simpleFun :: Name -> [Pat] -> Exp -> Dec
 simpleFun name pats rhs = FunD name [Clause pats (NormalB rhs) []]
 
+build_ps :: Quote m => m [Dec]
 build_ps = mapM build_p [1,2] where
     fname n = mkName $ "p2_" ++ show n
     build_p n = do
