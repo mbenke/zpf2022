@@ -57,7 +57,7 @@ getPosition = fmap transPos location where
                   snd (loc_start loc))
 
 exprToPatQ :: Expr -> Q Pat
-exprToPatQ (EInt n) = return $ ConP (mkName "EInt") [intLitP n]
+exprToPatQ (EInt n) = return $ ConP (mkName "EInt") [] [intLitP n]
 exprToPatQ (EAdd e1 e2) = convertBinP "EAdd" e1 e2
 exprToPatQ (ESub e1 e2) = convertBinP "ESub" e1 e2
 exprToPatQ (EMul e1 e2) = convertBinP "EMul" e1 e2
@@ -69,5 +69,5 @@ intLitP = LitP . IntegerL . toInteger
 convertBinP s e1 e2 = do
   e1' <- exprToPatQ e1
   e2' <- exprToPatQ e2  
-  return $ ConP (mkName s) [e1', e2']
+  return $ ConP (mkName s) [] [e1', e2']
   
