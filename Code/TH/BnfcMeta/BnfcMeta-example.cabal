@@ -1,0 +1,29 @@
+cabal-version:      3.4
+name:               BnfcMeta
+version:            0.1.0.0
+-- synopsis:
+-- description:
+license:            BSD-3-Clause
+license-file:       LICENSE
+author:             Marcin Benke
+maintainer:         marcin@benke.org
+-- copyright:
+category:           Language
+build-type:         Simple
+extra-doc-files:    CHANGELOG.md
+-- extra-source-files:
+
+common warnings
+    ghc-options: -Wall
+
+executable BnfcMeta
+    import:           warnings
+    main-is:          Main.hs
+    other-modules: Expr
+    -- other-extensions:
+    build-depends:    base ^>=4.16.4.0,
+                      mtl >= 2.2,
+                      containers >= 0.6,
+                      BNFC-meta >= 0.6,
+    hs-source-dirs:   app
+    default-language: GHC2021
