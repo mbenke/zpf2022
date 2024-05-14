@@ -2,7 +2,7 @@
 title: Advanced Functional Programming
 subtitle: Metaprogramming - Template Haskell, Quasiquotation
 author:  Marcin Benke
-date: May 16, 2023
+date: May 14, 2024
 ---
 
 # Metaprogramming - Template Haskell
@@ -62,6 +62,31 @@ str = QuasiQuoter { quoteExp = stringE }
 
 Let's try to understand how it works...
 
+# Perhaps a more concincing example
+
+Building Web aps with Yesod:
+
+``` haskell
+data Links = Links
+
+mkYesod "Links" [parseRoutes|
+/ HomeR GET
+/page1 Page1R GET
+/page2 Page2R GET
+|]
+
+instance Yesod Links
+
+getHomeR  = defaultLayout [whamlet|<a href=@{Page1R}>Go to page 1!|]
+getPage1R = defaultLayout [whamlet|<a href=@{Page2R}>Go to page 2!|]
+getPage2R = defaultLayout [whamlet|<a href=@{HomeR}>Go home!|]
+
+main = warp 3000 Links
+```
+
+* `mkYesod/parseRoutes` generate code routing requests to specified handlers
+* `whamlet` renders HTML templates
+
 # Parsing vs building/splicing
 
 Traditional implementation pipeline:
@@ -86,7 +111,7 @@ Quotations - `[q| ... |]` are a mechanism for generating ASTs.
 The quasiquoter `q` determines how the bracket content is parsed
 (default is `e` for Haskell expressions).
 
-We can do some experiments in GHCi (following this [tutorial](https://web.archive.org/web/20180501004533/http://www.hyperedsoftware.com:80/blog/entries/first-stab-th.html))
+We can do some experiments in GHCi:
 
 ```
 $ ghci -XTemplateHaskell
@@ -107,18 +132,17 @@ data Exp
   ...
   	-- Defined in ‘Language.Haskell.TH.Syntax’
 
-> runQ [| \x -> x + 1 |]  >>= putStrLn . print
+> runQ [| \x -> x + 1 |]  >>= putStrLn . pprint
 \x_0 -> x_0 GHC.Num.+ 1
 ```
 
 # The Q monad
 
-Code generation requires certain supporting features:
+Code generation requires certain supporting features, e.g.:
 
 * ability to generate new unique names
 * ability to retrieve information about an entity
 * custom state shared by all TH code in the same module
-* ability to run IO during compilation (e.g. to read a file)
 
 These features are supplied by a monad called `Q` (for quotation).
 
@@ -133,6 +157,15 @@ newtype Q a = ... -- Defined in ‘Language.Haskell.TH.Syntax’
 instance Monad Q
 ```
 
+NB in recent versions we have
+```
+[| \x -> 1 |] :: Quote m => m Exp
+instance Quote Q
+```
+
+but the essence remains the same.
+
+
 # Q, runQ
 
 ```
@@ -145,7 +178,8 @@ instance Quasi Q
 instance Quasi IO
 ```
 
-Basically `runQ` can be used to evaluate `Q` computations both in the `Q` context (natural habitat) and the `IO` context (useful for experimentation).
+Basically `runQ` can be used to evaluate `Q` computations both in the `Q` context (natural habitat)<br/>
+as well as in the `IO` context (useful for experimentation).
 
 <!--
 (curious about `type role Q nominal`? - see e.g. this [question](https://stackoverflow.com/questions/49209788/simplest-examples-demonstrating-the-need-for-nominal-type-role-in-haskell)
@@ -175,9 +209,6 @@ This allows for easy ``comptime'', e.g.
 
 ``` haskell
 main = print $(int (fib 20))
-
--- or using Language.Haskell.TH.lift
-main = print $(lift (fib 20))
 ```
 
 where `fib 20` is computed at compilation time.
@@ -217,7 +248,7 @@ AppE (VarE GHC.Enum.succ) (LitE (IntegerL 1))
 2
 ```
 
-but:
+but copying and pasting has its limits:
 ```
 > $(return (AppE (VarE GHC.Enum.succ) (LitE (IntegerL 1))))
 
@@ -363,8 +394,8 @@ Luckily, TH provides the function
 ```
 newName :: String -> Q Name
 
-> runQ (mapM newName $ replicate 5 "x")
-[x_2,x_3,x_4,x_5,x_6]
+ghci> runQ (mapM newName $ replicate 5 "x")
+[x_0,x_1,x_2,x_3,x_4]
 ```
 
 (which, by the way, explains one of the reasons why
@@ -374,6 +405,8 @@ Using `newName` we can safeguard our code against name clashes.
 
 Note, however, that `p1` is global and must use `mkName`,
 while `a` and `b` are locals, so we shall generate them using `newName`.
+
+(in newer versions `newName` is a method of the `Quote` class, but its essence remains the same)
 
 # Build2
 
@@ -469,7 +502,7 @@ main = mapM_ print
 
 # Quote, eval, quasiquote
 
-In Lisp we have quote: `'` (`code -> data`)
+In Lisp we have quote: `'` (`code -> data`) and eval (data -> code):
 
 ```
 (+ 1 1)         => 2
@@ -521,7 +554,7 @@ str = QuasiQuoter { quoteExp = stringE }
 ```
 
 
-* `stringE` builds a string literal expression
+* `stringE` builds a string literal expression (`stringE :: String -> Q Exp`)
 * `str` quasiquoter, when used in expression context, splices this literal
 
 # The QuasiQuoter type
@@ -713,7 +746,7 @@ This seems like a lot of boilerplate,
 luckily we can save us some work use facilities for generic programming provided by
 [Data.Data](http://hackage.haskell.org/package/base/docs/Data-Data.html)
 combined with the Template Haskell function
-[`dataToExpQ`](http://hackage.haskell.org/package/template-haskell-2.14.0.0/docs/Language-Haskell-TH-Syntax.html#v:dataToExpQ),
+[`dataToExpQ`](http://hackage.haskell.org/package/template-haskell-2.20.0.0/docs/Language-Haskell-TH-Syntax.html#v:dataToExpQ),
 
 ``` haskell
  exprToExpQ =  dataToExpQ (const Nothing) exp
@@ -722,7 +755,8 @@ combined with the Template Haskell function
 --            -> a -> Q Exp
 -- the first argument provides a way of extending the translation
 ```
-or a simpler [liftData](http://hackage.haskell.org/package/template-haskell-2.14.0.0/docs/Language-Haskell-TH-Syntax.html#v:liftData)
+or a simpler [liftData](https://hackage.haskell.org/package/template-haskell-2.20.0.0/docs/Language-Haskell-TH-Syntax.html#v:liftData)
+
 
 ``` haskell
 liftData :: Data a => a -> Q Exp
@@ -946,6 +980,31 @@ eval [expr| $a * $b|] = eval a * eval b
 eval (EInt n) = n
 ```
 
+# bnfc-meta
+
+Instead of writing a parser by hand, we can use BNFC.
+
+Similarly we can use `bnfc-meta` to generate quasiquoters:
+
+``` haskell
+module Expr where
+import Language.LBNF.Compiletime
+import Language.LBNF(lbnf, bnfc)
+
+bnfc [lbnf|
+EAdd . Expr1 ::= Expr1 "+" Expr2 ;
+EMul . Expr2 ::= Expr2 "*" Expr3 ;
+ELit . Expr3 ::= Integer ;
+EVar . Expr3 ::= Ident ;
+coercions Expr 3;
+|]
+------------------------------------------------------------------
+import Expr
+
+exp1 :: Expr
+exp1 = [expr| 2 + 2 |]
+```
+
 # Exercises
 
 * Write a function such that `build_ps n` generates all projections for n-tuples,
@@ -978,3 +1037,5 @@ simpl [expr|$int:n$ + $int:m$|] = [expr| $int:m+n$ |]
 ```
 
 (you are welcome to invent your own syntax in place of `$int: ... $`)
+
+* generate expression quasiquoters using `bnfc-meta`
