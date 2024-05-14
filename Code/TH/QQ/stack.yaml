@@ -15,9 +15,7 @@
 # resolver:
 #  name: custom-snapshot
 #  location: "./custom-snapshot.yaml"
-resolver: lts-16.31
-# GHC 8.6 works too:
-# resolver: lts-13.19
+resolver: lts-20.26
 
 
 # User packages to be built.
