@@ -12,6 +12,7 @@ Code for today is on github:
 * Code/TH/Here - multiline strings with TH (aka here docs)
 * Code/TH/Projections - building declarations in TH
 * Code/TH/QQ  - quasiquotation
+* Code/TH/BnfcMeta - generating quasiquoters using BNFC
 
 # Problem: multiline strings
 
@@ -62,7 +63,7 @@ str = QuasiQuoter { quoteExp = stringE }
 
 Let's try to understand how it works...
 
-# Perhaps a more concincing example
+# Perhaps a more convincing example
 
 Building Web aps with Yesod:
 

@@ -48,3 +48,5 @@ simpl [expr|$int:n$ + $int:m$|] = [expr| $int:m+n$ |]
 ```
 
 (you are welcome to invent your own syntax in place of `$int: ... $`)
+
+* generate expression quasiquoters using `bnfc-meta`

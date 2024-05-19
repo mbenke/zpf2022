@@ -226,6 +226,7 @@
 <li>Code/TH/Here - multiline strings with TH (aka here docs)</li>
 <li>Code/TH/Projections - building declarations in TH</li>
 <li>Code/TH/QQ - quasiquotation</li>
+<li>Code/TH/BnfcMeta - generating quasiquoters using BNFC</li>
 </ul>
 <h1 id="problem-multiline-strings">Problem: multiline strings</h1>
 <div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ot">showClass ::</span> [<span class="dt">Method</span>] <span class="ot">-&gt;</span> <span class="dt">String</span></span>
@@ -262,7 +263,7 @@ main = putStrLn longString
 <span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>str <span class="ot">=</span> <span class="dt">QuasiQuoter</span> { quoteExp <span class="ot">=</span> stringE }</span></code></pre></div>
 <p>Let’s try to understand how it works…</p>
-<h1 id="perhaps-a-more-concincing-example">Perhaps a more concincing example</h1>
+<h1 id="perhaps-a-more-convincing-example">Perhaps a more convincing example</h1>
 <p>Building Web aps with Yesod:</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Links</span> <span class="ot">=</span> <span class="dt">Links</span></span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
