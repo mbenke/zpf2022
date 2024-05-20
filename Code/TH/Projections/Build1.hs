@@ -2,7 +2,9 @@
 module Build1 where
 import Language.Haskell.TH
 
-build_p1 :: Q [Dec]
+
+build_p1 :: Quote m => m [Dec]
+--       :: Q [Dec]
 build_p1 = return
     [ FunD p1 
              [ Clause [TupP [VarP a,VarP b]] (NormalB (VarE a)) []

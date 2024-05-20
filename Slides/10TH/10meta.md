@@ -118,7 +118,7 @@ We can do some experiments in GHCi:
 $ ghci -XTemplateHaskell
 
 > :m +Language.Haskell.TH
-> runQ [| \x -> 1 |]
+> [| \x -> 1 |]
 
 LamE [VarP x_0] (LitE (IntegerL 1))
 
@@ -133,7 +133,7 @@ data Exp
   ...
   	-- Defined in ‘Language.Haskell.TH.Syntax’
 
-> runQ [| \x -> x + 1 |]  >>= putStrLn . pprint
+> [| \x -> x + 1 |]  >>= putStrLn . pprint
 \x_0 -> x_0 GHC.Num.+ 1
 ```
 
@@ -158,15 +158,6 @@ newtype Q a = ... -- Defined in ‘Language.Haskell.TH.Syntax’
 instance Monad Q
 ```
 
-NB in recent versions we have
-```
-[| \x -> 1 |] :: Quote m => m Exp
-instance Quote Q
-```
-
-but the essence remains the same.
-
-
 # Q, runQ
 
 ```
@@ -179,8 +170,7 @@ instance Quasi Q
 instance Quasi IO
 ```
 
-Basically `runQ` can be used to evaluate `Q` computations both in the `Q` context (natural habitat)<br/>
-as well as in the `IO` context (useful for experimentation).
+Basically `runQ` can be used to evaluate `Q` computations both in the `IO` context (useful for experimentation).
 
 <!--
 (curious about `type role Q nominal`? - see e.g. this [question](https://stackoverflow.com/questions/49209788/simplest-examples-demonstrating-the-need-for-nominal-type-role-in-haskell)
@@ -189,11 +179,20 @@ as well as in the `IO` context (useful for experimentation).
 For convenience, most AST constructors have ``smart'' variants, e.g.
 
 ``` haskell
-LitE :: Lit -> Exp
-litE :: Lit -> ExpQ
+Quote m => Lit -> m Exp
 ```
 
 so instead of `return (LitE (IntegerL 42))` we can write `litE (IntegerL 42)`
+
+
+NB in recent versions we have
+```
+[| \x -> 1 |] :: Quote m => m Exp
+instance Quote Q
+instance Quote IO
+```
+
+so that `runQ` is used less often, but the essence remains the same.
 
 # Splicing structure trees into a program (1)
 
@@ -224,7 +223,7 @@ Splicing and quoting can be interleaved:
 > $(let x = [| 2 + 3 |] in [| 2 + $(x) |])
 7
 
-> runQ (let x = [| 2 + 3 |] in [| 2 + $(x) |]) >>= putStrLn . pprint
+> (let x = [| 2 + 3 |] in [| 2 + $(x) |]) >>= putStrLn . pprint
 2 GHC.Num.+ (2 GHC.Num.+ 3)
 ```
 
@@ -243,7 +242,7 @@ power n = [| \k -> k * $(power (n-1)) k |]
 # Splicing structure trees into a program (3)
 
 ```
-> runQ [| succ 1 |]
+> [| succ 1 |]
 AppE (VarE GHC.Enum.succ) (LitE (IntegerL 1))
 > $(return it)
 2
@@ -293,7 +292,7 @@ mkName :: String -> Name
 So far, we have been building expressions, but we can build patterns, declarations, etc.:
 
 ```
-> runQ [d| p1 (a,b) = a |]
+> [d| p1 (a,b) = a |]
 [FunD p1_0 [Clause [TupP [VarP a_1,VarP b_2]] (NormalB (VarE a_1)) []]]
 ```
 
@@ -331,7 +330,7 @@ module Build1 where
 import Language.Haskell.TH
 
 -- p1 (a,b) = a
-build_p1 :: Q [Dec]
+build_p1 :: Quote m => m [Dec]
 build_p1 = return
     [ FunD p1
              [ Clause [TupP [VarP a,VarP b]] (NormalB (VarE a)) []
@@ -351,7 +350,7 @@ $(build_p1)
 
 main = print $ p1 (1,2)
 ```
-[REPLit](https://replit.com/@mbenke/THProjections1)
+<!-- [REPLit](https://replit.com/@mbenke/THProjections1) -->
 
 # Printing the declarations we built
 
@@ -366,7 +365,7 @@ pprLn = putStrLn . pprint
 -- pprint :: Ppr a => a -> String
 
 main = do
-  decs <- runQ build_p1
+  decs <- build_p1
   pprLn decs
   print $ p1(1,2)
 ```
@@ -376,12 +375,23 @@ p1 (a, b) = a
 1
 ```
 
+<!--
 Reminder about `runQ`:
 ``` {.haskell }
 class Monad m => Quasi m where ...
 instance Quasi Q where ...
 instance Quasi IO where ...
 runQ :: Quasi m => Q a -> m a
+```
+-->
+
+Reminder about the `Quote` class:
+```
+class Monad m => Quote m where
+  newName :: String -> m Name
+
+instance Quote Q -- Defined in ‘Language.Haskell.TH.Syntax’
+instance Quote IO -- Defined in ‘Language.Haskell.TH.Syntax’
 ```
 
 # Fresh names
@@ -409,13 +419,18 @@ while `a` and `b` are locals, so we shall generate them using `newName`.
 
 (in newer versions `newName` is a method of the `Quote` class, but its essence remains the same)
 
+```
+newName ""
+_1
+```
+
 # Build2
 
 ``` haskell
 module Build2 where
 import Language.Haskell.TH
 
-build_p1 :: Q [Dec]
+build_p1 :: Quote m => m [Dec]
 build_p1 = do
   let p1 = mkName "p1"
   a <- newName "a"
@@ -434,10 +449,12 @@ import Build2
 
 $(build_p1)
 
-main = print $ p1 (1,2)
+main = do
+  build_p1 >>= putStrLn . pprint
+  print $ p1(1,2)
 ```
 
-[REPLit](https://replit.com/@mbenke/THprojections2)
+<!-- [REPLit](https://replit.com/@mbenke/THprojections2) -->
 
 # Typical TH use
 
@@ -666,7 +683,7 @@ mkAddP = mkBinP "EAdd"
 
 ...but there's a better way
 
-# Why it's good to be Quasiquoted
+# Why it's Good to be Quasiquoted
 
 what if we could instead write
 
