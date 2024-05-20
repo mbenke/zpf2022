@@ -765,7 +765,7 @@ data QuasiQuoter
 </ul>
 <h1 id="building-pattern-ast">Building pattern AST</h1>
 <p>This time we need to construct Template Haskell pattern representation:</p>
-<div class="sourceCode" id="cb58"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a><span class="ot">quoteExprPat ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">TH.Q</span> <span class="dt">TH.Pat</span></span>
+<div class="sourceCode" id="cb58"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a><span class="ot">quoteExprPat ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Q</span> <span class="dt">Pat</span></span>
 <span id="cb58-2"><a href="#cb58-2" aria-hidden="true" tabindex="-1"></a>quoteExprPat s <span class="ot">=</span> <span class="kw">do</span></span>
 <span id="cb58-3"><a href="#cb58-3" aria-hidden="true" tabindex="-1"></a>  pos <span class="ot">&lt;-</span> getPosition</span>
 <span id="cb58-4"><a href="#cb58-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">exp</span> <span class="ot">&lt;-</span> parseExpr pos s</span>
@@ -788,7 +788,8 @@ data QuasiQuoter
 twice e = [expr| $e + $e |]
 
 testTwice = twice [expr| 3 * 3|]</code></pre>
-<p>This is nothing revolutionary. Haskell however, uses variables not only in expressions, but also in patterns, and here the story becomes a little interesting.</p>
+<p>This is nothing revolutionary.</p>
+<p>Haskell however, uses variables not only in expressions, but also in patterns, and here the story becomes a little interesting.</p>
 <h1 id="extending-quasiquoters">Extending quasiquoters</h1>
 <p>Recall the pattern quasiquoter:</p>
 <div class="sourceCode" id="cb61"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb61-1"><a href="#cb61-1" aria-hidden="true" tabindex="-1"></a><span class="ot">quoteExprPat ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Q</span> <span class="dt">Pat</span></span>
@@ -854,7 +855,12 @@ dataToPatQ (const Nothing `extQ` antiExprPat) :: Expr -&gt; Q Pat</code></pre>
 <span id="cb67-10"><a href="#cb67-10" aria-hidden="true" tabindex="-1"></a>pMetaVar <span class="ot">=</span> char <span class="ch">&#39;$&#39;</span> <span class="op">&gt;&gt;</span> <span class="dt">EMetaVar</span> <span class="op">&lt;$&gt;</span> ident</span>
 <span id="cb67-11"><a href="#cb67-11" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb67-12"><a href="#cb67-12" aria-hidden="true" tabindex="-1"></a>test1 <span class="ot">=</span> parse pExpr <span class="st">&quot;test1&quot;</span> <span class="st">&quot;1 - 2 - 3 * 4 &quot;</span></span>
-<span id="cb67-13"><a href="#cb67-13" aria-hidden="true" tabindex="-1"></a>test2 <span class="ot">=</span> parse pExpr <span class="st">&quot;test2&quot;</span> <span class="st">&quot;$x - $y*$z&quot;</span></span></code></pre></div>
+<span id="cb67-13"><a href="#cb67-13" aria-hidden="true" tabindex="-1"></a>test2 <span class="ot">=</span> parse pExpr <span class="st">&quot;test2&quot;</span> <span class="st">&quot;$x - $y*$z&quot;</span></span>
+<span id="cb67-14"><a href="#cb67-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb67-15"><a href="#cb67-15" aria-hidden="true" tabindex="-1"></a>ghci<span class="op">&gt;</span> test1</span>
+<span id="cb67-16"><a href="#cb67-16" aria-hidden="true" tabindex="-1"></a><span class="dt">Right</span> (<span class="dt">ESub</span> (<span class="dt">ESub</span> (<span class="dt">EInt</span> <span class="dv">1</span>) (<span class="dt">EInt</span> <span class="dv">2</span>)) (<span class="dt">EMul</span> (<span class="dt">EInt</span> <span class="dv">3</span>) (<span class="dt">EInt</span> <span class="dv">4</span>)))</span>
+<span id="cb67-17"><a href="#cb67-17" aria-hidden="true" tabindex="-1"></a>ghci<span class="op">&gt;</span> test2</span>
+<span id="cb67-18"><a href="#cb67-18" aria-hidden="true" tabindex="-1"></a><span class="dt">Right</span> (<span class="dt">ESub</span> (<span class="dt">EMetaVar</span> <span class="st">&quot;x&quot;</span>) (<span class="dt">EMul</span> (<span class="dt">EMetaVar</span> <span class="st">&quot;y&quot;</span>) (<span class="dt">EMetaVar</span> <span class="st">&quot;z&quot;</span>)))</span></code></pre></div>
 <h1 id="antiquoting-metavariables">Antiquoting metavariables</h1>
 <p>The antiquoter is defined as an extension for the <code>dataToPatQ</code>:</p>
 <div class="sourceCode" id="cb68"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb68-1"><a href="#cb68-1" aria-hidden="true" tabindex="-1"></a><span class="ot">antiExprPat ::</span> <span class="dt">Expr</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Q</span> <span class="dt">Pat</span>)</span>

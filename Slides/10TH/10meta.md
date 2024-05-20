@@ -842,7 +842,7 @@ This can be done similarly to the quasiquoter for expressions:
 This time we need to construct Template Haskell pattern representation:
 
 ``` haskell
-quoteExprPat :: String -> TH.Q TH.Pat
+quoteExprPat :: String -> Q Pat
 quoteExprPat s = do
   pos <- getPosition
   exp <- parseExpr pos s
@@ -879,7 +879,9 @@ twice e = [expr| $e + $e |]
 testTwice = twice [expr| 3 * 3|]
 ```
 
-This is nothing revolutionary. Haskell however, uses variables not only in expressions, but also in patterns, and here the story becomes a little interesting.
+This is nothing revolutionary.
+
+Haskell however, uses variables not only in expressions, but also in patterns, and here the story becomes a little interesting.
 
 # Extending quasiquoters
 
@@ -975,6 +977,11 @@ pMetaVar = char '$' >> EMetaVar <$> ident
 
 test1 = parse pExpr "test1" "1 - 2 - 3 * 4 "
 test2 = parse pExpr "test2" "$x - $y*$z"
+
+ghci> test1
+Right (ESub (ESub (EInt 1) (EInt 2)) (EMul (EInt 3) (EInt 4)))
+ghci> test2
+Right (ESub (EMetaVar "x") (EMul (EMetaVar "y") (EMetaVar "z")))
 ```
 
 # Antiquoting metavariables
