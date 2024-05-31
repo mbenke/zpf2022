@@ -7,7 +7,7 @@
   <meta http-equiv="Content-Style-Type" content="text/css" />
   <meta name="generator" content="pandoc" />
   <meta name="author" content="Marcin Benke" />
-  <meta name="date" content="2023-06-06" />
+  <meta name="date" content="2024-06-04" />
   <title>Advanced Functional Programming</title>
   <style type="text/css">
     code{white-space: pre-wrap;}
@@ -93,7 +93,7 @@
   <p class="author">
 Marcin Benke
   </p>
-  <p class="date">June 6, 2023</p>
+  <p class="date">June 4, 2024</p>
 </div>
 <div class="slide section level1">
 
@@ -153,7 +153,7 @@ Marcin Benke
 <ul>
 <li><p>Operations on values are described by types</p></li>
 <li><p>Operations on types are described by kinds</p></li>
-<li><p>Types (e.g. <code>Int</code>) are of kind <code>*</code></p></li>
+<li><p>Types (e.g. <code>Int</code>) are of kind <code>*</code> (newer GHC versions prefer <code>Type</code> instead of <code>*</code>)</p></li>
 <li><p>One argument constructors (e.g. <code>Maybe</code>) are of kind <code>* -&gt; *</code></p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> <span class="dt">Functor</span> f <span class="ot">=&gt;</span> <span class="dt">Pointed</span> (<span class="ot">f ::</span> <span class="op">*</span> <span class="ot">-&gt;</span> <span class="op">*</span>) <span class="kw">where</span></span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="ot">    pure ::</span> <span class="kw">forall</span> (<span class="ot">a ::</span> <span class="op">*</span>)<span class="op">.</span>a <span class="ot">-&gt;</span> f a</span></code></pre></div></li>
@@ -282,7 +282,7 @@ Amount 10.0
 <h1>Promotion</h1>
 <p>If we have the <code>Nat</code> datatype, types for zero and successor can be automatically generated:</p>
 <div class="sourceCode" id="cb19"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="ot">{-# LANGUAGE GADTs, DataKinds, KindSignatures #-}</span></span>
-<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Nat</span><span class="ot"> ::</span> <span class="op">*</span> <span class="kw">where</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Nat</span><span class="ot"> ::</span> <span class="dt">Type</span> <span class="kw">where</span></span>
 <span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Z</span><span class="ot"> ::</span> <span class="dt">Nat</span></span>
 <span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">S</span><span class="ot"> ::</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="dt">Nat</span></span></code></pre></div>
 <div class="sourceCode" id="cb20"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- This defines</span></span>
@@ -303,13 +303,13 @@ Amount 10.0
 </div>
 <div id="vec-with-promoted-nat" class="slide section level1">
 <h1>Vec with promoted Nat</h1>
-<div class="sourceCode" id="cb21"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Nat</span><span class="ot"> ::</span> <span class="op">*</span> <span class="kw">where</span></span>
+<div class="sourceCode" id="cb21"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Nat</span><span class="ot"> ::</span> <span class="dt">Type</span> <span class="kw">where</span></span>
 <span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Z</span><span class="ot"> ::</span> <span class="dt">Nat</span></span>
 <span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">S</span><span class="ot"> ::</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="dt">Nat</span></span>
 <span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a><span class="co">-- Nat is a kind, and so is Nat -&gt; * -&gt; *</span></span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a><span class="co">-- Nat is a kind, and so is Nat -&gt; Type -&gt; Type</span></span>
 <span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a><span class="kw">infixr</span> <span class="dv">6</span> <span class="op">:&gt;</span></span>
-<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Vec</span><span class="ot"> ::</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="op">*</span> <span class="ot">-&gt;</span> <span class="op">*</span> <span class="kw">where</span></span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Vec</span><span class="ot"> ::</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="kw">where</span></span>
 <span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>  <span class="dt">V0</span><span class="ot">   ::</span> <span class="dt">Vec</span> <span class="dt">&#39;Z</span> a</span>
 <span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a><span class="ot">  (:&gt;) ::</span> a <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a <span class="ot">-&gt;</span> <span class="dt">Vec</span> (<span class="dt">&#39;S</span> n) a</span>
 <span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a></span>
@@ -322,11 +322,11 @@ Amount 10.0
 <div id="other-promotion-examples" class="slide section level1">
 <h1>Other promotion examples</h1>
 <p>Heterogenous lists:</p>
-<div class="sourceCode" id="cb22"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">HList</span><span class="ot"> ::</span> [<span class="op">*</span>] <span class="ot">-&gt;</span> <span class="op">*</span> <span class="kw">where</span> <span class="co">-- [*] is a list of types</span></span>
+<div class="sourceCode" id="cb22"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">HList</span><span class="ot"> ::</span> [<span class="dt">Type</span>] <span class="ot">-&gt;</span> <span class="dt">Type</span> <span class="kw">where</span> <span class="co">-- [Type] is a list of types</span></span>
 <span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">HNil</span><span class="ot">  ::</span> <span class="dt">HList</span> &#39;[]</span>
 <span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">HCons</span><span class="ot"> ::</span> a <span class="ot">-&gt;</span> <span class="dt">HList</span> t <span class="ot">-&gt;</span> <span class="dt">HList</span> (a &#39;<span class="op">:</span> t)</span>
 <span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a><span class="ot">foo0 ::</span> <span class="dt">HList</span> &#39;[]</span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a><span class="ot">foo0 ::</span> <span class="dt">HList</span> &#39;[]  <span class="co">-- The tick (&#39;) is necessary here</span></span>
 <span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>foo0 <span class="ot">=</span> <span class="dt">HNil</span></span>
 <span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a><span class="ot">foo1 ::</span> <span class="dt">HList</span> &#39;[<span class="dt">Int</span>]</span>
@@ -334,7 +334,6 @@ Amount 10.0
 <span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a><span class="ot">foo2 ::</span> <span class="dt">HList</span> [<span class="dt">Int</span>, <span class="dt">Bool</span>]</span>
 <span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a>foo2 <span class="ot">=</span> <span class="fu">undefined</span>  <span class="co">-- (easy) exercise</span></span></code></pre></div>
-<p>It is in a sense a generalisation of vectors: <code>Nat ~ [()]</code></p>
 </div>
 <div id="vector-concatenation" class="slide section level1">
 <h1>Vector concatenation</h1>
@@ -696,17 +695,16 @@ vaccrev acc V0 = acc</code></pre>
 <span id="cb61-4"><a href="#cb61-4" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb61-5"><a href="#cb61-5" aria-hidden="true" tabindex="-1"></a><span class="co">-- implicit quantification</span></span>
 <span id="cb61-6"><a href="#cb61-6" aria-hidden="true" tabindex="-1"></a><span class="co">-- plus_id_l_impl :: forall (n::Nat).(Z :+ n) :~: n </span></span>
-<span id="cb61-7"><a href="#cb61-7" aria-hidden="true" tabindex="-1"></a><span class="ot">plus_id_l_impl ::</span> <span class="kw">forall</span><span class="ot"> n::</span><span class="dt">Nat</span><span class="op">.</span>(<span class="dt">Z</span> <span class="op">:+</span> n) <span class="op">:~:</span> n </span>
-<span id="cb61-8"><a href="#cb61-8" aria-hidden="true" tabindex="-1"></a><span class="ot">plus_id_l_impl ::</span> (<span class="dt">Z</span> <span class="op">:+</span> n) <span class="op">:~:</span> n </span>
-<span id="cb61-9"><a href="#cb61-9" aria-hidden="true" tabindex="-1"></a>plus_id_l_impl <span class="ot">=</span> <span class="dt">Refl</span></span>
-<span id="cb61-10"><a href="#cb61-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb61-11"><a href="#cb61-11" aria-hidden="true" tabindex="-1"></a><span class="co">-- Prove by induction: n+0 ~ n</span></span>
-<span id="cb61-12"><a href="#cb61-12" aria-hidden="true" tabindex="-1"></a><span class="co">-- Pattern-match on n, so explicit quantification</span></span>
-<span id="cb61-13"><a href="#cb61-13" aria-hidden="true" tabindex="-1"></a><span class="co">-- Compare with Coq Agda or Idris</span></span>
-<span id="cb61-14"><a href="#cb61-14" aria-hidden="true" tabindex="-1"></a><span class="ot">plus_id_r ::</span> <span class="dt">SNat</span> n <span class="ot">-&gt;</span> (n <span class="op">:+</span> <span class="dt">Z</span>) <span class="op">:~:</span> n</span>
-<span id="cb61-15"><a href="#cb61-15" aria-hidden="true" tabindex="-1"></a>plus_id_r <span class="dt">SZ</span> <span class="ot">=</span> <span class="dt">Refl</span>                      <span class="co">-- (Z :+ Z) :~: Z </span></span>
-<span id="cb61-16"><a href="#cb61-16" aria-hidden="true" tabindex="-1"></a>plus_id_r (<span class="dt">SS</span> m) <span class="ot">=</span> cong <span class="op">@</span><span class="dt">S</span> (plus_id_r m) <span class="co">-- S(m :+ Z) :~: S m</span></span>
-<span id="cb61-17"><a href="#cb61-17" aria-hidden="true" tabindex="-1"></a><span class="co">-- @S is optional above, added only for clarity</span></span></code></pre></div>
+<span id="cb61-7"><a href="#cb61-7" aria-hidden="true" tabindex="-1"></a><span class="ot">plus_id_l_impl ::</span> (<span class="dt">Z</span> <span class="op">:+</span> n) <span class="op">:~:</span> n </span>
+<span id="cb61-8"><a href="#cb61-8" aria-hidden="true" tabindex="-1"></a>plus_id_l_impl <span class="ot">=</span> <span class="dt">Refl</span></span>
+<span id="cb61-9"><a href="#cb61-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb61-10"><a href="#cb61-10" aria-hidden="true" tabindex="-1"></a><span class="co">-- Prove by induction: n+0 ~ n</span></span>
+<span id="cb61-11"><a href="#cb61-11" aria-hidden="true" tabindex="-1"></a><span class="co">-- Pattern-match on n, so explicit quantification</span></span>
+<span id="cb61-12"><a href="#cb61-12" aria-hidden="true" tabindex="-1"></a><span class="co">-- Compare with Coq Agda or Idris</span></span>
+<span id="cb61-13"><a href="#cb61-13" aria-hidden="true" tabindex="-1"></a><span class="ot">plus_id_r ::</span> <span class="dt">SNat</span> n <span class="ot">-&gt;</span> (n <span class="op">:+</span> <span class="dt">Z</span>) <span class="op">:~:</span> n</span>
+<span id="cb61-14"><a href="#cb61-14" aria-hidden="true" tabindex="-1"></a>plus_id_r <span class="dt">SZ</span> <span class="ot">=</span> <span class="dt">Refl</span>                      <span class="co">-- (Z :+ Z) :~: Z </span></span>
+<span id="cb61-15"><a href="#cb61-15" aria-hidden="true" tabindex="-1"></a>plus_id_r (<span class="dt">SS</span> m) <span class="ot">=</span> cong <span class="op">@</span><span class="dt">S</span> (plus_id_r m) <span class="co">-- S(m :+ Z) :~: S m</span></span>
+<span id="cb61-16"><a href="#cb61-16" aria-hidden="true" tabindex="-1"></a><span class="co">-- @S is optional above, added only for clarity</span></span></code></pre></div>
 </div>
 <div id="one-more-lemma" class="slide section level1">
 <h1>One more lemma</h1>

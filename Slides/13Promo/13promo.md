@@ -2,7 +2,7 @@
 title: Advanced Functional Programming
 subtitle: The Pleasure and Pain of Dependent Types in Haskell
 author:  Marcin Benke
-date: June 6, 2023
+date: June 4, 2024
 ---
 
 <meta name="duration" content="80" />
@@ -69,7 +69,7 @@ plus_id_r :: SNat n -> (n :+ Z) :~: n
 
 * Operations on types are described by kinds
 
-* Types (e.g. `Int`) are of kind `*`
+* Types (e.g. `Int`) are of kind `*` (newer GHC versions prefer `Type` instead of `*`)
 
 * One argument constructors  (e.g. `Maybe`) are of kind `* -> *`
 
@@ -88,6 +88,7 @@ plus_id_r :: SNat n -> (n :+ Z) :~: n
 GHC has also an  internal kind `#` for unboxed types (e.g. `Int#`)
 
 As we shall see, more kinds may be introduced.
+
 
 # Hutton's Razor: Expr1
 
@@ -243,7 +244,7 @@ If we have the `Nat` datatype, types for zero and successor can be automatically
 
 ``` {.haskell}
 {-# LANGUAGE GADTs, DataKinds, KindSignatures #-}
-data Nat :: * where
+data Nat :: Type where
   Z :: Nat
   S :: Nat -> Nat
 ```
@@ -269,13 +270,13 @@ data Nat :: * where
 # Vec with promoted Nat
 
 ``` haskell
-data Nat :: * where
+data Nat :: Type where
   Z :: Nat
   S :: Nat -> Nat
 
--- Nat is a kind, and so is Nat -> * -> *
+-- Nat is a kind, and so is Nat -> Type -> Type
 infixr 6 :>
-data Vec :: Nat -> * -> * where
+data Vec :: Nat -> Type -> Type where
   V0   :: Vec 'Z a
   (:>) :: a -> Vec n a -> Vec ('S n) a
 
@@ -292,11 +293,11 @@ vhead (x:>_) = x
 Heterogenous lists:
 
 ``` haskell
-data HList :: [*] -> * where -- [*] is a list of types
+data HList :: [Type] -> Type where -- [Type] is a list of types
   HNil  :: HList '[]
   HCons :: a -> HList t -> HList (a ': t)
 
-foo0 :: HList '[]
+foo0 :: HList '[]  -- The tick (') is necessary here
 foo0 = HNil
 
 foo1 :: HList '[Int]
@@ -306,8 +307,6 @@ foo2 :: HList [Int, Bool]
 foo2 = undefined  -- (easy) exercise
 
 ```
-
-It is in a sense a generalisation of vectors: `Nat ~ [()]`
 
 # Vector concatenation
 We have seen that addition can be defined with classes:
@@ -812,7 +811,6 @@ plus_id_l _ = Refl
 
 -- implicit quantification
 -- plus_id_l_impl :: forall (n::Nat).(Z :+ n) :~: n 
-plus_id_l_impl :: forall n::Nat.(Z :+ n) :~: n 
 plus_id_l_impl :: (Z :+ n) :~: n 
 plus_id_l_impl = Refl
 
