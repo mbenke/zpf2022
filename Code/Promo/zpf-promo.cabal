@@ -1,0 +1,28 @@
+cabal-version:      3.4
+name:               zpf-promo
+version:            0.1.0.0
+-- synopsis:
+-- description:
+license:            MIT
+-- license-file:       LICENSE
+author:             Marcin Benke
+maintainer:         marcin@benke.org
+-- copyright:
+category:           Language
+build-type:         Simple
+-- extra-doc-files:    CHANGELOG.md
+-- extra-source-files:
+
+common warnings
+    ghc-options: -Wall
+
+library
+--    import:           warnings
+    exposed-modules:  MyLib
+    other-modules:    Promo, Singletons, TypeEquality
+    -- other-extensions:
+    build-depends:    base ^>=4.16.4.0,
+                      singletons ^>= 3.0,
+                      singletons-th,
+    hs-source-dirs:   .
+    default-language: GHC2021
