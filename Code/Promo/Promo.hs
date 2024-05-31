@@ -9,8 +9,9 @@
 {-# LANGUAGE RankNTypes #-}
 
 module Promo where
+import Data.Kind
 
-data Nat :: * where
+data Nat :: Type where
   Z :: Nat
   S :: Nat -> Nat
 
@@ -31,24 +32,24 @@ data Nat :: * where
 -- type T2 = 'P    -- promoted 2
 
 -- Other promotions
-data HList :: [*] -> * where
+data HList :: [Type] -> Type where
   HNil  :: HList '[]
   HCons :: a -> HList t -> HList (a ': t)
 
-data Tuple :: (*,*) -> * where
+data Tuple :: (Type,Type) -> Type where
   Tuple :: a -> b -> Tuple '(a,b)
 
-foo0 :: HList '[]
+foo0 :: HList '[]  -- The tick (') is necessary here
 foo0 = HNil
 
 foo1 :: HList '[Int]
 foo1 = HCons 3 HNil
 
-foo2 :: HList [Int, Bool]
+foo2 :: HList '[Int, Bool]
 foo2 = HCons 3 (HCons True HNil)
 
 infixr 6 :>
-data Vec :: Nat -> * -> * where
+data Vec :: Nat -> Type -> Type where
   V0   :: Vec 'Z a
   (:>) :: a -> Vec n a -> Vec ('S n) a
 
@@ -58,8 +59,8 @@ deriving instance (Show a) => Show (Vec n a)
 infixl 6 :+
 
 type family (n :: Nat) :+ (m :: Nat) :: Nat
-type instance Z :+ m = m
-type instance (S n) :+ m = S (n :+ m)
+type instance 'Z :+ m = m
+type instance ('S n) :+ m = 'S (n :+ m)
 
 vhead :: Vec ('S n) a -> a
 vhead (x:>_) = x
@@ -85,6 +86,7 @@ data Fin n where
 atIndex :: Vec n a -> Fin n -> a
 atIndex (x:>_) FinZ = x
 atIndex (_:>xs) (FinS k) = atIndex xs k
+atIndex V0 _ = error "atIndex: empty vector"
 
 -- Exercise: why not:
 -- atIndex :: Vec (S n) a -> ... ?
@@ -162,7 +164,7 @@ nth (SS m') (_:>xs) = nth m' xs
 -- >>> vtake0 (SS SZ) (1 :> 2 :> V0)
 -- 1 :> V0
 vtake0 :: forall m n a.SNat m -> Vec (m :+ n) a -> Vec m a
-vtake0 m v = let (a,b) = vchop m v :: (Vec m a, Vec n a) in a
+vtake0 m v = let (a,_) = vchop m v :: (Vec m a, Vec n a) in a
 -- vchop :: SNat m -> Vec(m:+n) a -> (Vec m a, Vec n a)
 
 -- | Take first `n` elements of a vector
@@ -179,7 +181,7 @@ vtake1' SZ _  _ = V0
 vtake1' (SS m) n (x:>xs) = x :> vtake1' m n xs
 
 -- | Nat Proxy
-data NP :: Nat -> * where NP :: NP n
+data NP :: Nat -> Type where NP :: NP n
 
 -- >>> let v = 1 :> (1 :> (1 :> V0)); two = SS(SS SZ) in vtake2 two NP v
 -- 1 :> (1 :> V0)
@@ -188,7 +190,7 @@ vtake2 SZ     _ _ = V0
 vtake2 (SS m) n (x:>xs) = x :> vtake2 m n xs
 
 -- | Generic Proxy
-data Proxy :: k -> * where
+data Proxy :: k -> Type where
   Proxy :: Proxy (i::k)
 
 -- >>> let v = 1 :> (1 :> (1 :> V0)); two = SS(SS SZ) in vtake3 two Proxy v
@@ -211,10 +213,10 @@ vtake4 (SS m) (x:>xs) = x :> vtake4 @n m xs
 class SNAT(n::Nat) where
   snat :: SNat n
 
-instance SNAT Z where
+instance SNAT 'Z where
   snat = SZ
 
-instance SNAT n => SNAT (S n) where
+instance SNAT n => SNAT ('S n) where
   snat = SS snat
 
 -- >>> vtrunc Proxy (1 :> 2 :> 3 :> 4 :> V0) :: Vec (S (S Z)) Int
@@ -235,7 +237,7 @@ naiverev (x:xs) = naiverev xs ++ [x]
 vrev1 :: Vec n a -> Vec n a
 vrev1 V0 = V0
 -- vrev1 (x:>xs) = vapp (vrev1 xs) (x:>V0)
-vrev1 (x:>xs) = undefined
+vrev1 (_x:>_xs) = undefined
 
 -- | vrev2
 -- >>> vrev2 (1:>2:>3:>V0)
@@ -244,7 +246,7 @@ vrev2 :: Vec n a -> Vec n a
 vrev2 V0 = V0
 vrev2 (x:>xs) = snoc (vrev2 xs) x
 
-snoc :: Vec n a -> a -> Vec (S n) a
+snoc :: Vec n a -> a -> Vec ('S n) a
 snoc V0 y = y :> V0
 snoc (x:>xs) y = x :> snoc xs y
 

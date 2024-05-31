@@ -9,6 +9,8 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
+import Data.Kind
+
 -- cf Data.Type.Equality
 
 infix 4 :~:
@@ -42,27 +44,27 @@ data Nat = Z | S Nat
 
 infixl 6 :+
 type family (n::Nat) :+ (m::Nat) :: Nat where
-  Z :+ m = m
-  S n :+ m = S(n :+ m)
+  'Z :+ m = m
+  'S n :+ m = 'S(n :+ m)
 
 data SNat n where
-  SZ :: SNat Z
-  SS :: SNat n -> SNat (S n)
+  SZ :: SNat 'Z
+  SS :: SNat n -> SNat ('S n)
 
 -- # Nat Proofs
 -- this is trivial
-plus_id_l :: SNat n -> Z :+ n :~: n
+plus_id_l :: SNat n -> 'Z :+ n :~: n
 plus_id_l _ = Refl
 
 
 -- implicit quant
 -- plus_id_l_impl :: forall (n::Nat).(Z :+ n) :~: n 
-plus_id_l_impl :: (Z :+ n) :~: n 
+plus_id_l_impl :: ('Z :+ n) :~: n 
 plus_id_l_impl = Refl
 
-plus_id_r :: SNat n -> n :+ Z :~: n
+plus_id_r :: SNat n -> n :+ 'Z :~: n
 plus_id_r SZ = Refl
-plus_id_r (SS m) = cong @S (plus_id_r m)
+plus_id_r (SS m) = cong @'S (plus_id_r m)
 -- @S is optional above, added only for clarity
 
 -- S m + Z ~ S(m + Z)
@@ -73,7 +75,7 @@ succ_plus_id _ _ = Refl
 -- succ_plus_id_impl = Refl
 
 infixr 6 :>
-data Vec :: * -> Nat -> * where
+data Vec :: Type -> Nat ->Type where
   V0 :: Vec a Z
   (:>) :: a -> Vec a n -> Vec a (S n)
 
@@ -124,6 +126,7 @@ accrev xs = go SZ V0 xs where
   go alen acc (h:>t) =  go (SS alen) (h:>acc) t 
                        `by` (plus_succ_r2 alen (size t)) -- x + S y ~ S(x+y)         
 
+main :: IO ()
 main = print $ accrev $ 1 :> 2 :> 3 :> V0
 
 --Exercise: implement a vector variant of
