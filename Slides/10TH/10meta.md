@@ -268,6 +268,10 @@ VarE :: Name -> Exp
 
 `VarE` needs a `Name`
 
+```
+$(return (AppE (VarE 'succ) (LitE (IntegerL 1))))
+```
+
 # Making a Name from String
 
 `VarE` needs a `Name`
