@@ -1,7 +1,7 @@
 ---
 title: Advanced Functional Programming
 author:  Marcin Benke
-date: Feb 27, 2024
+date: Feb 25, 2025
 ---
 
 <meta name="duration" content="80" />
@@ -12,15 +12,14 @@ date: Feb 27, 2024
     * Constructor classes
     * Multiparameter classes, functional dependencies
 * Testing (QuickCheck)
+* Metaprogramming (Template Haskell, Quasiquoters)
 * Dependent types, Agda, Idris, Coq, proving properties (ca 7 weeks)
 * Dependent types in Haskell
     * Type families, associated types, GADTs
     * data kinds, kind polymorphism
-* Metaprogramming
 * Parallel and concurrent programming in Haskell
     * Multicore and multiprocessor programming (SMP)
     * Concurrency
-    * Data Parallel Haskell
 * Project presentations
 
 Any wishes?
@@ -28,8 +27,11 @@ Any wishes?
 # Passing the course (Zasady zaliczania)
 * Lab: fixed Coq project, student-defined simple Haskell project (group projects are encouraged)
 * Oral exam, most important part of which is project presentation
+* First presentation round: Jun 10, second round Jul 1-4 (tentative)
 * Alternative to Haskell project: presentation on interesting Haskell topics during the lecture (possibly plus lab)
     * Anyone interested?
+
+
 
 # Installing GHC on your machine
 
@@ -39,7 +41,7 @@ Simplest way - `ghcup`: `https://www.haskell.org/ghcup/` np.
 curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh
 ```
 
-Alternatively you can use `stack`: http://haskellstack.org e.g.
+Alternatively you can use `stack`: `http://haskellstack.org` e.g.
 
 ```
 curl -sSL https://get.haskellstack.org/ | sh
@@ -97,9 +99,7 @@ If `f x` gives a result, it must be `x`
 
 # Types as a specification language (2)
 
-`g :: Integer -> Integer` may not have side effects visible outside
-
-It may have local side effects
+`g :: Integer -> Integer` may not have side effects visible outside (but may have local effects)
 
 Example: Fibonacci numbers in constant memory
 
@@ -107,20 +107,21 @@ Example: Fibonacci numbers in constant memory
 import Control.Monad.ST
 import Data.STRef
 fibST :: Integer -> Integer
-fibST n =
-    if n < 2 then n else runST fib2 where
-      fib2 =  do
-        x <- newSTRef 0
-        y <- newSTRef 1
-        fib3 n x y
+fibST n = if n < 2 then n else runST (fib2 n)
 
-      fib3 0 x _ = readSTRef x
-      fib3 n x y = do
-              x' <- readSTRef x
-              y' <- readSTRef y
-              writeSTRef x y'
-              writeSTRef y (x'+y')
-              fib3 (n-1) x y
+fib2 :: Integer -> ST s Integer
+fib2 n =  do
+  x <- newSTRef 0
+  y <- newSTRef 1
+  fib3 n x y
+
+fib3 0 x _ = readSTRef x
+fib3 n x y = do
+        x' <- readSTRef x
+        y' <- readSTRef y
+        writeSTRef x y'
+        writeSTRef y (x'+y')
+        fib3 (n-1) x y
 ~~~~
 
 How come?
