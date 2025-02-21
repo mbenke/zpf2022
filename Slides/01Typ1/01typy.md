@@ -439,7 +439,7 @@ parallellises to any number of cores (also CUDA)
     data Tree a = Leaf | Node a (Tree a) (Tree a)
     ~~~~
 
-* `Leaf`, `Node` are *value constructors
+* `Leaf`, `Node` are *value constructors*
 
     ~~~~ {.haskell}
     data Tree a where
@@ -603,6 +603,12 @@ newtype IdentityT m a = IdentityT { runIdentityT :: m a }
 NB spaces are obligatory - `::*->*` is one lexem
 
 Newer Haskell versions allow introducing user kinds - we'll talk about them later.
+
+Also note recent trend of using `Type` (imported from `Data.Kind`)instead of `*`:
+
+``` haskell
+newtype StateT s (m :: Type -> Type) a = StateT (s -> m (a, s))
+```
 
 # Multiparameter typeclasses
 
@@ -884,6 +890,10 @@ noproblem1 = ins2 (1::Int) (2::Int) empty
 noproblem2 :: [Char]
 noproblem2 = ins2 'a' 'b' empty
 ```
+
+`Elem c` is *associated* with class `Collection`
+
+`Elem` can be viewed as a family of types, hence `TypeFamilies`
 
 # Type families
 
