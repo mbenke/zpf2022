@@ -24,33 +24,16 @@ date: Feb 25, 2025
 
 Any wishes?
 
+# Course Materials
+
+https://github.com/mbenke/zpf2022
+
 # Passing the course (Zasady zaliczania)
 * Lab: fixed Coq project, student-defined simple Haskell project (group projects are encouraged)
 * Oral exam, most important part of which is project presentation
 * First presentation round: Jun 10, second round Jul 1-4 (tentative)
 * Alternative to Haskell project: presentation on interesting Haskell topics during the lecture (possibly plus lab)
     * Anyone interested?
-
-
-
-# Installing GHC on your machine
-
-Simplest way - `ghcup`: `https://www.haskell.org/ghcup/` np.
-
-```
-curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh
-```
-
-Alternatively you can use `stack`: `http://haskellstack.org` e.g.
-
-```
-curl -sSL https://get.haskellstack.org/ | sh
-stack setup
-stack ghci
-```
-
-(but cabal has improved a lot, so there is less reasons to use stack these days)
-
 
 
 # Functional languages
