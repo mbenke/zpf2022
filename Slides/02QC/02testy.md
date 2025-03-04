@@ -2,7 +2,7 @@
 title: Advanced Functional Programming
 subtitle: Testing
 author:  Marcin Benke
-date: Mar 5, 2024
+date: Mar 4, 2025
 ---
 
 <meta name="duration" content="80" />
