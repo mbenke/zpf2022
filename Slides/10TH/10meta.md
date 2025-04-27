@@ -2,7 +2,7 @@
 title: Advanced Functional Programming
 subtitle: Metaprogramming - Template Haskell, Quasiquotation
 author:  Marcin Benke
-date: May 14, 2024
+date: Apr 29, 2025
 ---
 
 # Metaprogramming - Template Haskell
@@ -71,7 +71,7 @@ Building Web aps with Yesod:
 data Links = Links
 
 mkYesod "Links" [parseRoutes|
-/ HomeR GET
+/      HomeR  GET
 /page1 Page1R GET
 /page2 Page2R GET
 |]
@@ -424,7 +424,9 @@ while `a` and `b` are locals, so we shall generate them using `newName`.
 (in newer versions `newName` is a method of the `Quote` class, but its essence remains the same)
 
 ```
-newName ""
+ghci> newName ""
+_0
+ghci> newName ""
 _1
 ```
 
@@ -520,7 +522,7 @@ main = mapM_ print
     ]
 ```
 
-[REPLit](https://replit.com/@mbenke/THProjections3)
+<!-- [REPLit](https://replit.com/@mbenke/THProjections3) -->
 
 # Quote, eval, quasiquote
 
@@ -786,7 +788,9 @@ liftData :: Data a => a -> Q Exp
 
 # Data.Data.Data
 
-To use `dataToExpQ` or `liftData` we need a `Data.Data.Data` instance for `Expr`:
+To use `dataToExpQ` or `liftData` we need a `Data.Data.Data` instance for `Expr`.
+
+This would be total bolerplate, luckily it can be derived:
 
 ``` haskell
 {-# LANGUAGE DeriveDataTypeable #-}
