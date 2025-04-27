@@ -21,7 +21,7 @@ executable BnfcMeta
     main-is:          Main.hs
     other-modules: Expr
     -- other-extensions:
-    build-depends:    base ^>=4.16.4.0,
+    build-depends:    base >=4.16.4.0,
                       mtl >= 2.2,
                       containers >= 0.6,
                       BNFC-meta >= 0.6,
