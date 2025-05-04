@@ -12,7 +12,7 @@ executable badfib
   main-is: badfib.hs
   other-modules:
       Paths_zpf_par
-  ghc-options: -O2 -threaded -rtsopts -eventlog
+  ghc-options: -O2 -threaded -rtsopts
   build-depends:
       array
     , base
@@ -24,7 +24,7 @@ executable badfib2
   main-is: parfib2.hs
   other-modules:
       Paths_zpf_par
-  ghc-options: -O2 -threaded -rtsopts -eventlog
+  ghc-options: -O2 -threaded -rtsopts
   build-depends:
       array
     , base
@@ -36,7 +36,7 @@ executable parfib
   main-is: parfib.hs
   other-modules:
       Paths_zpf_par
-  ghc-options: -O2 -threaded -rtsopts -eventlog
+  ghc-options: -O2 -threaded -rtsopts
   build-depends:
       array
     , base
@@ -48,7 +48,7 @@ executable sudoku1
   main-is: sudoku1.hs
   other-modules:
       Sudoku
-  ghc-options: -O2 -threaded -rtsopts -eventlog
+  ghc-options: -O2 -threaded -rtsopts
   build-depends:
       array
     , base
@@ -60,7 +60,7 @@ executable sudoku2
   main-is: sudoku2.hs
   other-modules:
       Sudoku
-  ghc-options: -O2 -threaded -rtsopts -eventlog
+  ghc-options: -O2 -threaded -rtsopts
   build-depends:
       array
     , base
@@ -72,7 +72,7 @@ executable sudoku3
   main-is: sudoku3.hs
   other-modules:
       Sudoku
-  ghc-options: -O2 -threaded -rtsopts -eventlog
+  ghc-options: -O2 -threaded -rtsopts
   build-depends:
       array
     , base
@@ -84,7 +84,7 @@ executable sudoku3b
   main-is: sudoku3b.hs
   other-modules:
       Sudoku
-  ghc-options: -O2 -threaded -rtsopts -eventlog
+  ghc-options: -O2 -threaded -rtsopts
   build-depends:
       array
     , base
@@ -96,7 +96,7 @@ executable sudoku4
   main-is: sudoku4.hs
   other-modules:
       Sudoku
-  ghc-options: -O2 -threaded -rtsopts -eventlog
+  ghc-options: -O2 -threaded -rtsopts
   build-depends:
       array
     , base
