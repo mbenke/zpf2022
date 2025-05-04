@@ -103,3 +103,26 @@ executable sudoku4
     , deepseq
     , parallel
   default-language: Haskell2010
+
+executable sudoku5parList
+  main-is: sudoku5parList.hs
+  other-modules:
+      Sudoku
+  ghc-options: -O2 -threaded -rtsopts
+  build-depends:
+      array
+    , base
+    , parallel
+  default-language: Haskell2010
+
+executable sudoku6badParList
+  main-is: sudoku6badParList.hs
+  other-modules:
+      Sudoku
+  ghc-options: -O2 -threaded -rtsopts
+  build-depends:
+      array
+    , base
+    , parallel
+  default-language: Haskell2010
+    

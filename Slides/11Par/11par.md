@@ -2,7 +2,7 @@
 title: Advanced Functional Programming
 subtitle: Parallelism and Concurrency
 author:  Marcin Benke
-date: May 23, 2023
+date: May 6, 2025
 ---
 
 # Parallelism vs concurrency
@@ -283,7 +283,7 @@ main = do
 
 ```
 $ ghc -O2 -threaded sudoku1.hs
-$ ./sudoku1 sudoku17.1000.txt +RTS -s
+$ ./sudoku1 problems.txt +RTS -s
   TASKS: 3 (1 bound, 2 peak workers (2 total), using -N1)
   SPARKS: 0 (0 converted, 0 overflowed, 0 dud, 0 GC'd, 0 fizzled)
 
@@ -295,7 +295,7 @@ $ ./sudoku1 sudoku17.1000.txt +RTS -s
 
 ~~~~
 $ ghc -O2 -threaded sudoku1.hs
-$ ./sudoku1 sudoku17.1000.txt +RTS -s
+$ ./sudoku1 problems.txt +RTS -s
   TASKS: 3 (1 bound, 2 peak workers (2 total), using -N1)
   SPARKS: 0 (0 converted, 0 overflowed, 0 dud, 0 GC'd, 0 fizzled)
 
@@ -305,7 +305,7 @@ $ ./sudoku1 sudoku17.1000.txt +RTS -s
 We can specify the number of threads using -N
 
 ~~~~
-$ ./sudoku1 sudoku17.1000.txt +RTS -s -N16
+$ ./sudoku1 problems.txt +RTS -s -N16
   TASKS: 18 (1 bound, 17 peak workers (17 total), using -N16)
   SPARKS: 0 (0 converted, 0 overflowed, 0 dud, 0 GC'd, 0 fizzled)
 
@@ -337,8 +337,8 @@ We create two light threads, in GHC called ``sparks'' (these are not OS threads)
 # Results
 
 ~~~~
-$ ghc -O2 -rtsopts -threaded --make sudoku2.hs
-$ ./sudoku2 sudoku17.1000.txt +RTS -N2 -s -RTS
+$ ghc -O2 -rtsopts -threaded --make sudoku2.hs # cabal package is available
+$ ./sudoku2 problems.txt +RTS -N2 -s -RTS
 
   TASKS: 4 (1 bound, 3 peak workers (3 total), using -N2)
   SPARKS: 2 (1 converted, 0 overflowed, 0 dud, 0 GC'd, 1 fizzled)
@@ -349,7 +349,7 @@ $ ./sudoku2 sudoku17.1000.txt +RTS -N2 -s -RTS
 Better, but we are still unable to use the whole power:
 
 ```
-./sudoku2 sudoku17.1000.txt +RTS -N16 -s -RTS
+./sudoku2 problems.txt +RTS -N16 -s -RTS
 
   TASKS: 18 (1 bound, 17 peak workers (17 total), using -N16)
   SPARKS: 2 (1 converted, 0 overflowed, 0 dud, 0 GC'd, 1 fizzled)
@@ -389,7 +389,7 @@ sparks in the pool may be
 
 # sudoku1 vs sudoku2
 ~~~~
-$ ./sudoku1 sudoku17.1000.txt +RTS -s
+$ ./sudoku1 problems.txt +RTS -s
   TASKS: 3 (1 bound, 2 peak workers (2 total), using -N1)
   SPARKS: 0 (0 converted, 0 overflowed, 0 dud, 0 GC'd, 0 fizzled)
 
@@ -397,7 +397,7 @@ $ ./sudoku1 sudoku17.1000.txt +RTS -s
 ~~~~
 
 ~~~~
-$ ./sudoku2 sudoku17.1000.txt +RTS -N2 -s -RTS
+$ ./sudoku2 problems.txt +RTS -N2 -s -RTS
 
   TASKS: 4 (1 bound, 3 peak workers (3 total), using -N2)
   SPARKS: 2 (1 converted, 0 overflowed, 0 dud, 0 GC'd, 1 fizzled)
@@ -411,12 +411,10 @@ Better, but still far from ideal.
 
 * A tool to analyse threaded program execution
 * can be built from source, but easiest to use binaries - see https://hackage.haskell.org/package/threadscope
-* `ghc -eventlog`
 * executing program `prog` yields `prog.eventlog`
 
 ~~~~
-$ stack ghc -- -O2 -threaded -eventlog sudoku2.hs
-$ ./sudoku2 sudoku17.1000.txt +RTS -N2 -ls
+$ ./sudoku2 problems.txt +RTS -N2 -ls
 $ threadscope sudoku2.eventlog &
 ~~~~
 
@@ -454,28 +452,51 @@ NB no need to use `force` here - evaluating first constructor (`Nothing`/`Just`)
 More efficient, easier to scale (we can use -N4, -N8 now)
 
 ```
-$ ./sudoku3b sudoku17.1000.txt +RTS -N1 -s 2>&1 | grep Total
+$ ./sudoku3b problems.txt +RTS -N1 -s 2>&1 | grep Total
   Total   time    3.497s  (  3.551s elapsed)
 
-$ ./sudoku3b sudoku17.1000.txt +RTS -N2 -s 2>&1 | grep Total
+$ ./sudoku3b problems.txt +RTS -N2 -s 2>&1 | grep Total
   Total   time    5.143s  (  2.642s elapsed)
 
-$ ./sudoku3b sudoku17.1000.txt +RTS -N4 -s 2>&1 | grep Total
+$ ./sudoku3b problems.txt +RTS -N4 -s 2>&1 | grep Total
   Total   time    5.167s  (  1.364s elapsed)
 
-$ ./sudoku3b sudoku17.1000.txt +RTS -N8 -s 2>&1 | grep Total
+$ ./sudoku3b problems.txt +RTS -N8 -s 2>&1 | grep Total
   Total   time    5.317s  (  0.755s elapsed)
 
-$ ./sudoku3b sudoku17.1000.txt +RTS -N16 -s 2>&1 | grep Total
+$ ./sudoku3b problems.txt +RTS -N16 -s 2>&1 | grep Total
   Total   time    5.943s  (  0.487s elapsed)
 ```
 
 BTW `-N` without argument uses all capabilities, try it, but not on students:
 
 ```
-$ ./sudoku3b sudoku17.1000.txt +RTS -N
+$ ./sudoku3b problems.txt +RTS -N
 sudoku3b: failed to create OS thread: Cannot allocate memory
 ```
+
+# Amdahl's law
+
+Why isn't using 8 cores twice as fast as 4 cores?
+
+Two reasons:
+
+- overhead
+- not all of the work is parallelisable
+
+
+Amdahl’s law gives the maximum speedup as the ratio:
+
+1 / ((1 - P) + P/N)
+
+where P is the portion of the runtime that can be parallelized, and N is the number of processors available.
+
+In our case P is about 0.97 (a lot!) so maximum possible speedups are
+
+- ~3.7 on 4 cores
+- ~6.6 on 8 cores
+- ~11 on 16 cores
+- ~27 on 128 cores
 
 # Threadscope - sudoku3 -N2
 
@@ -505,6 +526,9 @@ rdeepseq = rnf x `pseq` return x
 
 using :: a -> Strategy a -> a
 x `using` s = runEval (s x)
+
+rparWith :: Strategy a -> Strategy a
+rparWith strat x = rpar (x `using` strat)
 ~~~~
 
 The advantage is that  `using s` can be removed (almost) without changing semantics
@@ -521,14 +545,14 @@ parList strat [] = return []
 parList strat (x:xs) = do
 	x' <- rpar (x `using` strat)
 	xs' <- parList strat xs
-	return (x':xs)
+	return (x':xs')
 ~~~~
 
 The reason `using` works at all is that Haskell is lazy
 
 `map f xs` creates a thunk
 
-```
+``` haskell
 x `using` s = runEval (s x)
 
 parMap f xs
@@ -538,6 +562,59 @@ parMap f xs
     [] -> [];
     (y:ys) -> runEval $ do ...
 ```
+
+# Garbage parallelism
+
+Do we really need to build a new list?
+
+Couldn’t we just write a tail-recursive version of parList instead? Perhaps like this:
+
+``` haskell
+parList :: Strategy a -> Strategy [a]
+parList strat xs = do
+  go xs
+  return xs
+ where
+  go []     = return ()
+  go (x:xs) = do rparWith strat x
+                 go xs
+```
+
+After all, this is type-correct and seems to call rparWith on each list element as required.
+
+Alas:
+
+```
+  SPARKS: 1000 (7 converted, 0 overflowed, 0 dud, 993 GC'd, 0 fizzled)
+
+  Total   time    1.199s  (  1.140s elapsed)
+```
+
+What happened? The sparks created have been GC'd as there was no outside reference to them.
+
+If a large number of sparks are GC’d, it indicates sparks being removed from the spark pool before they can be used.
+
+# Spot the difference
+
+One of these implementations is good, the other is bad. Can you tell?
+
+~~~~ {.haskell}
+parList :: Strategy a -> Strategy [a]
+parList strat [] = return []
+parList strat (x:xs) = do
+	x' <- rpar (x `using` strat)
+	xs' <- parList strat xs
+	return (x':xs')
+~~~~
+
+~~~~ {.haskell}
+parList :: Strategy a -> Strategy [a]
+parList strat [] = return []
+parList strat (x:xs) = do
+	x' <- rpar (x `using` strat)
+	xs' <- parList strat xs
+	return (x':xs)
+~~~~
 
 # Cautionary note
 
@@ -555,7 +632,7 @@ main = print $ parFib 40
 ~~~~
 
 ~~~~
-@azor:
+@azor (64 cores):
 ./badfib +RTS -N2 -s -RTS
   SPARKS: 165597322 (16 converted, 14860689 overflowed, 0 dud,
                      150628741 GC'd, 107876 fizzled)
