@@ -2,7 +2,7 @@
 title: Advanced Functional Programming
 subtitle: The Pleasure and Pain of Dependent Types in Haskell
 author:  Marcin Benke
-date: June 4, 2024
+date: May 20, 2025
 ---
 
 <meta name="duration" content="80" />
@@ -31,9 +31,9 @@ date: June 4, 2024
 
 5. Dynamic dependencies, singletons
 ``` {.haskell}
-   data Natty :: Nat -> *
-   vchop :: Natty m -> Vec (m :+ n) a -> (Vec m a, Vec n a)
-   ? :: Natty m -> Vec (m :+ n) a -> Vec m a
+   data SNat :: Nat -> *
+   vchop :: SNat m -> Vec (m :+ n) a -> (Vec m a, Vec n a)
+   ? :: SNat m -> Vec (m :+ n) a -> Vec m a
 ```
 
 # Plan B
@@ -41,13 +41,13 @@ date: June 4, 2024
 6. Static dependencies, Proxy
 ``` haskell
    data NP :: Nat -> * where NP :: NP n
-   vtake1 :: Natty m -> NP n -> Vec (m :+ n) -> Vec m a
+   vtake1 :: SNat m -> NP n -> Vec (m :+ n) -> Vec m a
 ```
 
 7. Kind polymorphism
 ``` haskell
    data Proxy :: k -> * where Proxy :: Proxy i
-   vtake2 :: Natty m -> Proxy n -> Vec (m :+ n) -> Vec m a
+   vtake2 :: SNat m -> Proxy n -> Vec (m :+ n) -> Vec m a
 ```
 
 8. TypeApplication, getting rid of Proxy
@@ -433,7 +433,7 @@ Using a vector is an overkill, we need just its length.
 
 But `Nat` is not precise enough; it's like `[a]` - no size checking.
 
-Idea: create a representant of every element of kind Nat
+Idea: create a representant of every element of kind Nat (singletons)
 
 ``` {.haskell}
 -- SNat n ≃ Vec n ()
@@ -459,7 +459,7 @@ With `SNat` we can implement `vchop` properly:
 -- >>> vchop (SS SZ) (Vcons 1 (Vcons 2 V0))
 -- (Vcons 1 V0,Vcons 2 V0)
 vchop = vchop3
-vchop3 :: SNat m -> Vec(m:+n) a -> (Vec m a, Vec n a)
+vchop3 :: SNat m -> Vec(m :+ n) a -> (Vec m a, Vec n a)
 vchop3 SZ xs = (V0, xs)
 vchop3 (SS m) (Vcons x xs) = (Vcons x ys, zs) where
   (ys,zs) = vchop3 m xs
@@ -690,6 +690,8 @@ vtake4 :: forall n m a. SNat m -> Vec (m :+ n) a -> Vec m a
 vtake4 SZ _ = V0
 vtake4 (SS m) (x:>xs) = x :> vtake4 @n m xs
 ```
+
+`ScopedTypeVariables` and `forall` are needed for the `@n` type application.
 
 # Implicit Pi
 

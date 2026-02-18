@@ -7,17 +7,26 @@
   <meta http-equiv="Content-Style-Type" content="text/css" />
   <meta name="generator" content="pandoc" />
   <meta name="author" content="Marcin Benke" />
-  <meta name="date" content="2022-05-31" />
+  <meta name="date" content="2025-05-13" />
   <title>Advanced Functional Programming</title>
   <style type="text/css">
     code{white-space: pre-wrap;}
     span.smallcaps{font-variant: small-caps;}
-    span.underline{text-decoration: underline;}
-    div.column{display: inline-block; vertical-align: top; width: 50%;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
     div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
-    ul.task-list{list-style: none;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    /* CSS for syntax highlighting */
     pre > code.sourceCode { white-space: pre; position: relative; }
-    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span { line-height: 1.25; }
     pre > code.sourceCode > span:empty { height: 1.2em; }
     .sourceCode { overflow: visible; }
     code.sourceCode > span { color: inherit; text-decoration: inherit; }
@@ -54,7 +63,7 @@
     code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
     code span.at { color: #7d9029; } /* Attribute */
     code span.bn { color: #40a070; } /* BaseN */
-    code span.bu { } /* BuiltIn */
+    code span.bu { color: #008000; } /* BuiltIn */
     code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
     code span.ch { color: #4070a0; } /* Char */
     code span.cn { color: #880000; } /* Constant */
@@ -67,7 +76,7 @@
     code span.ex { } /* Extension */
     code span.fl { color: #40a070; } /* Float */
     code span.fu { color: #06287e; } /* Function */
-    code span.im { } /* Import */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
     code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
     code span.kw { color: #007020; font-weight: bold; } /* Keyword */
     code span.op { color: #666666; } /* Operator */
@@ -92,67 +101,91 @@
   <p class="author">
 Marcin Benke
   </p>
-  <p class="date">May 31, 2022</p>
+  <p class="date">May 13, 2025</p>
 </div>
 <div id="parallelism-and-concurrency" class="slide section level1">
 <h1>Parallelism and concurrency</h1>
-<p>A <em>parallel</em> program is one that uses a multiplicity of computational hardware (e.g. multiple processor cores) in order to perform computation more quickly. Different parts of the computation are delegated to different processors that execute at the same time (in parallel), so that results may be delivered earlier than if the computation had been performed sequentially.</p>
-<p>In contrast, <em>concurrency</em> is a program-structuring technique in which there are multiple threads of control. Notionally the threads of control execute “at the same time”; that is, the user sees their effects interleaved. Whether they actually execute at the same time or not is an implementation detail; a concurrent program can execute on a single processor through interleaved execution, or on multiple physical processors.</p>
-<p>— Simon Marlow, <em>Parallel and Concurrent Programming in Haskell</em>.</p>
+<p>A <em>parallel</em> program is one that uses a multiplicity of
+computational hardware (e.g. multiple processor cores) in order to
+perform computation more quickly. Different parts of the computation are
+delegated to different processors that execute at the same time (in
+parallel), so that results may be delivered earlier than if the
+computation had been performed sequentially.</p>
+<p>In contrast, <em>concurrency</em> is a program-structuring technique
+in which there are multiple threads of control. Notionally the threads
+of control execute “at the same time”; that is, the user sees their
+effects interleaved. Whether they actually execute at the same time or
+not is an implementation detail; a concurrent program can execute on a
+single processor through interleaved execution, or on multiple physical
+processors.</p>
+<p>— Simon Marlow, <em>Parallel and Concurrent Programming in
+Haskell</em>.</p>
 </div>
 <div id="concurrency" class="slide section level1">
 <h1>Concurrency</h1>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Control.Concurrent</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="co">-- forkIO :: IO() -&gt; IO ThreadId</span></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Control.Monad</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">System.IO</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  hSetBuffering stdout <span class="dt">NoBuffering</span></span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  forkIO <span class="op">$</span> forever <span class="op">$</span> <span class="fu">putChar</span> <span class="ch">&#39;A&#39;</span></span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  forkIO <span class="op">$</span> forever <span class="op">$</span> <span class="fu">putChar</span> <span class="ch">&#39;B&#39;</span></span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  threadDelay <span class="dv">700</span> <span class="co">-- Suspends the current thread for a given number of μs</span></span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Control.Concurrent</span></span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="co">-- forkIO :: IO() -&gt; IO ThreadId</span></span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Control.Monad</span></span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a><span class="kw">import</span> <span class="dt">System.IO</span></span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a>  hSetBuffering stdout <span class="dt">NoBuffering</span></span>
+<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a>  forkIO <span class="op">$</span> forever <span class="op">$</span> <span class="fu">putChar</span> <span class="ch">&#39;A&#39;</span></span>
+<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a>  forkIO <span class="op">$</span> forever <span class="op">$</span> <span class="fu">putChar</span> <span class="ch">&#39;B&#39;</span></span>
+<span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a>  threadDelay <span class="dv">700</span> <span class="co">-- Suspends the current thread for a given number of μs</span></span></code></pre></div>
 <pre><code>./fork +RTS -N2
 BABABABABABABABABABABABABABABABABABABABABABBBBBBBBBBBB</code></pre>
 </div>
 <div id="synchronisation-mvar" class="slide section level1">
 <h1>Synchronisation: <code>MVar</code></h1>
 <p>One element buffer (lock):</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">MVar</span> a</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="ot">newMVar  ::</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> (<span class="dt">MVar</span> a)</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="ot">takeMVar ::</span>  <span class="dt">MVar</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> a</span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="ot">putMVar  ::</span> <span class="dt">MVar</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="ot">readMVar ::</span> <span class="dt">MVar</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> a  <span class="co">--  Atomic read</span></span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="ot">tryTakeMVar ::</span> <span class="dt">MVar</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> (<span class="dt">Maybe</span> a) <span class="co">-- nonblocking</span></span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="ot">tryPutMVar  ::</span> <span class="dt">MVar</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> <span class="dt">Bool</span></span></code></pre></div>
-<p><code>stdout</code> is guarded by an <code>MVar</code>, hence <code>A</code> and <code>B</code> in the previous example come more or less evenly.</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="kw">data</span> <span class="dt">MVar</span> a</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="ot">newMVar  ::</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> (<span class="dt">MVar</span> a)</span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a><span class="ot">takeMVar ::</span>  <span class="dt">MVar</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> a</span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a><span class="ot">putMVar  ::</span> <span class="dt">MVar</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a><span class="ot">readMVar ::</span> <span class="dt">MVar</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> a  <span class="co">--  Atomic read</span></span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a></span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a><span class="ot">tryTakeMVar ::</span> <span class="dt">MVar</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> (<span class="dt">Maybe</span> a) <span class="co">-- nonblocking</span></span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a><span class="ot">tryPutMVar  ::</span> <span class="dt">MVar</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> <span class="dt">Bool</span></span></code></pre></div>
+<p><code>stdout</code> is guarded by an <code>MVar</code>, hence
+<code>A</code> and <code>B</code> in the previous example come more or
+less evenly.</p>
 <ul>
-<li><code>takeMVar</code> is single-wakeup. That is, if there are multiple threads blocked in <code>takeMVar</code>, and the <code>MVar</code> becomes full, only one thread will be woken up. The runtime guarantees that the woken thread completes its <code>takeMVar</code> operation.</li>
-<li>When multiple threads are blocked on an <code>MVar</code>, they are woken up in FIFO order.</li>
-<li><code>readMVar</code> is multiple-wakeup, so when multiple readers are blocked on an <code>MVar</code>, all of them are woken up at the same time.</li>
+<li><code>takeMVar</code> is single-wakeup. That is, if there are
+multiple threads blocked in <code>takeMVar</code>, and the
+<code>MVar</code> becomes full, only one thread will be woken up. The
+runtime guarantees that the woken thread completes its
+<code>takeMVar</code> operation.</li>
+<li>When multiple threads are blocked on an <code>MVar</code>, they are
+woken up in FIFO order.</li>
+<li><code>readMVar</code> is multiple-wakeup, so when multiple readers
+are blocked on an <code>MVar</code>, all of them are woken up at the
+same time.</li>
 </ul>
 </div>
 <div id="asynchronous-io" class="slide section level1">
 <h1>Asynchronous I/O</h1>
-<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">GetURL</span>             <span class="co">-- getURL :: String -&gt; IO ByteString</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Control.Concurrent</span></span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  m1 <span class="ot">&lt;-</span> newEmptyMVar</span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  forkIO <span class="op">$</span> <span class="kw">do</span></span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    r <span class="ot">&lt;-</span> getURL <span class="st">&quot;http://hackage.haskell.org/package/base&quot;</span></span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    putMVar m1 r</span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>  m2 <span class="ot">&lt;-</span> newEmptyMVar</span>
-<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>  forkIO <span class="op">$</span> <span class="kw">do</span></span>
-<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>    r <span class="ot">&lt;-</span> getURL <span class="st">&quot;http://hackage.haskell.org/package/parallel&quot;</span></span>
-<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>    putMVar m2 r</span>
-<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>  r1 <span class="ot">&lt;-</span> takeMVar m1</span>
-<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">putStrLn</span> <span class="st">&quot;1 DONE&quot;</span></span>
-<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>  r2 <span class="ot">&lt;-</span> takeMVar m2</span>
-<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">putStrLn</span> <span class="st">&quot;2 DONE&quot;</span></span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="kw">import</span> <span class="dt">GetURL</span>             <span class="co">-- getURL :: String -&gt; IO ByteString</span></span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Control.Concurrent</span></span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>  m1 <span class="ot">&lt;-</span> newEmptyMVar</span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a>  forkIO <span class="op">$</span> <span class="kw">do</span></span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a>    r <span class="ot">&lt;-</span> getURL <span class="st">&quot;http://hackage.haskell.org/package/base&quot;</span></span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a>    putMVar m1 r</span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a></span>
+<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a>  m2 <span class="ot">&lt;-</span> newEmptyMVar</span>
+<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a>  forkIO <span class="op">$</span> <span class="kw">do</span></span>
+<span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a>    r <span class="ot">&lt;-</span> getURL <span class="st">&quot;http://hackage.haskell.org/package/parallel&quot;</span></span>
+<span id="cb4-13"><a href="#cb4-13" tabindex="-1"></a>    putMVar m2 r</span>
+<span id="cb4-14"><a href="#cb4-14" tabindex="-1"></a></span>
+<span id="cb4-15"><a href="#cb4-15" tabindex="-1"></a>  r1 <span class="ot">&lt;-</span> takeMVar m1</span>
+<span id="cb4-16"><a href="#cb4-16" tabindex="-1"></a>  <span class="fu">putStrLn</span> <span class="st">&quot;1 DONE&quot;</span></span>
+<span id="cb4-17"><a href="#cb4-17" tabindex="-1"></a>  r2 <span class="ot">&lt;-</span> takeMVar m2</span>
+<span id="cb4-18"><a href="#cb4-18" tabindex="-1"></a>  <span class="fu">putStrLn</span> <span class="st">&quot;2 DONE&quot;</span></span></code></pre></div>
 <pre><code>./geturls1 +RTS -N2
 START 2
 START 1
@@ -162,43 +195,45 @@ START 1
 <div id="better" class="slide section level1">
 <h1>Better</h1>
 <p>Abstraction: use types, eliminate repetition</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Async</span> a <span class="ot">=</span> <span class="dt">Async</span> (<span class="dt">MVar</span> a)</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="ot">async ::</span> <span class="dt">IO</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> (<span class="dt">Async</span> a)</span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>async action <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>   var <span class="ot">&lt;-</span> newEmptyMVar</span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>   forkIO (action <span class="op">&gt;&gt;=</span> putMVar var)</span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>   <span class="fu">return</span> (<span class="dt">Async</span> var)</span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a><span class="ot">wait ::</span> <span class="dt">Async</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> a</span>
-<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>wait (<span class="dt">Async</span> var) <span class="ot">=</span> readMVar var</span>
-<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>  m1 <span class="ot">&lt;-</span> async <span class="op">$</span> getURL <span class="st">&quot;http://hackage.haskell.org/package/base&quot;</span></span>
-<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>  m2 <span class="ot">&lt;-</span> async <span class="op">$</span> getURL <span class="st">&quot;http://hackage.haskell.org/package/parallel&quot;</span></span>
-<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>  wait m1</span>
-<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">print</span> <span class="st">&quot;1 DONE&quot;</span></span>
-<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>  wait m2</span>
-<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">print</span> <span class="st">&quot;2 DONE&quot;</span></span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Async</span> a <span class="ot">=</span> <span class="dt">Async</span> (<span class="dt">MVar</span> a)</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a></span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a><span class="ot">async ::</span> <span class="dt">IO</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> (<span class="dt">Async</span> a)</span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>async action <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a>   var <span class="ot">&lt;-</span> newEmptyMVar</span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a>   forkIO (action <span class="op">&gt;&gt;=</span> putMVar var)</span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a>   <span class="fu">return</span> (<span class="dt">Async</span> var)</span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a></span>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a><span class="ot">wait ::</span> <span class="dt">Async</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> a</span>
+<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a>wait (<span class="dt">Async</span> var) <span class="ot">=</span> readMVar var</span>
+<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a></span>
+<span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a>  m1 <span class="ot">&lt;-</span> async <span class="op">$</span> getURL <span class="st">&quot;http://hackage.haskell.org/package/base&quot;</span></span>
+<span id="cb6-14"><a href="#cb6-14" tabindex="-1"></a>  m2 <span class="ot">&lt;-</span> async <span class="op">$</span> getURL <span class="st">&quot;http://hackage.haskell.org/package/parallel&quot;</span></span>
+<span id="cb6-15"><a href="#cb6-15" tabindex="-1"></a>  wait m1</span>
+<span id="cb6-16"><a href="#cb6-16" tabindex="-1"></a>  <span class="fu">print</span> <span class="st">&quot;1 DONE&quot;</span></span>
+<span id="cb6-17"><a href="#cb6-17" tabindex="-1"></a>  wait m2</span>
+<span id="cb6-18"><a href="#cb6-18" tabindex="-1"></a>  <span class="fu">print</span> <span class="st">&quot;2 DONE&quot;</span></span></code></pre></div>
 </div>
 <div id="more" class="slide section level1">
 <h1>More</h1>
-<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">TimeIt</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Text.Printf</span></span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="kw">qualified</span> <span class="dt">Data.ByteString</span> <span class="kw">as</span> <span class="dt">B</span></span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="co">-- ...</span></span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>sites <span class="ot">=</span> [<span class="st">&quot;http://www.google.com&quot;</span>,</span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>         <span class="st">&quot;http://www.bing.com&quot;</span>,</span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>         <span class="st">&quot;http://www.gajlity.com&quot;</span>,</span>
-<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>         <span class="st">&quot;http://hackage.haskell.org/package/parallel&quot;</span>,</span>
-<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>         <span class="st">&quot;http://hackage.haskell.org/package/base&quot;</span></span>
-<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>        ]</span>
-<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>main <span class="ot">=</span> <span class="fu">mapM</span> (async<span class="op">.</span>http) sites <span class="op">&gt;&gt;=</span> <span class="fu">mapM_</span> wait</span>
-<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a> <span class="kw">where</span></span>
-<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>   http url <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>     (page, time) <span class="ot">&lt;-</span> timeit <span class="op">$</span> getURL url</span>
-<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>     printf <span class="st">&quot;downloaded: %s (%d bytes, %.3fs)\n&quot;</span> url (B.length page) time</span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="kw">import</span> <span class="dt">TimeIt</span></span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Text.Printf</span></span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="kw">import</span> <span class="kw">qualified</span> <span class="dt">Data.ByteString</span> <span class="kw">as</span> <span class="dt">B</span></span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="co">-- ...</span></span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>sites <span class="ot">=</span> [<span class="st">&quot;http://www.google.com&quot;</span>,</span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a>         <span class="st">&quot;http://www.bing.com&quot;</span>,</span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a>         <span class="st">&quot;http://www.gajlity.com&quot;</span>,</span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a>         <span class="st">&quot;http://hackage.haskell.org/package/parallel&quot;</span>,</span>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a>         <span class="st">&quot;http://hackage.haskell.org/package/base&quot;</span></span>
+<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a>        ]</span>
+<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a></span>
+<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a>main <span class="ot">=</span> <span class="fu">mapM</span> (async<span class="op">.</span>http) sites <span class="op">&gt;&gt;=</span> <span class="fu">mapM_</span> wait</span>
+<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a> <span class="kw">where</span></span>
+<span id="cb7-14"><a href="#cb7-14" tabindex="-1"></a>   http url <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb7-15"><a href="#cb7-15" tabindex="-1"></a>     (page, time) <span class="ot">&lt;-</span> timeit <span class="op">$</span> getURL url</span>
+<span id="cb7-16"><a href="#cb7-16" tabindex="-1"></a>     printf <span class="st">&quot;downloaded: %s (%d bytes, %.3fs)\n&quot;</span> url (B.length page) time</span></code></pre></div>
 <pre><code>$ stack run geturls3
 downloaded: http://www.google.com (14158 bytes, 0.15s)
 downloaded: http://www.bing.com (87754 bytes, 0.19s)
@@ -209,39 +244,42 @@ downloaded: http://hackage.haskell.org/package/base (44854 bytes, 0.88s)</code><
 <div id="ioref" class="slide section level1">
 <h1>IORef</h1>
 <p>A mutable variable in the IO monad:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">IORef</span> a</span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="ot">newIORef ::</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> (<span class="dt">IORef</span> a)</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="ot">readIORef ::</span> <span class="dt">IORef</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> a</span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="ot">writeIORef ::</span> <span class="dt">IORef</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="ot">modifyIORef ::</span> <span class="dt">IORef</span> a <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</span></code></pre></div>
-<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="ot">incRef ::</span> <span class="dt">IORef</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>incRef var <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  val <span class="ot">&lt;-</span> readIORef var</span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  threadDelay <span class="dv">1000</span>   <span class="co">-- simulates computation</span></span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>  writeIORef var (val<span class="op">+</span><span class="dv">1</span>)</span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>  px <span class="ot">&lt;-</span> newIORef <span class="dv">0</span></span>
-<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>  incRef px</span>
-<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>  incRef px</span>
-<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>  readIORef px <span class="op">&gt;&gt;=</span> <span class="fu">print</span></span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="kw">data</span> <span class="dt">IORef</span> a</span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a><span class="ot">newIORef ::</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> (<span class="dt">IORef</span> a)</span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a><span class="ot">readIORef ::</span> <span class="dt">IORef</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> a</span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a><span class="ot">writeIORef ::</span> <span class="dt">IORef</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a><span class="ot">modifyIORef ::</span> <span class="dt">IORef</span> a <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="ot">incRef ::</span> <span class="dt">IORef</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>incRef var <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>  val <span class="ot">&lt;-</span> readIORef var</span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>  threadDelay <span class="dv">1000</span>   <span class="co">-- simulates computation</span></span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a>  writeIORef var (val<span class="op">+</span><span class="dv">1</span>)</span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a></span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a>  px <span class="ot">&lt;-</span> newIORef <span class="dv">0</span></span>
+<span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a>  incRef px</span>
+<span id="cb10-10"><a href="#cb10-10" tabindex="-1"></a>  incRef px</span>
+<span id="cb10-11"><a href="#cb10-11" tabindex="-1"></a>  readIORef px <span class="op">&gt;&gt;=</span> <span class="fu">print</span></span></code></pre></div>
 <pre><code>$ ./IORef1
 2</code></pre>
 </div>
 <div id="concurrently" class="slide section level1">
 <h1>Concurrently?</h1>
-<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="ot">incRef ::</span> <span class="dt">IORef</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>incRef var <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  val <span class="ot">&lt;-</span> readIORef var</span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>  threadDelay <span class="dv">1000</span>   <span class="co">-- simulates computation</span></span>
-<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>  writeIORef var (val<span class="op">+</span><span class="dv">1</span>)</span>
-<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>  px <span class="ot">&lt;-</span> newIORef <span class="dv">0</span></span>
-<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>  forkIO <span class="op">$</span> incRef px</span>
-<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>  forkIO <span class="op">$</span> incRef px</span>
-<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>  threadDelay <span class="dv">3000</span></span>
-<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>  readIORef px <span class="op">&gt;&gt;=</span> <span class="fu">print</span></span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="ot">incRef ::</span> <span class="dt">IORef</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>incRef var <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a>  val <span class="ot">&lt;-</span> readIORef var</span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a>  threadDelay <span class="dv">1000</span>   <span class="co">-- simulates computation</span></span>
+<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a>  writeIORef var (val<span class="op">+</span><span class="dv">1</span>)</span>
+<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a></span>
+<span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb12-8"><a href="#cb12-8" tabindex="-1"></a>  px <span class="ot">&lt;-</span> newIORef <span class="dv">0</span></span>
+<span id="cb12-9"><a href="#cb12-9" tabindex="-1"></a>  forkIO <span class="op">$</span> incRef px</span>
+<span id="cb12-10"><a href="#cb12-10" tabindex="-1"></a>  forkIO <span class="op">$</span> incRef px</span>
+<span id="cb12-11"><a href="#cb12-11" tabindex="-1"></a>  threadDelay <span class="dv">3000</span></span>
+<span id="cb12-12"><a href="#cb12-12" tabindex="-1"></a>  readIORef px <span class="op">&gt;&gt;=</span> <span class="fu">print</span></span></code></pre></div>
 <pre><code>$ ./IORef2
 1</code></pre>
 <p>Oops.</p>
@@ -249,62 +287,66 @@ downloaded: http://hackage.haskell.org/package/base (44854 bytes, 0.88s)</code><
 <div id="locking" class="slide section level1">
 <h1>Locking</h1>
 <p>Standard solution: protect shared resources with locks</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="ot">locking ::</span> <span class="dt">IO</span> a <span class="ot">-&gt;</span> <span class="dt">MVar</span> () <span class="ot">-&gt;</span> <span class="dt">IO</span> a</span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>action <span class="ot">`locking`</span> l <span class="ot">=</span> lock l <span class="op">&gt;&gt;</span> (action <span class="op">&lt;*</span> unlock l)</span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>  gil <span class="ot">&lt;-</span> newMVar ()</span>
-<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> atomically a <span class="ot">=</span> a <span class="ot">`locking`</span> gil</span>
-<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>  main2 atomically</span>
-<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>main2 atomically <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>  px <span class="ot">&lt;-</span> newIORef <span class="dv">0</span></span>
-<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>  forkIO <span class="op">$</span> atomically <span class="op">$</span> incRef px</span>
-<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>  forkIO <span class="op">$</span> atomically <span class="op">$</span> incRef px</span>
-<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>  threadDelay <span class="dv">3000</span></span>
-<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>  readIORef px <span class="op">&gt;&gt;=</span> <span class="fu">print</span></span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="ot">locking ::</span> <span class="dt">IO</span> a <span class="ot">-&gt;</span> <span class="dt">MVar</span> () <span class="ot">-&gt;</span> <span class="dt">IO</span> a</span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a>action <span class="ot">`locking`</span> l <span class="ot">=</span> lock l <span class="op">&gt;&gt;</span> (action <span class="op">&lt;*</span> unlock l)</span>
+<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a></span>
+<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb14-5"><a href="#cb14-5" tabindex="-1"></a>  gil <span class="ot">&lt;-</span> newMVar ()</span>
+<span id="cb14-6"><a href="#cb14-6" tabindex="-1"></a>  <span class="kw">let</span> atomically a <span class="ot">=</span> a <span class="ot">`locking`</span> gil</span>
+<span id="cb14-7"><a href="#cb14-7" tabindex="-1"></a>  main2 atomically</span>
+<span id="cb14-8"><a href="#cb14-8" tabindex="-1"></a></span>
+<span id="cb14-9"><a href="#cb14-9" tabindex="-1"></a>main2 atomically <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb14-10"><a href="#cb14-10" tabindex="-1"></a>  px <span class="ot">&lt;-</span> newIORef <span class="dv">0</span></span>
+<span id="cb14-11"><a href="#cb14-11" tabindex="-1"></a>  forkIO <span class="op">$</span> atomically <span class="op">$</span> incRef px</span>
+<span id="cb14-12"><a href="#cb14-12" tabindex="-1"></a>  forkIO <span class="op">$</span> atomically <span class="op">$</span> incRef px</span>
+<span id="cb14-13"><a href="#cb14-13" tabindex="-1"></a>  threadDelay <span class="dv">3000</span></span>
+<span id="cb14-14"><a href="#cb14-14" tabindex="-1"></a>  readIORef px <span class="op">&gt;&gt;=</span> <span class="fu">print</span></span></code></pre></div>
 <pre><code>$ runghc IORef3.hs
 2</code></pre>
 </div>
 <div id="but" class="slide section level1">
 <h1>…but…</h1>
-<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>main2 atomically <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>  px <span class="ot">&lt;-</span> newIORef <span class="dv">0</span></span>
-<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>  forkIO <span class="op">$</span> atomically <span class="op">$</span> incRef px</span>
-<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>  forkIO <span class="op">$</span> atomicaly  <span class="op">$</span> incRef px</span>
-<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>  threadDelay <span class="dv">3000</span></span>
-<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>  readIORef px <span class="op">&gt;&gt;=</span> <span class="fu">print</span></span></code></pre></div>
+<div class="sourceCode" id="cb16"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a>main2 atomically <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb16-2"><a href="#cb16-2" tabindex="-1"></a>  px <span class="ot">&lt;-</span> newIORef <span class="dv">0</span></span>
+<span id="cb16-3"><a href="#cb16-3" tabindex="-1"></a>  forkIO <span class="op">$</span> atomically <span class="op">$</span> incRef px</span>
+<span id="cb16-4"><a href="#cb16-4" tabindex="-1"></a>  forkIO <span class="op">$</span> atomicaly  <span class="op">$</span> incRef px</span>
+<span id="cb16-5"><a href="#cb16-5" tabindex="-1"></a>  threadDelay <span class="dv">3000</span></span>
+<span id="cb16-6"><a href="#cb16-6" tabindex="-1"></a>  readIORef px <span class="op">&gt;&gt;=</span> <span class="fu">print</span></span></code></pre></div>
 <pre><code>$ runghc IORef4.hs
 1</code></pre>
 <p>The shared resource can be accessed bypassing locks.</p>
 </div>
 <div id="ioref4.hs" class="slide section level1">
 <h1>IORef4.hs</h1>
-<div class="sourceCode" id="cb18"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="ot">incRef ::</span> <span class="dt">IORef</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</span>
-<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>incRef var <span class="ot">=</span> <span class="kw">do</span> { val <span class="ot">&lt;-</span> readIORef var</span>
-<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>                ; threadDelay <span class="dv">1000</span></span>
-<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>                ; writeIORef var (val<span class="op">+</span><span class="dv">1</span>) }</span>
-<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a><span class="ot">locking ::</span> <span class="dt">IO</span> a <span class="ot">-&gt;</span> <span class="dt">MVar</span> () <span class="ot">-&gt;</span> <span class="dt">IO</span> a</span>
-<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>action <span class="ot">`locking`</span> l <span class="ot">=</span> lock l <span class="op">&gt;&gt;</span> (action <span class="op">&lt;*</span> unlock l)</span>
-<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>atomicaly <span class="ot">=</span> <span class="fu">id</span></span>
-<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a>  gil <span class="ot">&lt;-</span> newMVar ()</span>
-<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> atomically a <span class="ot">=</span> a <span class="ot">`locking`</span> gil</span>
-<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a>  main2 atomically</span>
-<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb18-16"><a href="#cb18-16" aria-hidden="true" tabindex="-1"></a>main2 atomically <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb18-17"><a href="#cb18-17" aria-hidden="true" tabindex="-1"></a>  px <span class="ot">&lt;-</span> newIORef <span class="dv">0</span></span>
-<span id="cb18-18"><a href="#cb18-18" aria-hidden="true" tabindex="-1"></a>  forkIO <span class="op">$</span> atomically <span class="op">$</span> incRef px</span>
-<span id="cb18-19"><a href="#cb18-19" aria-hidden="true" tabindex="-1"></a>  forkIO <span class="op">$</span> atomicaly  <span class="op">$</span> incRef px</span>
-<span id="cb18-20"><a href="#cb18-20" aria-hidden="true" tabindex="-1"></a>  threadDelay <span class="dv">3000</span></span>
-<span id="cb18-21"><a href="#cb18-21" aria-hidden="true" tabindex="-1"></a>  readIORef px <span class="op">&gt;&gt;=</span> <span class="fu">print</span></span></code></pre></div>
+<div class="sourceCode" id="cb18"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb18-1"><a href="#cb18-1" tabindex="-1"></a><span class="ot">incRef ::</span> <span class="dt">IORef</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</span>
+<span id="cb18-2"><a href="#cb18-2" tabindex="-1"></a>incRef var <span class="ot">=</span> <span class="kw">do</span> { val <span class="ot">&lt;-</span> readIORef var</span>
+<span id="cb18-3"><a href="#cb18-3" tabindex="-1"></a>                ; threadDelay <span class="dv">1000</span></span>
+<span id="cb18-4"><a href="#cb18-4" tabindex="-1"></a>                ; writeIORef var (val<span class="op">+</span><span class="dv">1</span>) }</span>
+<span id="cb18-5"><a href="#cb18-5" tabindex="-1"></a></span>
+<span id="cb18-6"><a href="#cb18-6" tabindex="-1"></a><span class="ot">locking ::</span> <span class="dt">IO</span> a <span class="ot">-&gt;</span> <span class="dt">MVar</span> () <span class="ot">-&gt;</span> <span class="dt">IO</span> a</span>
+<span id="cb18-7"><a href="#cb18-7" tabindex="-1"></a>action <span class="ot">`locking`</span> l <span class="ot">=</span> lock l <span class="op">&gt;&gt;</span> (action <span class="op">&lt;*</span> unlock l)</span>
+<span id="cb18-8"><a href="#cb18-8" tabindex="-1"></a></span>
+<span id="cb18-9"><a href="#cb18-9" tabindex="-1"></a>atomicaly <span class="ot">=</span> <span class="fu">id</span></span>
+<span id="cb18-10"><a href="#cb18-10" tabindex="-1"></a></span>
+<span id="cb18-11"><a href="#cb18-11" tabindex="-1"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb18-12"><a href="#cb18-12" tabindex="-1"></a>  gil <span class="ot">&lt;-</span> newMVar ()</span>
+<span id="cb18-13"><a href="#cb18-13" tabindex="-1"></a>  <span class="kw">let</span> atomically a <span class="ot">=</span> a <span class="ot">`locking`</span> gil</span>
+<span id="cb18-14"><a href="#cb18-14" tabindex="-1"></a>  main2 atomically</span>
+<span id="cb18-15"><a href="#cb18-15" tabindex="-1"></a></span>
+<span id="cb18-16"><a href="#cb18-16" tabindex="-1"></a>main2 atomically <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb18-17"><a href="#cb18-17" tabindex="-1"></a>  px <span class="ot">&lt;-</span> newIORef <span class="dv">0</span></span>
+<span id="cb18-18"><a href="#cb18-18" tabindex="-1"></a>  forkIO <span class="op">$</span> atomically <span class="op">$</span> incRef px</span>
+<span id="cb18-19"><a href="#cb18-19" tabindex="-1"></a>  forkIO <span class="op">$</span> atomicaly  <span class="op">$</span> incRef px</span>
+<span id="cb18-20"><a href="#cb18-20" tabindex="-1"></a>  threadDelay <span class="dv">3000</span></span>
+<span id="cb18-21"><a href="#cb18-21" tabindex="-1"></a>  readIORef px <span class="op">&gt;&gt;=</span> <span class="fu">print</span></span></code></pre></div>
 </div>
 <div id="exercise-unbounded-channels" class="slide section level1">
 <h1>Exercise: unbounded channels</h1>
-<p><code>MVar</code> represent a one-element channel. Use them to implement unbounded channels:</p>
+<p><code>MVar</code> represent a one-element channel. Use them to
+implement unbounded channels:</p>
 <pre><code>type Stream a = MVar (Item a)
 data Item a   = Item a (Stream a)
 
@@ -316,7 +358,8 @@ writeChan :: Chan a -&gt; a -&gt; IO ()
 
 readChan :: Chan a -&gt; IO a
 -- |Read the next value from the Chan.</code></pre>
-<p>NB this is available as <code>Control.Concurrent.Chan</code> but try to implement your solution before peeking.</p>
+<p>NB this is available as <code>Control.Concurrent.Chan</code> but try
+to implement your solution before peeking.</p>
 </div>
 <div id="bank-accounts" class="slide section level1">
 <h1>Bank accounts</h1>
@@ -337,7 +380,8 @@ else { to.lock(); from.lock(); }</code></pre>
 <h1>Problems with locking</h1>
 <ul>
 <li><p>not enough locks</p></li>
-<li><p>wrong locks - the connection between a lock and data it protects is not always clear</p></li>
+<li><p>wrong locks - the connection between a lock and data it protects
+is not always clear</p></li>
 <li><p>too many locks - deadlock, starvation</p></li>
 <li><p>taking locks in a wrong order</p></li>
 </ul>
@@ -352,8 +396,10 @@ transfer from to amount = atomically $ do
      withdraw from amount</code></pre>
 <p>Guarantees:</p>
 <ul>
-<li><p>Atomicity: results of <code>atomically</code> are visible to other threads as a whole</p></li>
-<li><p>Isolation: during <code>atomically act</code>, no interference from other threads</p></li>
+<li><p>Atomicity: results of <code>atomically</code> are visible to
+other threads as a whole</p></li>
+<li><p>Isolation: during <code>atomically act</code>, no interference
+from other threads</p></li>
 </ul>
 </div>
 <div id="global-locks" class="slide section level1">
@@ -361,23 +407,31 @@ transfer from to amount = atomically $ do
 <p>Two problems</p>
 <ul>
 <li><p>one we have seen already: no isolation guarantee</p></li>
-<li><p>killing concurrency (I called the global lock <code>gil</code> on purpose)</p></li>
+<li><p>killing concurrency (I called the global lock <code>gil</code> on
+purpose)</p></li>
 </ul>
 <p>The first problem can be solved using types:</p>
-<div class="sourceCode" id="cb24"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="ot">atomically ::</span> <span class="dt">STM</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> a</span></code></pre></div>
-<p>where <code>STM</code> has no direct access to <code>IORef</code>, only to transaction variables:</p>
-<div class="sourceCode" id="cb25"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">TVar</span></span>
-<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a><span class="ot">newTVar ::</span> a <span class="ot">-&gt;</span> <span class="dt">STM</span> (<span class="dt">TVar</span> a)</span>
-<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a><span class="ot">readTVar ::</span> <span class="dt">TVar</span> a <span class="ot">-&gt;</span> <span class="dt">STM</span> a</span>
-<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a><span class="ot">writeTVar ::</span> <span class="dt">TVar</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">STM</span> ()</span></code></pre></div>
-<p><strong>Exercise:</strong> develop this idea; check its throughput</p>
+<div class="sourceCode" id="cb24"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb24-1"><a href="#cb24-1" tabindex="-1"></a><span class="ot">atomically ::</span> <span class="dt">STM</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> a</span></code></pre></div>
+<p>where <code>STM</code> has no direct access to <code>IORef</code>,
+only to transaction variables:</p>
+<div class="sourceCode" id="cb25"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb25-1"><a href="#cb25-1" tabindex="-1"></a><span class="kw">data</span> <span class="dt">TVar</span></span>
+<span id="cb25-2"><a href="#cb25-2" tabindex="-1"></a><span class="ot">newTVar ::</span> a <span class="ot">-&gt;</span> <span class="dt">STM</span> (<span class="dt">TVar</span> a)</span>
+<span id="cb25-3"><a href="#cb25-3" tabindex="-1"></a><span class="ot">readTVar ::</span> <span class="dt">TVar</span> a <span class="ot">-&gt;</span> <span class="dt">STM</span> a</span>
+<span id="cb25-4"><a href="#cb25-4" tabindex="-1"></a><span class="ot">writeTVar ::</span> <span class="dt">TVar</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">STM</span> ()</span></code></pre></div>
+<p><strong>Exercise:</strong> develop this idea; check its
+throughput</p>
 </div>
 <div id="optimistic-concurrency" class="slide section level1">
 <h1>Optimistic concurrency</h1>
 <ul>
-<li>An idea from databases: <code>atomically</code> writes a local log</li>
-<li><code>writeTVar</code> writes only to the log, not to shared memory.</li>
-<li><code>readTVar</code> checks the log first, if not found reads the memory, writing to the log.</li>
+<li>An idea from databases: <code>atomically</code> writes a local
+log</li>
+<li><code>writeTVar</code> writes only to the log, not to shared
+memory.</li>
+<li><code>readTVar</code> checks the log first, if not found reads the
+memory, writing to the log.</li>
 <li>eventually we attempt to commit the transaction:
 <ul>
 <li>read all vars it reads, compare with the log</li>
@@ -390,30 +444,33 @@ transfer from to amount = atomically $ do
 <div id="launchmissiles" class="slide section level1">
 <h1>launchMissiles?</h1>
 <p>Transactions can have no side effects other than STM</p>
-<div class="sourceCode" id="cb26"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>atomically <span class="op">$</span> <span class="kw">do</span></span>
-<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>    x <span class="ot">&lt;-</span> readTVar xv</span>
-<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>    y <span class="ot">&lt;-</span> readTVar yv</span>
-<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>    when (x<span class="op">&gt;</span>y) launchMissiles</span></code></pre></div>
+<div class="sourceCode" id="cb26"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb26-1"><a href="#cb26-1" tabindex="-1"></a>atomically <span class="op">$</span> <span class="kw">do</span></span>
+<span id="cb26-2"><a href="#cb26-2" tabindex="-1"></a>    x <span class="ot">&lt;-</span> readTVar xv</span>
+<span id="cb26-3"><a href="#cb26-3" tabindex="-1"></a>    y <span class="ot">&lt;-</span> readTVar yv</span>
+<span id="cb26-4"><a href="#cb26-4" tabindex="-1"></a>    when (x<span class="op">&gt;</span>y) launchMissiles</span></code></pre></div>
 <p>``optimistically’’ read values of x,y need not be true</p>
 <p>better not to launch missiles…</p>
 </div>
 <div id="stm" class="slide section level1">
 <h1>STM</h1>
-<p>STM is implemented in <code>Control.Concurrent.STM</code> (package <code>stm</code>)</p>
-<div class="sourceCode" id="cb27"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Control.Concurrent</span></span>
-<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Control.Concurrent.STM</span></span>
-<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a><span class="ot">incRef ::</span> <span class="dt">TVar</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</span>
-<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a>incRef var <span class="ot">=</span> atomically <span class="op">$</span> <span class="kw">do</span></span>
-<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a>                val <span class="ot">&lt;-</span> readTVar var</span>
-<span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a>                <span class="kw">let</span> x <span class="ot">=</span> <span class="fu">fromInteger</span> <span class="op">$</span> delay baseDelay</span>
-<span id="cb27-8"><a href="#cb27-8" aria-hidden="true" tabindex="-1"></a>                writeTVar var (val<span class="op">+</span><span class="dv">1</span><span class="op">+</span>x)</span>
-<span id="cb27-9"><a href="#cb27-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb27-10"><a href="#cb27-10" aria-hidden="true" tabindex="-1"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb27-11"><a href="#cb27-11" aria-hidden="true" tabindex="-1"></a>  px <span class="ot">&lt;-</span> newTVarIO <span class="dv">0</span>     <span class="co">-- create top-level TVar</span></span>
-<span id="cb27-12"><a href="#cb27-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mapM</span> forkIO <span class="op">$</span> <span class="fu">replicate</span> <span class="dv">20</span> (incRef px)</span>
-<span id="cb27-13"><a href="#cb27-13" aria-hidden="true" tabindex="-1"></a>  delay (<span class="dv">30</span><span class="op">*</span>baseDelay) <span class="ot">`seq`</span> <span class="fu">return</span> ()</span>
-<span id="cb27-14"><a href="#cb27-14" aria-hidden="true" tabindex="-1"></a>  atomically (readTVar px) <span class="op">&gt;&gt;=</span> <span class="fu">print</span></span></code></pre></div>
+<p>STM is implemented in <code>Control.Concurrent.STM</code> (package
+<code>stm</code>)</p>
+<div class="sourceCode" id="cb27"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb27-1"><a href="#cb27-1" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Control.Concurrent</span></span>
+<span id="cb27-2"><a href="#cb27-2" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Control.Concurrent.STM</span></span>
+<span id="cb27-3"><a href="#cb27-3" tabindex="-1"></a></span>
+<span id="cb27-4"><a href="#cb27-4" tabindex="-1"></a><span class="ot">incRef ::</span> <span class="dt">TVar</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</span>
+<span id="cb27-5"><a href="#cb27-5" tabindex="-1"></a>incRef var <span class="ot">=</span> atomically <span class="op">$</span> <span class="kw">do</span></span>
+<span id="cb27-6"><a href="#cb27-6" tabindex="-1"></a>                val <span class="ot">&lt;-</span> readTVar var</span>
+<span id="cb27-7"><a href="#cb27-7" tabindex="-1"></a>                <span class="kw">let</span> x <span class="ot">=</span> <span class="fu">fromInteger</span> <span class="op">$</span> delay baseDelay</span>
+<span id="cb27-8"><a href="#cb27-8" tabindex="-1"></a>                writeTVar var (val<span class="op">+</span><span class="dv">1</span><span class="op">+</span>x)</span>
+<span id="cb27-9"><a href="#cb27-9" tabindex="-1"></a></span>
+<span id="cb27-10"><a href="#cb27-10" tabindex="-1"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb27-11"><a href="#cb27-11" tabindex="-1"></a>  px <span class="ot">&lt;-</span> newTVarIO <span class="dv">0</span>     <span class="co">-- create top-level TVar</span></span>
+<span id="cb27-12"><a href="#cb27-12" tabindex="-1"></a>  <span class="fu">mapM</span> forkIO <span class="op">$</span> <span class="fu">replicate</span> <span class="dv">20</span> (incRef px)</span>
+<span id="cb27-13"><a href="#cb27-13" tabindex="-1"></a>  delay (<span class="dv">30</span><span class="op">*</span>baseDelay) <span class="ot">`seq`</span> <span class="fu">return</span> ()</span>
+<span id="cb27-14"><a href="#cb27-14" tabindex="-1"></a>  atomically (readTVar px) <span class="op">&gt;&gt;=</span> <span class="fu">print</span></span></code></pre></div>
 <pre><code>./stm1 +RTS -N2
 20</code></pre>
 </div>
@@ -430,119 +487,138 @@ delay n = delay $! n-1
 </div>
 <div id="blocking-retry" class="slide section level1">
 <h1>Blocking: <code>retry</code></h1>
-<div class="sourceCode" id="cb30"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="ot">retry ::</span> <span class="dt">STM</span> a</span>
-<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a><span class="ot">limitedWithdraw ::</span> <span class="dt">Account</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">STM</span> ()</span>
-<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>limitedWithdraw acc amount <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>   balance <span class="ot">&lt;-</span> readTVar acc</span>
-<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>   <span class="kw">if</span> amount <span class="op">&gt;</span> balance</span>
-<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a>      <span class="kw">then</span> retry</span>
-<span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a>      <span class="kw">else</span> writeTVar acc (balance <span class="op">-</span> amount)</span></code></pre></div>
+<div class="sourceCode" id="cb30"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb30-1"><a href="#cb30-1" tabindex="-1"></a><span class="ot">retry ::</span> <span class="dt">STM</span> a</span>
+<span id="cb30-2"><a href="#cb30-2" tabindex="-1"></a></span>
+<span id="cb30-3"><a href="#cb30-3" tabindex="-1"></a><span class="ot">limitedWithdraw ::</span> <span class="dt">Account</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">STM</span> ()</span>
+<span id="cb30-4"><a href="#cb30-4" tabindex="-1"></a>limitedWithdraw acc amount <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb30-5"><a href="#cb30-5" tabindex="-1"></a>   balance <span class="ot">&lt;-</span> readTVar acc</span>
+<span id="cb30-6"><a href="#cb30-6" tabindex="-1"></a>   <span class="kw">if</span> amount <span class="op">&gt;</span> balance</span>
+<span id="cb30-7"><a href="#cb30-7" tabindex="-1"></a>      <span class="kw">then</span> retry</span>
+<span id="cb30-8"><a href="#cb30-8" tabindex="-1"></a>      <span class="kw">else</span> writeTVar acc (balance <span class="op">-</span> amount)</span></code></pre></div>
 <p>When not enough funds, stop the transaction and retry later.</p>
-<p>The system knows which variables are read and can retry when one of them changes (here: <code>amount</code>).</p>
+<p>The system knows which variables are read and can retry when one of
+them changes (here: <code>amount</code>).</p>
 </div>
 <div id="better-check" class="slide section level1">
 <h1>Better: <code>check</code></h1>
-<div class="sourceCode" id="cb31"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="ot">limitedWithdraw ::</span> <span class="dt">Account</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">STM</span> ()</span>
-<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>limitedWithdraw acc amount <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>   balance <span class="ot">&lt;-</span> readTVar acc</span>
-<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a>   check (amount <span class="op">&gt;</span> balance)</span>
-<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a>   writeTVar acc (balance <span class="op">-</span> amount)</span>
-<span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-7"><a href="#cb31-7" aria-hidden="true" tabindex="-1"></a><span class="ot">check ::</span> <span class="dt">Bool</span> <span class="ot">-&gt;</span> <span class="dt">STM</span> ()</span>
-<span id="cb31-8"><a href="#cb31-8" aria-hidden="true" tabindex="-1"></a>check <span class="dt">True</span> <span class="ot">=</span> <span class="fu">return</span> ()</span>
-<span id="cb31-9"><a href="#cb31-9" aria-hidden="true" tabindex="-1"></a>check <span class="dt">False</span> <span class="ot">=</span> retry</span></code></pre></div>
+<div class="sourceCode" id="cb31"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb31-1"><a href="#cb31-1" tabindex="-1"></a><span class="ot">limitedWithdraw ::</span> <span class="dt">Account</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">STM</span> ()</span>
+<span id="cb31-2"><a href="#cb31-2" tabindex="-1"></a>limitedWithdraw acc amount <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb31-3"><a href="#cb31-3" tabindex="-1"></a>   balance <span class="ot">&lt;-</span> readTVar acc</span>
+<span id="cb31-4"><a href="#cb31-4" tabindex="-1"></a>   check (amount <span class="op">&gt;</span> balance)</span>
+<span id="cb31-5"><a href="#cb31-5" tabindex="-1"></a>   writeTVar acc (balance <span class="op">-</span> amount)</span>
+<span id="cb31-6"><a href="#cb31-6" tabindex="-1"></a></span>
+<span id="cb31-7"><a href="#cb31-7" tabindex="-1"></a><span class="ot">check ::</span> <span class="dt">Bool</span> <span class="ot">-&gt;</span> <span class="dt">STM</span> ()</span>
+<span id="cb31-8"><a href="#cb31-8" tabindex="-1"></a>check <span class="dt">True</span> <span class="ot">=</span> <span class="fu">return</span> ()</span>
+<span id="cb31-9"><a href="#cb31-9" tabindex="-1"></a>check <span class="dt">False</span> <span class="ot">=</span> retry</span></code></pre></div>
 <p>NB</p>
-<div class="sourceCode" id="cb32"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="ot">guard           ::</span> (<span class="dt">MonadPlus</span> m) <span class="ot">=&gt;</span> <span class="dt">Bool</span> <span class="ot">-&gt;</span> m ()</span>
-<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>guard <span class="dt">True</span>      <span class="ot">=</span>  <span class="fu">return</span> ()</span>
-<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>guard <span class="dt">False</span>     <span class="ot">=</span>  mzero</span></code></pre></div>
+<div class="sourceCode" id="cb32"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb32-1"><a href="#cb32-1" tabindex="-1"></a><span class="ot">guard           ::</span> (<span class="dt">MonadPlus</span> m) <span class="ot">=&gt;</span> <span class="dt">Bool</span> <span class="ot">-&gt;</span> m ()</span>
+<span id="cb32-2"><a href="#cb32-2" tabindex="-1"></a>guard <span class="dt">True</span>      <span class="ot">=</span>  <span class="fu">return</span> ()</span>
+<span id="cb32-3"><a href="#cb32-3" tabindex="-1"></a>guard <span class="dt">False</span>     <span class="ot">=</span>  mzero</span></code></pre></div>
 </div>
-<div id="other-uses-of-retry---window-manager" class="slide section level1">
+<div id="other-uses-of-retry---window-manager"
+class="slide section level1">
 <h1>Other uses of retry - window manager</h1>
 <p>Marlow, p 181</p>
-<div class="sourceCode" id="cb33"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="ot">renderThread ::</span> <span class="dt">Display</span> <span class="ot">-&gt;</span> <span class="dt">UserFocus</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</span>
-<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>renderThread disp focus <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>  wins <span class="ot">&lt;-</span> atomically <span class="op">$</span> getWindows disp focus    <span class="co">-- &lt;1&gt;</span></span>
-<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a>  loop wins                                     <span class="co">-- &lt;2&gt;</span></span>
-<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a> <span class="kw">where</span></span>
-<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a>  loop wins <span class="ot">=</span> <span class="kw">do</span>                                <span class="co">-- &lt;3&gt;</span></span>
-<span id="cb33-7"><a href="#cb33-7" aria-hidden="true" tabindex="-1"></a>    render wins                                 <span class="co">-- &lt;4&gt;</span></span>
-<span id="cb33-8"><a href="#cb33-8" aria-hidden="true" tabindex="-1"></a>    next <span class="ot">&lt;-</span> atomically <span class="op">$</span> <span class="kw">do</span></span>
-<span id="cb33-9"><a href="#cb33-9" aria-hidden="true" tabindex="-1"></a>               wins&#39; <span class="ot">&lt;-</span> getWindows disp focus   <span class="co">-- &lt;5&gt;</span></span>
-<span id="cb33-10"><a href="#cb33-10" aria-hidden="true" tabindex="-1"></a>               <span class="kw">if</span> (wins <span class="op">==</span> wins&#39;)               <span class="co">-- &lt;6&gt;</span></span>
-<span id="cb33-11"><a href="#cb33-11" aria-hidden="true" tabindex="-1"></a>                   <span class="kw">then</span> retry                   <span class="co">-- &lt;7&gt;</span></span>
-<span id="cb33-12"><a href="#cb33-12" aria-hidden="true" tabindex="-1"></a>                   <span class="kw">else</span> <span class="fu">return</span> wins&#39;            <span class="co">-- &lt;8&gt;</span></span>
-<span id="cb33-13"><a href="#cb33-13" aria-hidden="true" tabindex="-1"></a>    loop next</span></code></pre></div>
+<div class="sourceCode" id="cb33"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb33-1"><a href="#cb33-1" tabindex="-1"></a><span class="ot">renderThread ::</span> <span class="dt">Display</span> <span class="ot">-&gt;</span> <span class="dt">UserFocus</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</span>
+<span id="cb33-2"><a href="#cb33-2" tabindex="-1"></a>renderThread disp focus <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb33-3"><a href="#cb33-3" tabindex="-1"></a>  wins <span class="ot">&lt;-</span> atomically <span class="op">$</span> getWindows disp focus    <span class="co">-- &lt;1&gt;</span></span>
+<span id="cb33-4"><a href="#cb33-4" tabindex="-1"></a>  loop wins                                     <span class="co">-- &lt;2&gt;</span></span>
+<span id="cb33-5"><a href="#cb33-5" tabindex="-1"></a> <span class="kw">where</span></span>
+<span id="cb33-6"><a href="#cb33-6" tabindex="-1"></a>  loop wins <span class="ot">=</span> <span class="kw">do</span>                                <span class="co">-- &lt;3&gt;</span></span>
+<span id="cb33-7"><a href="#cb33-7" tabindex="-1"></a>    render wins                                 <span class="co">-- &lt;4&gt;</span></span>
+<span id="cb33-8"><a href="#cb33-8" tabindex="-1"></a>    next <span class="ot">&lt;-</span> atomically <span class="op">$</span> <span class="kw">do</span></span>
+<span id="cb33-9"><a href="#cb33-9" tabindex="-1"></a>               wins&#39; <span class="ot">&lt;-</span> getWindows disp focus   <span class="co">-- &lt;5&gt;</span></span>
+<span id="cb33-10"><a href="#cb33-10" tabindex="-1"></a>               <span class="kw">if</span> (wins <span class="op">==</span> wins&#39;)               <span class="co">-- &lt;6&gt;</span></span>
+<span id="cb33-11"><a href="#cb33-11" tabindex="-1"></a>                   <span class="kw">then</span> retry                   <span class="co">-- &lt;7&gt;</span></span>
+<span id="cb33-12"><a href="#cb33-12" tabindex="-1"></a>                   <span class="kw">else</span> <span class="fu">return</span> wins&#39;            <span class="co">-- &lt;8&gt;</span></span>
+<span id="cb33-13"><a href="#cb33-13" tabindex="-1"></a>    loop next</span></code></pre></div>
 <p>1: read the current set of windows to display</p>
-<p>4: call render to display the current state and then enter a transaction to read the next state.</p>
-<p>7: If the states are the same, then there is no need to do anything, so we call <code>retry</code></p>
-<p>8: If the states are different, then we return the new state, and the loop iterates with the new state</p>
+<p>4: call render to display the current state and then enter a
+transaction to read the next state.</p>
+<p>7: If the states are the same, then there is no need to do anything,
+so we call <code>retry</code></p>
+<p>8: If the states are different, then we return the new state, and the
+loop iterates with the new state</p>
 </div>
 <div id="choice" class="slide section level1">
 <h1>Choice</h1>
 <p>Withdraw from account A, when no funds try account B.</p>
-<div class="sourceCode" id="cb34"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="ot">limitedWithdraw2 ::</span> <span class="dt">Account</span> <span class="ot">-&gt;</span> <span class="dt">Account</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">STM</span> ()</span>
-<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>limitedWithdraw2 acc1 acc2 amt <span class="ot">=</span></span>
-<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>   limitedWithdraw acc1 amt <span class="ot">`orElse`</span></span>
-<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a>   limitedWithdraw acc2 amt</span></code></pre></div>
+<div class="sourceCode" id="cb34"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb34-1"><a href="#cb34-1" tabindex="-1"></a><span class="ot">limitedWithdraw2 ::</span> <span class="dt">Account</span> <span class="ot">-&gt;</span> <span class="dt">Account</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">STM</span> ()</span>
+<span id="cb34-2"><a href="#cb34-2" tabindex="-1"></a>limitedWithdraw2 acc1 acc2 amt <span class="ot">=</span></span>
+<span id="cb34-3"><a href="#cb34-3" tabindex="-1"></a>   limitedWithdraw acc1 amt <span class="ot">`orElse`</span></span>
+<span id="cb34-4"><a href="#cb34-4" tabindex="-1"></a>   limitedWithdraw acc2 amt</span></code></pre></div>
 <p><code>orElse a1 a2</code></p>
 <ul>
 <li>execute <code>a1</code></li>
-<li>if <code>a1</code> blocks (<code>retry</code>), try <code>a2</code>,</li>
+<li>if <code>a1</code> blocks (<code>retry</code>), try
+<code>a2</code>,</li>
 <li>if it also blocks, the whole transaction blocks</li>
 </ul>
 </div>
 <div id="exercise-tchan" class="slide section level1">
 <h1>Exercise: TChan</h1>
 <p>Reimplement unbounded channels you implemented before using STM:</p>
-<div class="sourceCode" id="cb35"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">TChan</span> a <span class="ot">=</span> <span class="dt">TChan</span> (<span class="dt">TVar</span> (<span class="dt">TVarList</span> a))</span>
-<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>                     (<span class="dt">TVar</span> (<span class="dt">TVarList</span> a))</span>
-<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">TVarList</span> a <span class="ot">=</span> <span class="dt">TVar</span> (<span class="dt">TList</span> a)</span>
-<span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">TList</span> a <span class="ot">=</span> <span class="dt">TNil</span> <span class="op">|</span> <span class="dt">TCons</span> a (<span class="dt">TVarList</span> a)</span>
-<span id="cb35-6"><a href="#cb35-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb35-7"><a href="#cb35-7" aria-hidden="true" tabindex="-1"></a><span class="ot">newTChan ::</span> <span class="dt">STM</span> (<span class="dt">TChan</span> a)</span>
-<span id="cb35-8"><a href="#cb35-8" aria-hidden="true" tabindex="-1"></a><span class="ot">readTChan ::</span> <span class="dt">TChan</span> a <span class="ot">-&gt;</span> <span class="dt">STM</span> a</span>
-<span id="cb35-9"><a href="#cb35-9" aria-hidden="true" tabindex="-1"></a><span class="ot">writeTChan ::</span> <span class="dt">TChan</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">STM</span> ()</span></code></pre></div>
+<div class="sourceCode" id="cb35"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb35-1"><a href="#cb35-1" tabindex="-1"></a><span class="kw">data</span> <span class="dt">TChan</span> a <span class="ot">=</span> <span class="dt">TChan</span> (<span class="dt">TVar</span> (<span class="dt">TVarList</span> a))</span>
+<span id="cb35-2"><a href="#cb35-2" tabindex="-1"></a>                     (<span class="dt">TVar</span> (<span class="dt">TVarList</span> a))</span>
+<span id="cb35-3"><a href="#cb35-3" tabindex="-1"></a></span>
+<span id="cb35-4"><a href="#cb35-4" tabindex="-1"></a><span class="kw">type</span> <span class="dt">TVarList</span> a <span class="ot">=</span> <span class="dt">TVar</span> (<span class="dt">TList</span> a)</span>
+<span id="cb35-5"><a href="#cb35-5" tabindex="-1"></a><span class="kw">data</span> <span class="dt">TList</span> a <span class="ot">=</span> <span class="dt">TNil</span> <span class="op">|</span> <span class="dt">TCons</span> a (<span class="dt">TVarList</span> a)</span>
+<span id="cb35-6"><a href="#cb35-6" tabindex="-1"></a></span>
+<span id="cb35-7"><a href="#cb35-7" tabindex="-1"></a><span class="ot">newTChan ::</span> <span class="dt">STM</span> (<span class="dt">TChan</span> a)</span>
+<span id="cb35-8"><a href="#cb35-8" tabindex="-1"></a><span class="ot">readTChan ::</span> <span class="dt">TChan</span> a <span class="ot">-&gt;</span> <span class="dt">STM</span> a</span>
+<span id="cb35-9"><a href="#cb35-9" tabindex="-1"></a><span class="ot">writeTChan ::</span> <span class="dt">TChan</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">STM</span> ()</span></code></pre></div>
 </div>
-<div id="dataflow-parallelism-the-par-monad" class="slide section level1">
+<div id="dataflow-parallelism-the-par-monad"
+class="slide section level1">
 <h1>Dataflow parallelism: the <code>Par</code> monad</h1>
-<p>Between <code>Eval</code> and <code>Concurrent</code>: explicit thread creation but preserving determinism.</p>
-<div class="sourceCode" id="cb36"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="kw">newtype</span> <span class="dt">Par</span> a</span>
-<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Functor</span> <span class="dt">Par</span></span>
-<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Applicative</span> <span class="dt">Par</span></span>
-<span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Monad</span> <span class="dt">Par</span></span>
-<span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-6"><a href="#cb36-6" aria-hidden="true" tabindex="-1"></a><span class="ot">runPar ::</span> <span class="dt">Par</span> a <span class="ot">-&gt;</span> a</span>
-<span id="cb36-7"><a href="#cb36-7" aria-hidden="true" tabindex="-1"></a><span class="ot">fork ::</span> <span class="dt">Par</span> () <span class="ot">-&gt;</span> <span class="dt">Par</span> ()</span></code></pre></div>
-<p><code>fork</code> executes its argument in parallel with the caller, but does not return anything</p>
+<p>Between <code>Eval</code> and <code>Concurrent</code>: explicit
+thread creation but preserving determinism.</p>
+<div class="sourceCode" id="cb36"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb36-1"><a href="#cb36-1" tabindex="-1"></a><span class="kw">newtype</span> <span class="dt">Par</span> a</span>
+<span id="cb36-2"><a href="#cb36-2" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Functor</span> <span class="dt">Par</span></span>
+<span id="cb36-3"><a href="#cb36-3" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Applicative</span> <span class="dt">Par</span></span>
+<span id="cb36-4"><a href="#cb36-4" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Monad</span> <span class="dt">Par</span></span>
+<span id="cb36-5"><a href="#cb36-5" tabindex="-1"></a></span>
+<span id="cb36-6"><a href="#cb36-6" tabindex="-1"></a><span class="ot">runPar ::</span> <span class="dt">Par</span> a <span class="ot">-&gt;</span> a</span>
+<span id="cb36-7"><a href="#cb36-7" tabindex="-1"></a><span class="ot">fork ::</span> <span class="dt">Par</span> () <span class="ot">-&gt;</span> <span class="dt">Par</span> ()</span></code></pre></div>
+<p><code>fork</code> executes its argument in parallel with the caller,
+but does not return anything</p>
 <p>we need communication</p>
 </div>
 <div id="communication-ivar" class="slide section level1">
 <h1>Communication — IVar</h1>
-<div class="sourceCode" id="cb37"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">IVar</span> a</span>
-<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a><span class="ot">new ::</span> <span class="dt">Par</span> (<span class="dt">IVar</span> a)</span>
-<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a><span class="ot">put ::</span> <span class="dt">NFData</span> a <span class="ot">=&gt;</span> <span class="dt">IVar</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Par</span> ()</span>
-<span id="cb37-4"><a href="#cb37-4" aria-hidden="true" tabindex="-1"></a><span class="ot">get ::</span> <span class="dt">IVar</span> a <span class="ot">-&gt;</span> <span class="dt">Par</span> a</span></code></pre></div>
+<div class="sourceCode" id="cb37"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb37-1"><a href="#cb37-1" tabindex="-1"></a><span class="kw">data</span> <span class="dt">IVar</span> a</span>
+<span id="cb37-2"><a href="#cb37-2" tabindex="-1"></a><span class="ot">new ::</span> <span class="dt">Par</span> (<span class="dt">IVar</span> a)</span>
+<span id="cb37-3"><a href="#cb37-3" tabindex="-1"></a><span class="ot">put ::</span> <span class="dt">NFData</span> a <span class="ot">=&gt;</span> <span class="dt">IVar</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Par</span> ()</span>
+<span id="cb37-4"><a href="#cb37-4" tabindex="-1"></a><span class="ot">get ::</span> <span class="dt">IVar</span> a <span class="ot">-&gt;</span> <span class="dt">Par</span> a</span></code></pre></div>
 <ul>
 <li><p><code>new</code> creates a new, empty var</p></li>
-<li><p><code>put</code> fills it with a value (allowed only once)</p></li>
+<li><p><code>put</code> fills it with a value (allowed only
+once)</p></li>
 <li><p><code>get</code> gets the value, waiting if necessary</p></li>
 </ul>
 </div>
 <div id="example-fibonacci" class="slide section level1">
 <h1>Example: Fibonacci</h1>
-<div class="sourceCode" id="cb38"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a>  [n,m] <span class="ot">&lt;-</span> <span class="fu">map</span> <span class="fu">read</span> <span class="op">&lt;$&gt;</span> getArgs</span>
-<span id="cb38-4"><a href="#cb38-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">print</span> <span class="op">$</span> runPar <span class="op">$</span> <span class="kw">do</span></span>
-<span id="cb38-5"><a href="#cb38-5" aria-hidden="true" tabindex="-1"></a>      i <span class="ot">&lt;-</span> new                          <span class="co">-- &lt;1&gt;</span></span>
-<span id="cb38-6"><a href="#cb38-6" aria-hidden="true" tabindex="-1"></a>      j <span class="ot">&lt;-</span> new                          <span class="co">-- &lt;1&gt;</span></span>
-<span id="cb38-7"><a href="#cb38-7" aria-hidden="true" tabindex="-1"></a>      fork (put i (fib n))              <span class="co">-- &lt;2&gt;</span></span>
-<span id="cb38-8"><a href="#cb38-8" aria-hidden="true" tabindex="-1"></a>      fork (put j (fib m))              <span class="co">-- &lt;2&gt;</span></span>
-<span id="cb38-9"><a href="#cb38-9" aria-hidden="true" tabindex="-1"></a>      a <span class="ot">&lt;-</span> get i                        <span class="co">-- &lt;3&gt;</span></span>
-<span id="cb38-10"><a href="#cb38-10" aria-hidden="true" tabindex="-1"></a>      b <span class="ot">&lt;-</span> get j                        <span class="co">-- &lt;3&gt;</span></span>
-<span id="cb38-11"><a href="#cb38-11" aria-hidden="true" tabindex="-1"></a>      <span class="fu">return</span> (a<span class="op">+</span>b)                      <span class="co">-- &lt;4&gt;</span></span></code></pre></div>
+<div class="sourceCode" id="cb38"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb38-1"><a href="#cb38-1" tabindex="-1"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb38-2"><a href="#cb38-2" tabindex="-1"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb38-3"><a href="#cb38-3" tabindex="-1"></a>  [n,m] <span class="ot">&lt;-</span> <span class="fu">map</span> <span class="fu">read</span> <span class="op">&lt;$&gt;</span> getArgs</span>
+<span id="cb38-4"><a href="#cb38-4" tabindex="-1"></a>  <span class="fu">print</span> <span class="op">$</span> runPar <span class="op">$</span> <span class="kw">do</span></span>
+<span id="cb38-5"><a href="#cb38-5" tabindex="-1"></a>      i <span class="ot">&lt;-</span> new                          <span class="co">-- &lt;1&gt;</span></span>
+<span id="cb38-6"><a href="#cb38-6" tabindex="-1"></a>      j <span class="ot">&lt;-</span> new                          <span class="co">-- &lt;1&gt;</span></span>
+<span id="cb38-7"><a href="#cb38-7" tabindex="-1"></a>      fork (put i (fib n))              <span class="co">-- &lt;2&gt;</span></span>
+<span id="cb38-8"><a href="#cb38-8" tabindex="-1"></a>      fork (put j (fib m))              <span class="co">-- &lt;2&gt;</span></span>
+<span id="cb38-9"><a href="#cb38-9" tabindex="-1"></a>      a <span class="ot">&lt;-</span> get i                        <span class="co">-- &lt;3&gt;</span></span>
+<span id="cb38-10"><a href="#cb38-10" tabindex="-1"></a>      b <span class="ot">&lt;-</span> get j                        <span class="co">-- &lt;3&gt;</span></span>
+<span id="cb38-11"><a href="#cb38-11" tabindex="-1"></a>      <span class="fu">return</span> (a<span class="op">+</span>b)                      <span class="co">-- &lt;4&gt;</span></span></code></pre></div>
 <p>1: create two new <code>IVar</code>s to hold the results</p>
 <p>2: fork two independent <code>Par</code> computations</p>
 <p>3: wait for the results</p>
@@ -551,56 +627,62 @@ delay n = delay $! n-1
 ./parmonad 34 35 +RTS -N1 -s
   Total   time    1.745s  (  1.779s elapsed)</code></pre>
 </div>
-<div id="dataflow-parallelism-the-par-monad-1" class="slide section level1">
+<div id="dataflow-parallelism-the-par-monad-1"
+class="slide section level1">
 <h1>Dataflow parallelism: the <code>Par</code> monad</h1>
-<p>A program can be represented as a dataflow network (graph) where vertices represent operations, edges - dependencies.</p>
+<p>A program can be represented as a dataflow network (graph) where
+vertices represent operations, edges - dependencies.</p>
 <p><img src="dataflow-network.png" title="Dataflow network" /></p>
-<p>in the graph above, <code>j</code> depends on results of <code>g</code> and <code>h</code>, which in turn need the result of <code>f</code> but are independent of each other.</p>
+<p>in the graph above, <code>j</code> depends on results of
+<code>g</code> and <code>h</code>, which in turn need the result of
+<code>f</code> but are independent of each other.</p>
 <p>The dependency graph need not be static, can be built dynamically</p>
 </div>
 <div id="code" class="slide section level1">
 <h1>Code</h1>
-<div class="sourceCode" id="cb40"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="ot">network ::</span> <span class="dt">IVar</span> <span class="dt">In</span> <span class="ot">-&gt;</span> <span class="dt">Par</span> <span class="dt">Out</span></span>
-<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a>network inp <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a> [vf,vg,vh] <span class="ot">&lt;-</span> <span class="fu">sequence</span> [new,new,new]</span>
-<span id="cb40-4"><a href="#cb40-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb40-5"><a href="#cb40-5" aria-hidden="true" tabindex="-1"></a> fork <span class="op">$</span> <span class="kw">do</span> x <span class="ot">&lt;-</span> get inp</span>
-<span id="cb40-6"><a href="#cb40-6" aria-hidden="true" tabindex="-1"></a>           put vf (f x)</span>
-<span id="cb40-7"><a href="#cb40-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb40-8"><a href="#cb40-8" aria-hidden="true" tabindex="-1"></a> fork <span class="op">$</span> <span class="kw">do</span> x <span class="ot">&lt;-</span> get vf</span>
-<span id="cb40-9"><a href="#cb40-9" aria-hidden="true" tabindex="-1"></a>           put vg (g x)</span>
-<span id="cb40-10"><a href="#cb40-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb40-11"><a href="#cb40-11" aria-hidden="true" tabindex="-1"></a> fork <span class="op">$</span> <span class="kw">do</span> x <span class="ot">&lt;-</span> get vf</span>
-<span id="cb40-12"><a href="#cb40-12" aria-hidden="true" tabindex="-1"></a>           put vh (h x)</span>
-<span id="cb40-13"><a href="#cb40-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb40-14"><a href="#cb40-14" aria-hidden="true" tabindex="-1"></a> x <span class="ot">&lt;-</span> get vg</span>
-<span id="cb40-15"><a href="#cb40-15" aria-hidden="true" tabindex="-1"></a> y <span class="ot">&lt;-</span> get vh</span>
-<span id="cb40-16"><a href="#cb40-16" aria-hidden="true" tabindex="-1"></a> <span class="fu">return</span> (j x y)</span>
-<span id="cb40-17"><a href="#cb40-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb40-18"><a href="#cb40-18" aria-hidden="true" tabindex="-1"></a>f x <span class="ot">=</span> x<span class="op">+</span><span class="dv">1</span></span>
-<span id="cb40-19"><a href="#cb40-19" aria-hidden="true" tabindex="-1"></a>g x <span class="ot">=</span> x<span class="op">+</span>x</span>
-<span id="cb40-20"><a href="#cb40-20" aria-hidden="true" tabindex="-1"></a>h x <span class="ot">=</span> x<span class="op">*</span>x</span>
-<span id="cb40-21"><a href="#cb40-21" aria-hidden="true" tabindex="-1"></a>j <span class="ot">=</span> (,)</span>
-<span id="cb40-22"><a href="#cb40-22" aria-hidden="true" tabindex="-1"></a>main <span class="ot">=</span> <span class="fu">print</span> <span class="op">$</span> runNetwork <span class="dv">2</span></span></code></pre></div>
+<div class="sourceCode" id="cb40"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb40-1"><a href="#cb40-1" tabindex="-1"></a><span class="ot">network ::</span> <span class="dt">IVar</span> <span class="dt">In</span> <span class="ot">-&gt;</span> <span class="dt">Par</span> <span class="dt">Out</span></span>
+<span id="cb40-2"><a href="#cb40-2" tabindex="-1"></a>network inp <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb40-3"><a href="#cb40-3" tabindex="-1"></a> [vf,vg,vh] <span class="ot">&lt;-</span> <span class="fu">sequence</span> [new,new,new]</span>
+<span id="cb40-4"><a href="#cb40-4" tabindex="-1"></a></span>
+<span id="cb40-5"><a href="#cb40-5" tabindex="-1"></a> fork <span class="op">$</span> <span class="kw">do</span> x <span class="ot">&lt;-</span> get inp</span>
+<span id="cb40-6"><a href="#cb40-6" tabindex="-1"></a>           put vf (f x)</span>
+<span id="cb40-7"><a href="#cb40-7" tabindex="-1"></a></span>
+<span id="cb40-8"><a href="#cb40-8" tabindex="-1"></a> fork <span class="op">$</span> <span class="kw">do</span> x <span class="ot">&lt;-</span> get vf</span>
+<span id="cb40-9"><a href="#cb40-9" tabindex="-1"></a>           put vg (g x)</span>
+<span id="cb40-10"><a href="#cb40-10" tabindex="-1"></a></span>
+<span id="cb40-11"><a href="#cb40-11" tabindex="-1"></a> fork <span class="op">$</span> <span class="kw">do</span> x <span class="ot">&lt;-</span> get vf</span>
+<span id="cb40-12"><a href="#cb40-12" tabindex="-1"></a>           put vh (h x)</span>
+<span id="cb40-13"><a href="#cb40-13" tabindex="-1"></a></span>
+<span id="cb40-14"><a href="#cb40-14" tabindex="-1"></a> x <span class="ot">&lt;-</span> get vg</span>
+<span id="cb40-15"><a href="#cb40-15" tabindex="-1"></a> y <span class="ot">&lt;-</span> get vh</span>
+<span id="cb40-16"><a href="#cb40-16" tabindex="-1"></a> <span class="fu">return</span> (j x y)</span>
+<span id="cb40-17"><a href="#cb40-17" tabindex="-1"></a></span>
+<span id="cb40-18"><a href="#cb40-18" tabindex="-1"></a>f x <span class="ot">=</span> x<span class="op">+</span><span class="dv">1</span></span>
+<span id="cb40-19"><a href="#cb40-19" tabindex="-1"></a>g x <span class="ot">=</span> x<span class="op">+</span>x</span>
+<span id="cb40-20"><a href="#cb40-20" tabindex="-1"></a>h x <span class="ot">=</span> x<span class="op">*</span>x</span>
+<span id="cb40-21"><a href="#cb40-21" tabindex="-1"></a>j <span class="ot">=</span> (,)</span>
+<span id="cb40-22"><a href="#cb40-22" tabindex="-1"></a>main <span class="ot">=</span> <span class="fu">print</span> <span class="op">$</span> runNetwork <span class="dv">2</span></span></code></pre></div>
 <pre><code>$ stack run parnetwork -- +RTS -N2
 (6,9)</code></pre>
 </div>
 <div id="sudoku-using-par" class="slide section level1">
 <h1>Sudoku using <code>Par</code></h1>
-<div class="sourceCode" id="cb42"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a>    [f] <span class="ot">&lt;-</span> getArgs</span>
-<span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a>    grids <span class="ot">&lt;-</span> <span class="fu">fmap</span> <span class="fu">lines</span> <span class="op">$</span> <span class="fu">readFile</span> f</span>
-<span id="cb42-4"><a href="#cb42-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb42-5"><a href="#cb42-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">let</span> (as,bs) <span class="ot">=</span> <span class="fu">splitAt</span> (<span class="fu">length</span> grids <span class="ot">`div`</span> <span class="dv">2</span>) grids</span>
-<span id="cb42-6"><a href="#cb42-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb42-7"><a href="#cb42-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">print</span> <span class="op">$</span> <span class="fu">length</span> <span class="op">$</span> <span class="fu">filter</span> isJust <span class="op">$</span> runPar <span class="op">$</span> <span class="kw">do</span></span>
-<span id="cb42-8"><a href="#cb42-8" aria-hidden="true" tabindex="-1"></a>       i1 <span class="ot">&lt;-</span> new</span>
-<span id="cb42-9"><a href="#cb42-9" aria-hidden="true" tabindex="-1"></a>       i2 <span class="ot">&lt;-</span> new</span>
-<span id="cb42-10"><a href="#cb42-10" aria-hidden="true" tabindex="-1"></a>       fork <span class="op">$</span> put i1 (<span class="fu">map</span> solve as)</span>
-<span id="cb42-11"><a href="#cb42-11" aria-hidden="true" tabindex="-1"></a>       fork <span class="op">$</span> put i2 (<span class="fu">map</span> solve bs)</span>
-<span id="cb42-12"><a href="#cb42-12" aria-hidden="true" tabindex="-1"></a>       as&#39; <span class="ot">&lt;-</span> get i1</span>
-<span id="cb42-13"><a href="#cb42-13" aria-hidden="true" tabindex="-1"></a>       bs&#39; <span class="ot">&lt;-</span> get i2</span>
-<span id="cb42-14"><a href="#cb42-14" aria-hidden="true" tabindex="-1"></a>       <span class="fu">return</span> (as&#39; <span class="op">++</span> bs&#39;)</span></code></pre></div>
+<div class="sourceCode" id="cb42"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb42-1"><a href="#cb42-1" tabindex="-1"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb42-2"><a href="#cb42-2" tabindex="-1"></a>    [f] <span class="ot">&lt;-</span> getArgs</span>
+<span id="cb42-3"><a href="#cb42-3" tabindex="-1"></a>    grids <span class="ot">&lt;-</span> <span class="fu">fmap</span> <span class="fu">lines</span> <span class="op">$</span> <span class="fu">readFile</span> f</span>
+<span id="cb42-4"><a href="#cb42-4" tabindex="-1"></a></span>
+<span id="cb42-5"><a href="#cb42-5" tabindex="-1"></a>    <span class="kw">let</span> (as,bs) <span class="ot">=</span> <span class="fu">splitAt</span> (<span class="fu">length</span> grids <span class="ot">`div`</span> <span class="dv">2</span>) grids</span>
+<span id="cb42-6"><a href="#cb42-6" tabindex="-1"></a></span>
+<span id="cb42-7"><a href="#cb42-7" tabindex="-1"></a>    <span class="fu">print</span> <span class="op">$</span> <span class="fu">length</span> <span class="op">$</span> <span class="fu">filter</span> isJust <span class="op">$</span> runPar <span class="op">$</span> <span class="kw">do</span></span>
+<span id="cb42-8"><a href="#cb42-8" tabindex="-1"></a>       i1 <span class="ot">&lt;-</span> new</span>
+<span id="cb42-9"><a href="#cb42-9" tabindex="-1"></a>       i2 <span class="ot">&lt;-</span> new</span>
+<span id="cb42-10"><a href="#cb42-10" tabindex="-1"></a>       fork <span class="op">$</span> put i1 (<span class="fu">map</span> solve as)</span>
+<span id="cb42-11"><a href="#cb42-11" tabindex="-1"></a>       fork <span class="op">$</span> put i2 (<span class="fu">map</span> solve bs)</span>
+<span id="cb42-12"><a href="#cb42-12" tabindex="-1"></a>       as&#39; <span class="ot">&lt;-</span> get i1</span>
+<span id="cb42-13"><a href="#cb42-13" tabindex="-1"></a>       bs&#39; <span class="ot">&lt;-</span> get i2</span>
+<span id="cb42-14"><a href="#cb42-14" tabindex="-1"></a>       <span class="fu">return</span> (as&#39; <span class="op">++</span> bs&#39;)</span></code></pre></div>
 <pre><code>stack run -- sudoku-par2 ../Par/sudoku17.1000.txt +RTS -N1 -s 2&gt;&amp;1 | grep Total
   Total   time    1.610s  (  1.690s elapsed)
 stack run -- sudoku-par2 ../Par/sudoku17.1000.txt +RTS -N2 -s 2&gt;&amp;1 | grep Total
@@ -608,22 +690,24 @@ stack run -- sudoku-par2 ../Par/sudoku17.1000.txt +RTS -N2 -s 2&gt;&amp;1 | grep
 </div>
 <div id="parmap" class="slide section level1">
 <h1>parMap</h1>
-<div class="sourceCode" id="cb44"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><span class="ot">spawn ::</span> <span class="dt">NFData</span> a <span class="ot">=&gt;</span> <span class="dt">Par</span> a <span class="ot">-&gt;</span> <span class="dt">Par</span> (<span class="dt">IVar</span> a)</span>
-<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a>spawn p <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a>      i <span class="ot">&lt;-</span> new</span>
-<span id="cb44-4"><a href="#cb44-4" aria-hidden="true" tabindex="-1"></a>      fork (p <span class="op">&gt;&gt;=</span> put i)</span>
-<span id="cb44-5"><a href="#cb44-5" aria-hidden="true" tabindex="-1"></a>      <span class="fu">return</span> i</span>
-<span id="cb44-6"><a href="#cb44-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb44-7"><a href="#cb44-7" aria-hidden="true" tabindex="-1"></a><span class="ot">spawnP ::</span> <span class="dt">NFData</span> a <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Par</span> (<span class="dt">IVar</span> a)   <span class="co">-- for pure computations</span></span>
-<span id="cb44-8"><a href="#cb44-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb44-9"><a href="#cb44-9" aria-hidden="true" tabindex="-1"></a>parMap f as <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb44-10"><a href="#cb44-10" aria-hidden="true" tabindex="-1"></a>    ibs <span class="ot">&lt;-</span> <span class="fu">mapM</span> (spawnP <span class="op">.</span> f) as</span>
-<span id="cb44-11"><a href="#cb44-11" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mapM</span> get ibs</span></code></pre></div>
-<div class="sourceCode" id="cb45"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Control.Monad.Par</span></span>
-<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb45-3"><a href="#cb45-3" aria-hidden="true" tabindex="-1"></a>    [f] <span class="ot">&lt;-</span> getArgs</span>
-<span id="cb45-4"><a href="#cb45-4" aria-hidden="true" tabindex="-1"></a>    grids <span class="ot">&lt;-</span> <span class="fu">fmap</span> <span class="fu">lines</span> <span class="op">$</span> <span class="fu">readFile</span> f</span>
-<span id="cb45-5"><a href="#cb45-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">print</span> (<span class="fu">length</span> (<span class="fu">filter</span> isJust (runPar <span class="op">$</span> parMap solve grids)))</span></code></pre></div>
+<div class="sourceCode" id="cb44"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb44-1"><a href="#cb44-1" tabindex="-1"></a><span class="ot">spawn ::</span> <span class="dt">NFData</span> a <span class="ot">=&gt;</span> <span class="dt">Par</span> a <span class="ot">-&gt;</span> <span class="dt">Par</span> (<span class="dt">IVar</span> a)</span>
+<span id="cb44-2"><a href="#cb44-2" tabindex="-1"></a>spawn p <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb44-3"><a href="#cb44-3" tabindex="-1"></a>      i <span class="ot">&lt;-</span> new</span>
+<span id="cb44-4"><a href="#cb44-4" tabindex="-1"></a>      fork (p <span class="op">&gt;&gt;=</span> put i)</span>
+<span id="cb44-5"><a href="#cb44-5" tabindex="-1"></a>      <span class="fu">return</span> i</span>
+<span id="cb44-6"><a href="#cb44-6" tabindex="-1"></a></span>
+<span id="cb44-7"><a href="#cb44-7" tabindex="-1"></a><span class="ot">spawnP ::</span> <span class="dt">NFData</span> a <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Par</span> (<span class="dt">IVar</span> a)   <span class="co">-- for pure computations</span></span>
+<span id="cb44-8"><a href="#cb44-8" tabindex="-1"></a></span>
+<span id="cb44-9"><a href="#cb44-9" tabindex="-1"></a>parMap f as <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb44-10"><a href="#cb44-10" tabindex="-1"></a>    ibs <span class="ot">&lt;-</span> <span class="fu">mapM</span> (spawnP <span class="op">.</span> f) as</span>
+<span id="cb44-11"><a href="#cb44-11" tabindex="-1"></a>    <span class="fu">mapM</span> get ibs</span></code></pre></div>
+<div class="sourceCode" id="cb45"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb45-1"><a href="#cb45-1" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Control.Monad.Par</span></span>
+<span id="cb45-2"><a href="#cb45-2" tabindex="-1"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb45-3"><a href="#cb45-3" tabindex="-1"></a>    [f] <span class="ot">&lt;-</span> getArgs</span>
+<span id="cb45-4"><a href="#cb45-4" tabindex="-1"></a>    grids <span class="ot">&lt;-</span> <span class="fu">fmap</span> <span class="fu">lines</span> <span class="op">$</span> <span class="fu">readFile</span> f</span>
+<span id="cb45-5"><a href="#cb45-5" tabindex="-1"></a>    <span class="fu">print</span> (<span class="fu">length</span> (<span class="fu">filter</span> isJust (runPar <span class="op">$</span> parMap solve grids)))</span></code></pre></div>
 <pre><code>$ stack run -- sudoku-par3 ../Par/sudoku17.1000.txt +RTS -N1 -s 2&gt;&amp;1 | grep Total
   Total   time    1.561s  (  1.613s elapsed)
 $ stack run -- sudoku-par3 ../Par/sudoku17.1000.txt +RTS -N2 -s 2&gt;&amp;1 | grep Total
@@ -631,11 +715,14 @@ $ stack run -- sudoku-par3 ../Par/sudoku17.1000.txt +RTS -N2 -s 2&gt;&amp;1 | gr
 </div>
 <div id="questions" class="slide section level1">
 <h1>Questions?</h1>
-<div class="sourceCode" id="cb47"><pre class="sourceCode haskell"><code class="sourceCode haskell"></code></pre></div>
+<div class="sourceCode" id="cb47"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"></code></pre></div>
 </div>
-<div id="bonus-exercise-more-nqueens-variants" class="slide section level1">
+<div id="bonus-exercise-more-nqueens-variants"
+class="slide section level1">
 <h1>Bonus Exercise: more <code>nqueens</code> variants</h1>
-<p>Rewrite <code>nqueens</code> from last week (using <code>Eval</code>) to use <code>Par</code></p>
+<p>Rewrite <code>nqueens</code> from last week (using <code>Eval</code>)
+to use <code>Par</code></p>
 <p>Ditto with <code>forkIO+MVar</code></p>
 <p>Careful with granularity!</p>
 </div>

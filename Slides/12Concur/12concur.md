@@ -2,7 +2,7 @@
 title: Advanced Functional Programming
 subtitle: Parallelism and Concurrency
 author:  Marcin Benke
-date: May 31, 2022
+date: May 13, 2025
 ---
 
 # Parallelism and concurrency
