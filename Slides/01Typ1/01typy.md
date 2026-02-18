@@ -1,7 +1,7 @@
 ---
 title: Advanced Functional Programming
 author:  Marcin Benke
-date: Feb 25, 2025
+date: Feb 24, 2026
 ---
 
 <meta name="duration" content="80" />
