@@ -29,11 +29,13 @@ Any wishes?
 https://github.com/mbenke/zpf2022
 
 # Passing the course (Zasady zaliczania)
-* Lab: fixed Coq project, student-defined simple Haskell project (group projects are encouraged)
+* Lab:
+    - individual Coq project
+    - student-defined simple Haskell project (group projects are encouraged)
 * Oral exam, most important part of which is project presentation
-* First presentation round: Jun 10, second round Jul 1-4 (tentative)
-* Alternative to Haskell project: presentation on interesting Haskell topics during the lecture (possibly plus lab)
-    * Anyone interested?
+* First presentation round: Jun 9, second round Jul 22-25 (tentative)
+* Alternative to Haskell project: presentation on interesting Haskell topics during the lecture (preferably plus lab)
+    * Anyone interested? Let me know in advance.
 
 
 # Functional languages
@@ -47,21 +49,47 @@ Rich type structure distinguishes Haskell among other languages.
 
 Second part of the course: Coq, Idris where the type structure is arguably even richer.
 
-# Types as a specification language
+# Types as a specification language (1)
 
 A function type often specifies not only its input and output but also relationship between them:
 
 
 ~~~~ {.haskell}
-f :: forall a. a -> a
-f x = ?
+i :: forall a. a -> a
+i x = ?
 ~~~~
 
 If `f x` gives a result, it must be `x`
 
-* Philip Wadler ["Theorems for Free"](http://ecee.colorado.edu/ecen5533/fall11/reading/free.pdf)
+* Philip Wadler ["Theorems for Free"](https://dl.acm.org/doi/10.1145/99370.99404)
 
-* `h :: a -> IO b` constructs a computation with possible side effects
+The free theorem for
+
+```
+i :: a -> a
+```
+
+states that for any types  `A, B` and function `f :: A -> B` we have
+
+$$ f\circ i = i\circ f $$
+
+hence $i$ must be the identity function (*)
+
+Similarly, for `k :: a -> b -> a`, any types `A,B,C,D` and `f :: A -> C`, `g :: B -> D`
+
+$$ f(k\ x\ y) = k (f\ x)\ (g\ y) $$
+
+hence `k x y = x`
+
+Proof (*):
+
+> Assume the contrary: $i(a)=b \neq a$;
+
+> if $i(b)=b$ then let $f(b)=a$, else let $f(b)=b$ - contradiction
+
+# Types as a specification language
+
+* `h :: Int -> IO Int` constructs a computation with possible side effects, for example
 
     ~~~~ {.haskell}
     import Data.IORef
@@ -78,9 +106,12 @@ If `f x` gives a result, it must be `x`
       print j
     ~~~~
 
+* a function of type `Int -> Int` may have no side effects
+* its result depends only on the argument
+* or, more precisely...
 
 
-# Types as a specification language (2)
+# Types as a specification language (3)
 
 `g :: Integer -> Integer` may not have side effects visible outside (but may have local effects)
 
@@ -175,7 +206,7 @@ resolve = undefined
 
 Newer Haskell version allow for typed holes that can be used instead of undefined,  e.g. with
 
-```
+``` haskell
 findUnitClauses :: Clauses -> Clauses
 headMaybe :: [a] -> Maybe a
 
@@ -587,9 +618,10 @@ NB spaces are obligatory - `::*->*` is one lexem
 
 Newer Haskell versions allow introducing user kinds - we'll talk about them later.
 
-Also note recent trend of using `Type` (imported from `Data.Kind`)instead of `*`:
+Also note recent trend of using `Type` instead of `*`:
 
 ``` haskell
+import Data.Kind
 newtype StateT s (m :: Type -> Type) a = StateT (s -> m (a, s))
 ```
 
@@ -853,10 +885,10 @@ Mul1.hs:19:22: error:
 ``` haskell
 {-# LANGUAGE TypeFamilies #-}
 class Collection c where
-      type Elem c :: *
-      empty :: c
-      insert :: Elem c -> c -> c
-      member :: Elem c -> c -> Bool
+  type Elem c :: *
+  empty :: c
+  insert :: Elem c -> c -> c
+  member :: Elem c -> c -> Bool
 
 instance Eq a => Collection [a] where
   type Elem [a] = a
@@ -897,3 +929,5 @@ vappend :: Vec m a -> Vec n a -> Vec (m:+n) a
 ~~~~
 
 We'll talk about them systematically when we talk about dependent types in Haskell
+
+# Questions?
