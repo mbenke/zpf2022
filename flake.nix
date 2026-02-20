@@ -26,7 +26,7 @@
               ghc cabal-install
 	      containers mtl
 	      pretty
-	      QuickCheck
+	      QuickCheck doctest
               # alex happy BNFC
 	      pandoc pandoc-cli
               # tex

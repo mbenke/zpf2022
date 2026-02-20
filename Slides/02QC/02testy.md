@@ -2,7 +2,7 @@
 title: Advanced Functional Programming
 subtitle: Testing
 author:  Marcin Benke
-date: Mar 4, 2025
+date: Mar 3, 2026
 ---
 
 <meta name="duration" content="80" />
@@ -33,8 +33,8 @@ module DoctestExamples where
 ```
 
 ```
-$ stack install doctest
-$ stack exec doctest DoctestExamples.hs
+$ cabal install doctest
+$ doctest DoctestExamples.hs
 ### Failure in DoctestExamples.hs:7: expression `2 + 2'
 expected: 5
  but got: 4
@@ -745,37 +745,6 @@ OrderedInts [-63,-15,37]
 OrderedInts [-122,-53,-47,-43,-21,-19,29,53]
 ~~~~
 
-<!--
-# doctest + QuickCheck
-
-~~~~ {.haskell}
-module Fib where
-
--- $setup
--- >>> import Control.Applicative
--- >>> import Test.QuickCheck
--- >>> newtype Small = Small Int deriving Show
--- >>> instance Arbitrary Small where arbitrary = Small . (`mod` 10) <$> arbitrary
-
--- | Compute Fibonacci numbers
---
--- The following property holds:
---
--- prop> \(Small n) -> fib n == fib (n + 2) - fib (n + 1)
-fib :: Int -> Int
-fib 0 = 0
-fib 1 = 1
-fib n = fib (n - 1) + fib (n - 2)
-~~~~
-
-```
-stack install QuickCheck
-stack exec doctest Fib.hs
-Run from outside a project, using implicit global project config
-Using resolver: lts-9.21 from implicit global project's config file: /Users/ben/.stack/global/stack.yaml
-Examples: 5  Tried: 5  Errors: 0  Failures: 0
-```
--->
 
 # Running all tests in a module
 
@@ -800,4 +769,33 @@ return []  -- tells TH to typecheck definitions above and insert an empty decl l
 runTests = $quickCheckAll
 
 main = runTests
+```
+
+# Questions?
+
+# Bonus: doctest + QuickCheck
+
+~~~~ {.haskell}
+module Fib where
+
+-- $setup
+-- >>> import Control.Applicative
+-- >>> import Test.QuickCheck
+-- >>> newtype Small = Small Int deriving Show
+-- >>> instance Arbitrary Small where arbitrary = Small . (`mod` 10) <$> arbitrary
+
+-- | Compute Fibonacci numbers
+--
+-- The following property holds:
+--
+-- prop> \(Small n) -> fib n == fib (n + 2) - fib (n + 1)
+fib :: Int -> Int
+fib 0 = 0
+fib 1 = 1
+fib n = fib (n - 1) + fib (n - 2)
+~~~~
+
+```
+$ cabal exec doctest Fib.hs
+Examples: 5  Tried: 5  Errors: 0  Failures: 0
 ```
