@@ -569,7 +569,96 @@ Falsifiable, after 0 tests:
 -2
 ~~~~
 
-<!--
+# A problem with implication
+
+~~~~
+prop_insert1 x xs = ordered (insert x xs)
+
+*Main Test.QuickCheck> quickCheck prop_insert1
+*** Failed! Falsifiable (after 6 tests and 7 shrinks):
+0
+[0,-1]
+~~~~
+
+...obviously...
+
+~~~~
+prop_insert2 x xs = ordered xs ==> ordered (insert x xs)
+
+>>> quickCheck prop_insert2
+*** Gave up! Passed only 75 tests; 1000 discarded tests.
+~~~~
+
+Probability that a random list is ordered is small...
+
+# Test case distribution
+
+...and those which are, are usually not very useful
+
+~~~~
+-- collect :: (Show a, Testable prop) => a -> prop -> Property
+-- Attaches a label to a test case. This is used for reporting test case distribution.
+
+prop_insert3 x xs = collect (length xs) $  ordered xs ==> ordered (insert x xs)
+
+>>> quickCheck prop_insert3
+*** Gave up! Passed only 37 tests:
+51% 0
+32% 1
+16% 2
+~~~~
+
+
+# Sometimes you need to write your own generator
+
+* Define a new type
+
+~~~~
+newtype OrderedInts = OrderedInts [Int]
+
+prop_insert4 :: Int -> OrderedInts -> Bool
+prop_insert4  x (OrderedInts xs) = ordered (insert x xs)
+
+>>> sample (arbitrary:: Gen OrderedInts)
+OrderedInts []
+OrderedInts [0,0]
+OrderedInts [-2,-1,2]
+OrderedInts [-4,-2,0,0,2,4]
+OrderedInts [-7,-6,-6,-5,-2,-1,5]
+OrderedInts [-13,-12,-11,-10,-10,-7,1,1,1,10]
+OrderedInts [-13,-10,-7,-5,-2,3,10,10,13]
+OrderedInts [-19,-4,26]
+OrderedInts [-63,-15,37]
+OrderedInts [-122,-53,-47,-43,-21,-19,29,53]
+~~~~
+
+
+# Running all tests in a module
+
+`quickCheckAll` tests all properties with names starting with `prop_` (and proper type).
+It uses TemplateHaskell.
+
+The next lecture will discuss how such functions work.
+
+Usage example
+
+``` haskell
+{-# LANGUAGE TemplateHaskell #-}
+import Test.QuickCheck
+
+prop_AddCom3 :: Int -> Int -> Bool
+prop_AddCom3 x y = x + y == y + x
+
+prop_Mul1 :: Int -> Property
+prop_Mul1 x = (x>0) ==> (2*x > 0)
+
+return []  -- tells TH to typecheck definitions above and insert an empty decl list
+runTests = $quickCheckAll
+
+main = runTests
+```
+
+# Questions?
 # Generating functions
 
 We can test functions, but to test higher-order functons we need to generate random functions.
@@ -680,98 +769,42 @@ instance Show(a->b) where
 propCompAssoc f g h = (f . g) . h === f . (g . h)
   where types = [f,g,h::Int->Int]
 ~~~~
--->
 
-# A problem with implication
+# Printing functions
 
-~~~~
-prop_insert1 x xs = ordered (insert x xs)
+Printing functions is a hard problem and QC v1 could not do it.
 
-*Main Test.QuickCheck> quickCheck prop_insert1
-*** Failed! Falsifiable (after 6 tests and 7 shrinks):
-0
-[0,-1]
-~~~~
+This problem was (partially) solved in v2:
 
-...obviously...
-
-~~~~
-prop_insert2 x xs = ordered xs ==> ordered (insert x xs)
-
->>> quickCheck prop_insert2
-*** Gave up! Passed only 75 tests; 1000 discarded tests.
-~~~~
-
-Probability that a random list is ordered is small...
-
-# Test case distribution
-
-...and those which are, are usually not very useful
-
-~~~~
--- collect :: (Show a, Testable prop) => a -> prop -> Property
--- Attaches a label to a test case. This is used for reporting test case distribution.
-
-prop_insert3 x xs = collect (length xs) $  ordered xs ==> ordered (insert x xs)
-
->>> quickCheck prop_insert3
-*** Gave up! Passed only 37 tests:
-51% 0
-32% 1
-16% 2
-~~~~
-
-
-# Sometimes you need to write your own generator
-
-* Define a new type
-
-~~~~
-newtype OrderedInts = OrderedInts [Int]
-
-prop_insert4 :: Int -> OrderedInts -> Bool
-prop_insert4  x (OrderedInts xs) = ordered (insert x xs)
-
->>> sample (arbitrary:: Gen OrderedInts)
-OrderedInts []
-OrderedInts [0,0]
-OrderedInts [-2,-1,2]
-OrderedInts [-4,-2,0,0,2,4]
-OrderedInts [-7,-6,-6,-5,-2,-1,5]
-OrderedInts [-13,-12,-11,-10,-10,-7,1,1,1,10]
-OrderedInts [-13,-10,-7,-5,-2,3,10,10,13]
-OrderedInts [-19,-4,26]
-OrderedInts [-63,-15,37]
-OrderedInts [-122,-53,-47,-43,-21,-19,29,53]
-~~~~
-
-
-# Running all tests in a module
-
-`quickCheckAll` tests all properties with names starting with `prop_` (and proper type).
-It uses TemplateHaskell.
-
-The next lecture will discuss how such functions work.
-
-Usage example
+- observe that any finite computation evaluates a function only for a finite number or arguments
+- print partial functions with finite support
+- define special type describing how functions can be constructed
 
 ``` haskell
-{-# LANGUAGE TemplateHaskell #-}
-import Test.QuickCheck
-
-prop_AddCom3 :: Int -> Int -> Bool
-prop_AddCom3 x y = x + y == y + x
-
-prop_Mul1 :: Int -> Property
-prop_Mul1 x = (x>0) ==> (2*x > 0)
-
-return []  -- tells TH to typecheck definitions above and insert an empty decl list
-runTests = $quickCheckAll
-
-main = runTests
+data Fun a b = Fun (a :-> b, b) (a -> b)
+-- | The type of possibly partial concrete functions
+data a :-> c where
+  Pair  :: (a :-> (b :-> c)) -> ((a,b) :-> c)
+  (:+:) :: (a :-> c) -> (b :-> c) -> (Either a b :-> c)
+  Unit  :: c -> (() :-> c)
+  Nil   :: a :-> c
+  Table :: Eq a => [(a,c)] -> (a :-> c)
+  Map   :: (a -> b) -> (b -> a) -> (b :-> c) -> (a :-> c)
 ```
 
-# Questions?
+See [Shrinking and Showing Functions](https://dl.acm.org/doi/epdf/10.1145/2430532.2364516) by Koen Claessen
+
+# Example of use
+
+```
+>>> :{
+>>> let prop :: Fun String Integer -> Bool
+>>> prop (Fun _ f) = f "monkey" == f "banana" || f "banana" == f "elephant"
+>>> :}
+>>> quickCheck prop
+*** Failed! Falsifiable (after 3 tests and 134 shrinks):
+{"elephant"->1, "monkey"->1, _->0}
+```
 
 # Bonus: doctest + QuickCheck
 

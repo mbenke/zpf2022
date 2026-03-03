@@ -134,8 +134,8 @@ class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a 
 <span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a><span class="co">-- | Expect failure</span></span>
 <span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a><span class="co">-- &gt;&gt;&gt; 2 + 2</span></span>
 <span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a><span class="co">-- 5</span></span></code></pre></div>
-<pre><code>$ stack install doctest
-$ stack exec doctest DoctestExamples.hs
+<pre><code>$ cabal install doctest
+$ doctest DoctestExamples.hs
 ### Failure in DoctestExamples.hs:7: expression `2 + 2&#39;
 expected: 5
  but got: 4
@@ -596,118 +596,6 @@ OK, passed 100 tests
 Falsifiable, after 0 tests:
 2
 -2</code></pre>
-<!--
-# Generating functions
-
-We can test functions, but to test higher-order functons we need to generate random functions.
-
-
-Note that
-
-~~~~ {.haskell}
-Gen a ~ (Int -> StdGen -> a)
-Gen(a -> b) ≃ (Int -> StdGen -> a -> b) ≃ (a -> Int -> StdGen -> b) ≃ (a -> Gen b)
-~~~~
-
-so we can write
-
-~~~~ {.haskell}
-promote :: (a -> Gen b) -> Gen (a -> b)
-promote f = Gen (\n r -> \a -> let Gen m = f a in m n r)
-~~~~
-
-We can use `promote` to construct a function generator if we can create a generator family for results depending somehow on arguments
-
-# Coarbitrary
-
-We can describe this with a class:
-
-~~~~ {.haskell}
-class CoArbitrary a where
-  coarbitrary :: a -> Gen b -> Gen b
-~~~~
-
-`coarbitrary` produces a generator transformer from its argument
-
-Now we can use `Coarbitrary` to define `Arbitrary` instance for functions:
-
-~~~~ {.haskell}
-instance (CoArbitrary a, Arbitrary b) => Arbitrary(a->b) where
-  arbitrary = promote $ \a -> coarbitrary a arbitrary
-~~~~
-
-NB in QuickCheck v1.1 `coarbitrary` is a method of `Arbitrary`;
-v2 uses a different approach to function generation
-
-**Exercise:** write a few instances of `Arbitrary` for your types.
-
-# CoArbitrary instances
-
-To define CoArbitrary instances
-
-~~~~ {.haskell}
-class CoArbitrary where
-  coarbitrary :: a -> Gen b -> Gen b
-~~~~
-
-we need a way to construct generator transformers. Let us define the function
-
-~~~~ {.haskell}
-variant :: Int -> Gen a -> Gen a
-variant v (Gen m) = Gen (\n r -> m n (rands r !! (v+1)))
- where
-  rands r0 = r1 : rands r2 where (r1, r2) = split r0
-~~~~
-
-which splits the input generator into many variants and chooses one of them
-depending on the argument
-
-~~~~ {.haskell}
-instance CoArbitrary Bool where
-  coarbitrary False = variant 0
-  coarbitrary True  = variant 1
-~~~~
-
-# Example: coarbitrary for trees
-
-~~~~ {.haskell}
-instance Arbitrary Tree where
-  arbitrary = sized tree'
-    where tree' 0 = liftM Leaf arbitrary
-      tree' n | n>0 =
-        oneof [liftM Leaf arbitrary,
-              liftM2 Branch subtree subtree]
-        where subtree = tree' (n `div` 2)
-
-  coarbitrary (Leaf n) =
-    variant 0 . coarbitrary n  --
-    -- coarbitrary n :: Gen T -> Gen T
-    -- variant 0 :: Gen T -> Gen T
-
-  coarbitrary (Branch t1 t2) =
-    variant 1 . coarbitrary t1 . coarbitrary t2
-~~~~
-
-
-~~~
-variant :: Int -> Gen a -> Gen a
-coarbitrary :: a -> Gen b -> Gen b
-~~~
-
-
-# Function properties
-
-~~~~ {.haskell}
-infix 4 ===
-(===)  f g x = f x == g x
-
-instance Show(a->b) where
-  show f = "<function>"
-
-propCompAssoc f g h = (f . g) . h === f . (g . h)
-  where types = [f,g,h::Int->Int]
-~~~~
--->
 </div>
 <div id="a-problem-with-implication" class="slide section level1">
 <h1>A problem with implication</h1>
@@ -785,26 +673,148 @@ class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb38-1"><a
 <div id="questions" class="slide section level1">
 <h1>Questions?</h1>
 </div>
+<div id="generating-functions" class="slide section level1">
+<h1>Generating functions</h1>
+<p>We can test functions, but to test higher-order functons we need to
+generate random functions.</p>
+<p>Note that</p>
+<div class="sourceCode" id="cb39"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb39-1"><a href="#cb39-1" tabindex="-1"></a><span class="dt">Gen</span> a <span class="op">~</span> (<span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">StdGen</span> <span class="ot">-&gt;</span> a)</span>
+<span id="cb39-2"><a href="#cb39-2" tabindex="-1"></a><span class="dt">Gen</span>(a <span class="ot">-&gt;</span> b) ≃ (<span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">StdGen</span> <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> b) ≃ (a <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">StdGen</span> <span class="ot">-&gt;</span> b) ≃ (a <span class="ot">-&gt;</span> <span class="dt">Gen</span> b)</span></code></pre></div>
+<p>so we can write</p>
+<div class="sourceCode" id="cb40"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb40-1"><a href="#cb40-1" tabindex="-1"></a><span class="ot">promote ::</span> (a <span class="ot">-&gt;</span> <span class="dt">Gen</span> b) <span class="ot">-&gt;</span> <span class="dt">Gen</span> (a <span class="ot">-&gt;</span> b)</span>
+<span id="cb40-2"><a href="#cb40-2" tabindex="-1"></a>promote f <span class="ot">=</span> <span class="dt">Gen</span> (\n r <span class="ot">-&gt;</span> \a <span class="ot">-&gt;</span> <span class="kw">let</span> <span class="dt">Gen</span> m <span class="ot">=</span> f a <span class="kw">in</span> m n r)</span></code></pre></div>
+<p>We can use <code>promote</code> to construct a function generator if
+we can create a generator family for results depending somehow on
+arguments</p>
+</div>
+<div id="coarbitrary" class="slide section level1">
+<h1>Coarbitrary</h1>
+<p>We can describe this with a class:</p>
+<div class="sourceCode" id="cb41"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb41-1"><a href="#cb41-1" tabindex="-1"></a><span class="kw">class</span> <span class="dt">CoArbitrary</span> a <span class="kw">where</span></span>
+<span id="cb41-2"><a href="#cb41-2" tabindex="-1"></a><span class="ot">  coarbitrary ::</span> a <span class="ot">-&gt;</span> <span class="dt">Gen</span> b <span class="ot">-&gt;</span> <span class="dt">Gen</span> b</span></code></pre></div>
+<p><code>coarbitrary</code> produces a generator transformer from its
+argument</p>
+<p>Now we can use <code>Coarbitrary</code> to define
+<code>Arbitrary</code> instance for functions:</p>
+<div class="sourceCode" id="cb42"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb42-1"><a href="#cb42-1" tabindex="-1"></a><span class="kw">instance</span> (<span class="dt">CoArbitrary</span> a, <span class="dt">Arbitrary</span> b) <span class="ot">=&gt;</span> <span class="dt">Arbitrary</span>(a<span class="ot">-&gt;</span>b) <span class="kw">where</span></span>
+<span id="cb42-2"><a href="#cb42-2" tabindex="-1"></a>  arbitrary <span class="ot">=</span> promote <span class="op">$</span> \a <span class="ot">-&gt;</span> coarbitrary a arbitrary</span></code></pre></div>
+<p>NB in QuickCheck v1.1 <code>coarbitrary</code> is a method of
+<code>Arbitrary</code>; v2 uses a different approach to function
+generation</p>
+<p><strong>Exercise:</strong> write a few instances of
+<code>Arbitrary</code> for your types.</p>
+</div>
+<div id="coarbitrary-instances" class="slide section level1">
+<h1>CoArbitrary instances</h1>
+<p>To define CoArbitrary instances</p>
+<div class="sourceCode" id="cb43"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb43-1"><a href="#cb43-1" tabindex="-1"></a><span class="kw">class</span> <span class="dt">CoArbitrary</span> <span class="kw">where</span></span>
+<span id="cb43-2"><a href="#cb43-2" tabindex="-1"></a><span class="ot">  coarbitrary ::</span> a <span class="ot">-&gt;</span> <span class="dt">Gen</span> b <span class="ot">-&gt;</span> <span class="dt">Gen</span> b</span></code></pre></div>
+<p>we need a way to construct generator transformers. Let us define the
+function</p>
+<div class="sourceCode" id="cb44"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb44-1"><a href="#cb44-1" tabindex="-1"></a><span class="ot">variant ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Gen</span> a <span class="ot">-&gt;</span> <span class="dt">Gen</span> a</span>
+<span id="cb44-2"><a href="#cb44-2" tabindex="-1"></a>variant v (<span class="dt">Gen</span> m) <span class="ot">=</span> <span class="dt">Gen</span> (\n r <span class="ot">-&gt;</span> m n (rands r <span class="op">!!</span> (v<span class="op">+</span><span class="dv">1</span>)))</span>
+<span id="cb44-3"><a href="#cb44-3" tabindex="-1"></a> <span class="kw">where</span></span>
+<span id="cb44-4"><a href="#cb44-4" tabindex="-1"></a>  rands r0 <span class="ot">=</span> r1 <span class="op">:</span> rands r2 <span class="kw">where</span> (r1, r2) <span class="ot">=</span> split r0</span></code></pre></div>
+<p>which splits the input generator into many variants and chooses one
+of them depending on the argument</p>
+<div class="sourceCode" id="cb45"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb45-1"><a href="#cb45-1" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">CoArbitrary</span> <span class="dt">Bool</span> <span class="kw">where</span></span>
+<span id="cb45-2"><a href="#cb45-2" tabindex="-1"></a>  coarbitrary <span class="dt">False</span> <span class="ot">=</span> variant <span class="dv">0</span></span>
+<span id="cb45-3"><a href="#cb45-3" tabindex="-1"></a>  coarbitrary <span class="dt">True</span>  <span class="ot">=</span> variant <span class="dv">1</span></span></code></pre></div>
+</div>
+<div id="example-coarbitrary-for-trees" class="slide section level1">
+<h1>Example: coarbitrary for trees</h1>
+<div class="sourceCode" id="cb46"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb46-1"><a href="#cb46-1" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Arbitrary</span> <span class="dt">Tree</span> <span class="kw">where</span></span>
+<span id="cb46-2"><a href="#cb46-2" tabindex="-1"></a>  arbitrary <span class="ot">=</span> sized tree&#39;</span>
+<span id="cb46-3"><a href="#cb46-3" tabindex="-1"></a>    <span class="kw">where</span> tree&#39; <span class="dv">0</span> <span class="ot">=</span> liftM <span class="dt">Leaf</span> arbitrary</span>
+<span id="cb46-4"><a href="#cb46-4" tabindex="-1"></a>      tree&#39; n <span class="op">|</span> n<span class="op">&gt;</span><span class="dv">0</span> <span class="ot">=</span></span>
+<span id="cb46-5"><a href="#cb46-5" tabindex="-1"></a>        oneof [liftM <span class="dt">Leaf</span> arbitrary,</span>
+<span id="cb46-6"><a href="#cb46-6" tabindex="-1"></a>              liftM2 <span class="dt">Branch</span> subtree subtree]</span>
+<span id="cb46-7"><a href="#cb46-7" tabindex="-1"></a>        <span class="kw">where</span> subtree <span class="ot">=</span> tree&#39; (n <span class="ot">`div`</span> <span class="dv">2</span>)</span>
+<span id="cb46-8"><a href="#cb46-8" tabindex="-1"></a></span>
+<span id="cb46-9"><a href="#cb46-9" tabindex="-1"></a>  coarbitrary (<span class="dt">Leaf</span> n) <span class="ot">=</span></span>
+<span id="cb46-10"><a href="#cb46-10" tabindex="-1"></a>    variant <span class="dv">0</span> <span class="op">.</span> coarbitrary n  <span class="co">--</span></span>
+<span id="cb46-11"><a href="#cb46-11" tabindex="-1"></a>    <span class="co">-- coarbitrary n :: Gen T -&gt; Gen T</span></span>
+<span id="cb46-12"><a href="#cb46-12" tabindex="-1"></a>    <span class="co">-- variant 0 :: Gen T -&gt; Gen T</span></span>
+<span id="cb46-13"><a href="#cb46-13" tabindex="-1"></a></span>
+<span id="cb46-14"><a href="#cb46-14" tabindex="-1"></a>  coarbitrary (<span class="dt">Branch</span> t1 t2) <span class="ot">=</span></span>
+<span id="cb46-15"><a href="#cb46-15" tabindex="-1"></a>    variant <span class="dv">1</span> <span class="op">.</span> coarbitrary t1 <span class="op">.</span> coarbitrary t2</span></code></pre></div>
+<pre><code>variant :: Int -&gt; Gen a -&gt; Gen a
+coarbitrary :: a -&gt; Gen b -&gt; Gen b</code></pre>
+</div>
+<div id="function-properties" class="slide section level1">
+<h1>Function properties</h1>
+<div class="sourceCode" id="cb48"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb48-1"><a href="#cb48-1" tabindex="-1"></a>infix <span class="dv">4</span> <span class="op">===</span></span>
+<span id="cb48-2"><a href="#cb48-2" tabindex="-1"></a>(<span class="op">===</span>)  f g x <span class="ot">=</span> f x <span class="op">==</span> g x</span>
+<span id="cb48-3"><a href="#cb48-3" tabindex="-1"></a></span>
+<span id="cb48-4"><a href="#cb48-4" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Show</span>(a<span class="ot">-&gt;</span>b) <span class="kw">where</span></span>
+<span id="cb48-5"><a href="#cb48-5" tabindex="-1"></a>  <span class="fu">show</span> f <span class="ot">=</span> <span class="st">&quot;&lt;function&gt;&quot;</span></span>
+<span id="cb48-6"><a href="#cb48-6" tabindex="-1"></a></span>
+<span id="cb48-7"><a href="#cb48-7" tabindex="-1"></a>propCompAssoc f g h <span class="ot">=</span> (f <span class="op">.</span> g) <span class="op">.</span> h <span class="op">===</span> f <span class="op">.</span> (g <span class="op">.</span> h)</span>
+<span id="cb48-8"><a href="#cb48-8" tabindex="-1"></a>  <span class="kw">where</span> types <span class="ot">=</span> [f,g,<span class="ot">h::</span><span class="dt">Int</span><span class="ot">-&gt;</span><span class="dt">Int</span>]</span></code></pre></div>
+</div>
+<div id="printing-functions" class="slide section level1">
+<h1>Printing functions</h1>
+<p>Printing functions is a hard problem and QC v1 could not do it.</p>
+<p>This problem was (partially) solved in v2:</p>
+<ul>
+<li>observe that any finite computation evaluates a function only for a
+finite number or arguments</li>
+<li>print partial functions with finite support</li>
+<li>define special type describing how functions can be constructed</li>
+</ul>
+<div class="sourceCode" id="cb49"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb49-1"><a href="#cb49-1" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Fun</span> a b <span class="ot">=</span> <span class="dt">Fun</span> (a <span class="op">:-&gt;</span> b, b) (a <span class="ot">-&gt;</span> b)</span>
+<span id="cb49-2"><a href="#cb49-2" tabindex="-1"></a><span class="co">-- | The type of possibly partial concrete functions</span></span>
+<span id="cb49-3"><a href="#cb49-3" tabindex="-1"></a><span class="kw">data</span> a <span class="op">:-&gt;</span> c <span class="kw">where</span></span>
+<span id="cb49-4"><a href="#cb49-4" tabindex="-1"></a>  <span class="dt">Pair</span><span class="ot">  ::</span> (a <span class="op">:-&gt;</span> (b <span class="op">:-&gt;</span> c)) <span class="ot">-&gt;</span> ((a,b) <span class="op">:-&gt;</span> c)</span>
+<span id="cb49-5"><a href="#cb49-5" tabindex="-1"></a><span class="ot">  (:+:) ::</span> (a <span class="op">:-&gt;</span> c) <span class="ot">-&gt;</span> (b <span class="op">:-&gt;</span> c) <span class="ot">-&gt;</span> (<span class="dt">Either</span> a b <span class="op">:-&gt;</span> c)</span>
+<span id="cb49-6"><a href="#cb49-6" tabindex="-1"></a>  <span class="dt">Unit</span><span class="ot">  ::</span> c <span class="ot">-&gt;</span> (() <span class="op">:-&gt;</span> c)</span>
+<span id="cb49-7"><a href="#cb49-7" tabindex="-1"></a>  <span class="dt">Nil</span><span class="ot">   ::</span> a <span class="op">:-&gt;</span> c</span>
+<span id="cb49-8"><a href="#cb49-8" tabindex="-1"></a>  <span class="dt">Table</span><span class="ot"> ::</span> <span class="dt">Eq</span> a <span class="ot">=&gt;</span> [(a,c)] <span class="ot">-&gt;</span> (a <span class="op">:-&gt;</span> c)</span>
+<span id="cb49-9"><a href="#cb49-9" tabindex="-1"></a>  <span class="dt">Map</span><span class="ot">   ::</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> (b <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> (b <span class="op">:-&gt;</span> c) <span class="ot">-&gt;</span> (a <span class="op">:-&gt;</span> c)</span></code></pre></div>
+<p>See <a
+href="https://dl.acm.org/doi/epdf/10.1145/2430532.2364516">Shrinking and
+Showing Functions</a> by Koen Claessen</p>
+</div>
+<div id="example-of-use" class="slide section level1">
+<h1>Example of use</h1>
+<pre><code>&gt;&gt;&gt; :{
+&gt;&gt;&gt; let prop :: Fun String Integer -&gt; Bool
+&gt;&gt;&gt; prop (Fun _ f) = f &quot;monkey&quot; == f &quot;banana&quot; || f &quot;banana&quot; == f &quot;elephant&quot;
+&gt;&gt;&gt; :}
+&gt;&gt;&gt; quickCheck prop
+*** Failed! Falsifiable (after 3 tests and 134 shrinks):
+{&quot;elephant&quot;-&gt;1, &quot;monkey&quot;-&gt;1, _-&gt;0}</code></pre>
+</div>
 <div id="bonus-doctest-quickcheck" class="slide section level1">
 <h1>Bonus: doctest + QuickCheck</h1>
-<div class="sourceCode" id="cb39"><pre
-class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb39-1"><a href="#cb39-1" tabindex="-1"></a><span class="kw">module</span> <span class="dt">Fib</span> <span class="kw">where</span></span>
-<span id="cb39-2"><a href="#cb39-2" tabindex="-1"></a></span>
-<span id="cb39-3"><a href="#cb39-3" tabindex="-1"></a><span class="co">-- $setup</span></span>
-<span id="cb39-4"><a href="#cb39-4" tabindex="-1"></a><span class="co">-- &gt;&gt;&gt; import Control.Applicative</span></span>
-<span id="cb39-5"><a href="#cb39-5" tabindex="-1"></a><span class="co">-- &gt;&gt;&gt; import Test.QuickCheck</span></span>
-<span id="cb39-6"><a href="#cb39-6" tabindex="-1"></a><span class="co">-- &gt;&gt;&gt; newtype Small = Small Int deriving Show</span></span>
-<span id="cb39-7"><a href="#cb39-7" tabindex="-1"></a><span class="co">-- &gt;&gt;&gt; instance Arbitrary Small where arbitrary = Small . (`mod` 10) &lt;$&gt; arbitrary</span></span>
-<span id="cb39-8"><a href="#cb39-8" tabindex="-1"></a></span>
-<span id="cb39-9"><a href="#cb39-9" tabindex="-1"></a><span class="co">-- | Compute Fibonacci numbers</span></span>
-<span id="cb39-10"><a href="#cb39-10" tabindex="-1"></a><span class="co">--</span></span>
-<span id="cb39-11"><a href="#cb39-11" tabindex="-1"></a><span class="co">-- The following property holds:</span></span>
-<span id="cb39-12"><a href="#cb39-12" tabindex="-1"></a><span class="co">--</span></span>
-<span id="cb39-13"><a href="#cb39-13" tabindex="-1"></a><span class="co">-- prop&gt; \(Small n) -&gt; fib n == fib (n + 2) - fib (n + 1)</span></span>
-<span id="cb39-14"><a href="#cb39-14" tabindex="-1"></a><span class="ot">fib ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span></span>
-<span id="cb39-15"><a href="#cb39-15" tabindex="-1"></a>fib <span class="dv">0</span> <span class="ot">=</span> <span class="dv">0</span></span>
-<span id="cb39-16"><a href="#cb39-16" tabindex="-1"></a>fib <span class="dv">1</span> <span class="ot">=</span> <span class="dv">1</span></span>
-<span id="cb39-17"><a href="#cb39-17" tabindex="-1"></a>fib n <span class="ot">=</span> fib (n <span class="op">-</span> <span class="dv">1</span>) <span class="op">+</span> fib (n <span class="op">-</span> <span class="dv">2</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb51"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb51-1"><a href="#cb51-1" tabindex="-1"></a><span class="kw">module</span> <span class="dt">Fib</span> <span class="kw">where</span></span>
+<span id="cb51-2"><a href="#cb51-2" tabindex="-1"></a></span>
+<span id="cb51-3"><a href="#cb51-3" tabindex="-1"></a><span class="co">-- $setup</span></span>
+<span id="cb51-4"><a href="#cb51-4" tabindex="-1"></a><span class="co">-- &gt;&gt;&gt; import Control.Applicative</span></span>
+<span id="cb51-5"><a href="#cb51-5" tabindex="-1"></a><span class="co">-- &gt;&gt;&gt; import Test.QuickCheck</span></span>
+<span id="cb51-6"><a href="#cb51-6" tabindex="-1"></a><span class="co">-- &gt;&gt;&gt; newtype Small = Small Int deriving Show</span></span>
+<span id="cb51-7"><a href="#cb51-7" tabindex="-1"></a><span class="co">-- &gt;&gt;&gt; instance Arbitrary Small where arbitrary = Small . (`mod` 10) &lt;$&gt; arbitrary</span></span>
+<span id="cb51-8"><a href="#cb51-8" tabindex="-1"></a></span>
+<span id="cb51-9"><a href="#cb51-9" tabindex="-1"></a><span class="co">-- | Compute Fibonacci numbers</span></span>
+<span id="cb51-10"><a href="#cb51-10" tabindex="-1"></a><span class="co">--</span></span>
+<span id="cb51-11"><a href="#cb51-11" tabindex="-1"></a><span class="co">-- The following property holds:</span></span>
+<span id="cb51-12"><a href="#cb51-12" tabindex="-1"></a><span class="co">--</span></span>
+<span id="cb51-13"><a href="#cb51-13" tabindex="-1"></a><span class="co">-- prop&gt; \(Small n) -&gt; fib n == fib (n + 2) - fib (n + 1)</span></span>
+<span id="cb51-14"><a href="#cb51-14" tabindex="-1"></a><span class="ot">fib ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span></span>
+<span id="cb51-15"><a href="#cb51-15" tabindex="-1"></a>fib <span class="dv">0</span> <span class="ot">=</span> <span class="dv">0</span></span>
+<span id="cb51-16"><a href="#cb51-16" tabindex="-1"></a>fib <span class="dv">1</span> <span class="ot">=</span> <span class="dv">1</span></span>
+<span id="cb51-17"><a href="#cb51-17" tabindex="-1"></a>fib n <span class="ot">=</span> fib (n <span class="op">-</span> <span class="dv">1</span>) <span class="op">+</span> fib (n <span class="op">-</span> <span class="dv">2</span>)</span></code></pre></div>
 <pre><code>$ cabal exec doctest Fib.hs
 Examples: 5  Tried: 5  Errors: 0  Failures: 0</code></pre>
 </div>
