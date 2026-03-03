@@ -22,8 +22,6 @@ date: Feb 24, 2026
     * Concurrency
 * Project presentations
 
-Any wishes?
-
 # Course Materials
 
 https://github.com/mbenke/zpf2022
@@ -140,7 +138,7 @@ fib3 n x y = do
 
 How come?
 
-~~~~
+~~~~ {.haskell}
 runST :: (forall s. ST s a) -> a
 ~~~~
 

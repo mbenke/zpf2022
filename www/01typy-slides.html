@@ -134,7 +134,6 @@ weeks)</li>
 </ul></li>
 <li>Project presentations</li>
 </ul>
-<p>Any wishes?</p>
 </div>
 <div id="course-materials" class="slide section level1">
 <h1>Course Materials</h1>
@@ -261,7 +260,8 @@ class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a 
 <span id="cb4-17"><a href="#cb4-17" tabindex="-1"></a>        writeSTRef y (x&#39;<span class="op">+</span>y&#39;)</span>
 <span id="cb4-18"><a href="#cb4-18" tabindex="-1"></a>        fib3 (n<span class="op">-</span><span class="dv">1</span>) x y</span></code></pre></div>
 <p>How come?</p>
-<pre><code>runST :: (forall s. ST s a) -&gt; a</code></pre>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="ot">runST ::</span> (<span class="kw">forall</span> s<span class="op">.</span> <span class="dt">ST</span> s a) <span class="ot">-&gt;</span> a</span></code></pre></div>
 <p>The type of <code>runST</code> guarantees that side effects do not
 leak; <code>fibST</code> is pure.</p>
 </div>
