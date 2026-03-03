@@ -6,3 +6,5 @@
 * Write a generator for OrderedInts (increasing [Int])
 * Write a generator for some type of trees (e.g. BST) and use it in tests
 * Basing on the lecture notes, recreate  QuickCheck v1 (and improve it)
+* Read [[Shrinking and Showing Functions](https://dl.acm.org/doi/epdf/10.1145/2430532.2364516),
+  implement a type and try out of printable functions.
