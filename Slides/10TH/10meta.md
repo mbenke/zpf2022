@@ -2,7 +2,7 @@
 title: Advanced Functional Programming
 subtitle: Metaprogramming - Template Haskell, Quasiquotation
 author:  Marcin Benke
-date: Apr 29, 2025
+date: Mar 10, 2026
 ---
 
 # Metaprogramming - Template Haskell
@@ -65,7 +65,7 @@ Let's try to understand how it works...
 
 # Perhaps a more convincing example
 
-Building Web aps with Yesod:
+Building Web apps with Yesod:
 
 ``` haskell
 data Links = Links
@@ -164,7 +164,7 @@ instance Monad Q
 > :t runQ
 runQ :: Language.Haskell.TH.Syntax.Quasi m => Q a -> m a
 
->: i Quasi
+> :i Quasi
 class (MonadIO m, MonadFail m) => Quasi m where ...
 instance Quasi Q
 instance Quasi IO
@@ -286,9 +286,8 @@ mkName :: String -> Name
 > $(return (AppE (VarE (mkName "succ")) (LitE (IntegerL 1))))
 2
 
--- or $(appE (varE (mkName "succ")) (litE (IntegerL 1)))
+-- shorter: $(appE (varE 'succ) (litE (IntegerL 1)))
 ```
-
 
 # Names, patterns, declarations
 
@@ -524,6 +523,154 @@ main = mapM_ print
 
 <!-- [REPLit](https://replit.com/@mbenke/THProjections3) -->
 
+# `reify` - getting type and function info
+
+NB this is compile-time info, not runtime!
+
+``` haskell
+reify :: Name -> Q Info
+```
+
+Info is a sum type with constructors for each kind of thing a name can refer to:
+``` haskell
+data Info
+  = ClassI     Dec [InstanceDec]       -- a typeclass
+  | ClassOpI   Name Type ParentName    -- a class method
+  | TyConI     Dec                     -- a type declaration
+  | DataConI   Name Type ParentName    -- a data constructor
+  | VarI       Name Type (Maybe Dec)   -- a function/value
+  | TyVarI     Name Type               -- a type variable
+  -- ... plus a few more for primitives, patterns, etc.
+```
+So for a plain function you'd get VarI name type _, and the Type there is the full type signature as an AST.
+
+# Name syntax
+
+There are two tick conventions:
+``` haskell
+reify 'myFunction   -- single tick: refers to a VALUE name
+reify ''MyType      -- double tick: refers to a TYPE name
+
+ghci> 'True
+GHC.Types.True
+ghci> nameBase 'True
+"True"
+
+ghci> ''Bool
+GHC.Types.Bool
+```
+
+Trap: `'foo` is not always the same as `mkName "foo":
+
+``` haskell
+ghci> 'foo
+
+<interactive>:52:1: error: [GHC-76037]
+    • Not in scope: ‘foo’
+    • In the Template Haskell quotation 'foo
+ghci> mkName "foo"
+foo
+```
+
+(`'foo` works only if `foo` is unambiguously resolved)
+
+# `reify` usage examples
+
+reify a function
+``` haskell
+ghci> putStrLn $(do { reify 'not >>= stringE . pprint })
+GHC.Classes.not :: GHC.Types.Bool -> GHC.Types.Bool
+
+ghci> putStrLn $(do { reify 'not >>= stringE . show })
+VarI GHC.Classes.not (AppT (AppT ArrowT (ConT GHC.Types.Bool)) (ConT GHC.Types.Bool)) Nothing
+```
+
+reify a type:
+``` haskell
+ghci> writeln $(do { reify ''Bool >>= stringE . pprint  })
+data GHC.Types.Bool
+    = GHC.Types.False
+    | GHC.Types.True
+
+ghci> writeln $(do { reify ''Bool >>= stringE . show  })
+TyConI (DataD [] GHC.Types.Bool [] Nothing
+              [ NormalC GHC.Types.False []
+	      , NormalC GHC.Types.True []
+	      ] [])
+```
+
+# Bigger example
+
+``` haskell
+{-# LANGUAGE TemplateHaskell #-}
+module Derive where
+import Language.Haskell.TH
+
+-- | makeToFields ''Person
+-- generates:  fieldsOfPerson :: Person -> [(String, String)]
+makeFieldsOf :: Name -> Q [Dec]
+makeFieldsOf typeName = do
+  info <- reify typeName
+  fields <- case info of
+    TyConI (DataD _ _ _ _ [RecC _ fs] _) -> return fs
+    _ -> fail $ show typeName ++ " must be a single-constructor record"
+
+  xName <- newName "x"
+
+  -- derive "fieldsOfPerson" from "Person"
+  let funName = mkName ("fieldsOf" ++ nameBase typeName)   -- nameBase :: Name -> String
+
+  -- each field becomes ("fieldName", show (fieldAccessor x))
+  let mkPair (fieldName, _, _) =
+        TupE [ Just (LitE (StringL (nameBase fieldName)))
+             , Just (AppE (VarE 'show) (AppE (VarE fieldName) (VarE xName)))
+             ]
+
+  let body = NormalB (ListE (map mkPair fields))
+  return [ FunD funName [ Clause [VarP xName] body [] ] ]
+```
+
+Note the use of `'show` as a shorthand for `mkName "show"`
+
+# Usage 
+
+``` haskell
+{-# LANGUAGE TemplateHaskell #-}
+
+module Main where
+import Derive
+
+data Person = Person
+  { personName :: String
+  , personAge  :: Int
+  , personCity :: String
+  } deriving (Show)
+
+-- This splice calls the macro at compile time.
+-- reify ''Person sees the declaration above and generates:
+--
+--   fieldsOfPerson :: Person -> [(String, String)]
+--   fieldsOfPerson x = [ ("personName", show (personName x))
+--                       , ("personAge",  show (personAge  x))
+--                       , ("personCity", show (personCity x)) ]
+--
+makeFieldsOf ''Person
+
+main :: IO ()
+main = do
+  let p = Person "Alice" 30 "Warsaw"
+  mapM_ (\(k,v) -> putStrLn (k ++ ": " ++ v)) (fieldsOfPerson p)
+```
+
+```
+$ cabal run
+personName: "Alice"
+personAge: 30
+personCity: "Warsaw"
+```
+
+**Exercise:** extend the `fieldsOf` to produce JSON from records where each field can be a base type, record, or a list.
+
 # Quote, eval, quasiquote
 
 In Lisp we have quote: `'` (`code -> data`) and eval (data -> code):
@@ -609,7 +756,6 @@ Let's start with a simple data type and parser for arithmetic expressions
 {-# LANGUAGE DeriveDataTypeable #-}
 
 data Expr = EInt Int
-  | EVar Var
   | EAdd Expr Expr
   | ESub Expr Expr
   | EMul Expr Expr
@@ -678,10 +824,10 @@ simpl :: Expr -> Expr
 simpl $(return $ mkAddP (mkIntP 0) (VarP (mkName "x"))) = x
 
 mkIntP :: Integer -> Pat
-mkIntP i = ConP (mkName "EInt") [LitP $ IntegerL i]
+mkIntP i = ConP (mkName "EInt") [] [LitP $ IntegerL i]
 
 mkBinP :: String -> Pat -> Pat -> Pat
-mkBinP s p1 p2 = ConP (mkName s) [p1, p2]
+mkBinP s p1 p2 = ConP (mkName s) [] [p1, p2]
 
 mkAddP :: Pat -> Pat -> Pat
 mkAddP = mkBinP "EAdd"
@@ -704,7 +850,7 @@ turns out with quasiquotation we can do just that (albeit with a slightly differ
 simpl :: Expr -> Expr
 simpl [expr|0 + $x|] = x
 
-main = print $ simpl [expr|0+2|]
+main = print $ simpl [expr|0+z|]
 -- ...
 expr  :: QuasiQuoter
 expr  =  QuasiQuoter
@@ -747,8 +893,11 @@ Parsing is done with our expression parser, but building the Haskell AST is a bi
 Next we need to build Haskell AST from expression tree built by our parser:
 
 ``` haskell
+($$) = AppE  -- TH AST node for application
+
 exprToExpQ :: Expr -> Q Exp
 exprToExpQ (EInt n) = return $ ConE (mkName "EInt") $$ (intLitE n)
+exprToExpQ (EVar s) = return $ ConE (mkName "EVar") $$ (stringLitE s)
 exprToExpQ (EAdd e1 e2) = convertBinE "EAdd" e1 e2
 exprToExpQ (ESub e1 e2) = convertBinE "ESub" e1 e2
 exprToExpQ (EMul e1 e2) = convertBinE "EMul" e1 e2
@@ -758,8 +907,6 @@ convertBinE s e1 e2 = do
   e1' <- exprToExpQ e1
   e2' <- exprToExpQ e2
   return $ ConE (mkName s) $$ e1' $$ e2'
-
-($$) = AppE  -- TH AST node for application
 ```
 
 (alternatively we might make our parser return Haskell AST)
@@ -799,11 +946,12 @@ import Data.Typeable
 import Data.Data
 
 data Expr = EInt Int
-         | EAdd Expr Expr
-         | ESub Expr Expr
-         | EMul Expr Expr
-         | EDiv Expr Expr
-           deriving(Show,Typeable,Data)
+	  | EAdd Expr Expr
+	  | ESub Expr Expr
+	  | EMul Expr Expr
+	  | EDiv Expr Expr
+	  | EVar String
+	  deriving(Show,Typeable,Data)
 ```
 
 # Quasiquoting patterns
@@ -916,32 +1064,63 @@ antiExprPat :: Expr -> Maybe (Q Pat)
 antiExprPat (EMetaVar v) = Just $ varP (mkName v)
 antiExprPat _ = Nothing
 
+-- antiExprExp analogous, mutatis mutandis (`varP/varE`)
 ```
 
 What are the "extensions"?
 
-# What’s a function extension?
-You have
+# Generic programming — `Typeable` and `Data`
 
-* a generic function, say
-```
-gen :: Data a => a -> R
-```
-* a type-specific function, say
-```
-spec :: T -> R
+`Typeable` provides runtime type information — it lets us ask "what type is this value?"
+
+`Data` (a subclass of `Typeable`) adds the ability to generically traverse and transform values — inspect constructors, access fields, etc.
+
+``` haskell
+class Typeable a where ...              -- runtime type representation
+class Typeable a => Data a where ...    -- generic traversal/construction
+-- both can be derived automatically with DeriveDataTypeable
 ```
 
-You want a generic function which behaves like spec on values of type T,
-and like gen on all other values.
+With `Data`, we can write functions that work on *any* type:
 
-The function `extQ` does just that.
-
+``` haskell
+gsize :: Data a => a -> Int
+gsize x = 1 + sum (gmapQ gsize x)
+-- counts all constructors in a value, recursively
 ```
-extQ :: (Typeable a, Typeable t) => (a -> r) -> (t -> r) -> a -> r
 
-gen `extQ` spec :: Data a => a -> R  -- Data is a subclass of Typeable
+But sometimes we want to override behavior for one specific type.
+For example, treat `String` as atomic (size 1) instead of traversing its characters:
+
+``` haskell
+gsize' :: Data a => a -> Int
+gsize' = gsize `extQ` stringSize
+  where stringSize :: String -> Int
+	stringSize _ = 1
 ```
+
+``` haskell
+ghci> gsize  "ab"    -- traverses list structure: (:) 'a' ((:) 'b' [])
+5
+ghci> gsize' "ab"    -- treats String as a single unit
+1
+```
+
+# Extending generic functions
+
+`extQ` "extends" a generic query with a type-specific case:
+
+``` haskell
+extQ :: (Typeable a, Typeable t)
+     => (a -> r) -> (t -> r) -> a -> r
+```
+
+At runtime, `extQ` checks whether the value's type matches `t`.
+If yes, it applies the specific function; otherwise, it falls back to the generic one.
+
+This is exactly what we need for antiquotation: `dataToPatQ` provides the generic
+translation, and we extend it with a specific case for our `Expr` type
+that handles metavariables differently.
 
 (NB `extQ` comes from `Data.Generics` and the `Q` in the name has nothing to do with
 Template Haskell `Q` monad)
@@ -1013,6 +1192,68 @@ eval [expr| $a * $b|] = eval a * eval b
 eval (EInt n) = n
 ```
 
+
+# Exercises
+
+* Write a function such that `build_ps n` generates all projections for n-tuples,
+* Write a function `tupleFromList :: Int -> ExpQ` such that
+```
+$(tupleFromList 8) [1..8] == (1,2,3,4,5,6,7,8)
+```
+* Extend the `fieldsOf` example to produce JSON from records where each field can be a base type, record, or a list.
+* When using the State monad, we often write a lot of boilerplate of the form
+
+    ``` haskell
+    getGenerateDefs :: TcM Bool
+    getGenerateDefs = gets generateDefs
+
+    setGenerateDefs :: Bool -> TcM ()
+    setGenerateDefs b =
+      modify (\env -> env {generateDefs = b})
+    ```
+    Write a function `makeStateAccessors` such that
+
+    ``` haskell
+    data State = { field1 :: T1, ..., fieldN :: TN }
+
+    makeStateAccessors ''State
+    ```
+    generates `getFieldK/setFieldK` for all fields (field names can be arbitrary, not necessarily `fieldK`)
+* Write a `matrix` quasiquoter such that
+
+```
+*MatrixSplice> :{
+*MatrixSplice| [matrix|
+*MatrixSplice| 1 2
+*MatrixSplice| 3 4
+*MatrixSplice| |]
+*MatrixSplice| :}
+[[1,2],[3,4]]
+```
+
+be careful with blank lines!
+
+* Extend the expression simplifier with more rules.
+
+<!--
+* Extend the expression quasiquoter to handle metavariables for
+  numeric constants, allowing to implement simplification rules like
+
+    ```
+    simpl [expr|$int:n$ + $int:m$|] = [expr| $int:m+n$ |]
+    ```
+    (you are welcome to invent your own syntax in place of `$int: ... $`).
+    you'll need a new constructor like
+    `EMetaInt String` and corresponding `antiExprPat/antiExprExp` cases.
+-->
+<!--
+* generate expression quasiquoters using `bnfc-meta`
+-->
+
+# Questions?
+
+# Bonus
+
 # bnfc-meta
 
 Instead of writing a parser by hand, we can use BNFC.
@@ -1038,37 +1279,3 @@ exp1 :: Expr
 exp1 = [expr| 2 + 2 |]
 ```
 
-# Exercises
-
-* Write a function such that `build_ps n` generates all projections for n-tuples,
-* Write a function `tupleFromList` such that
-```
-$(tupleFromList 8) [1..8] == (1,2,3,4,5,6,7,8)
-```
-
-* W rite a `matrix` quasiquoter such that
-
-```
-*MatrixSplice> :{
-*MatrixSplice| [matrix|
-*MatrixSplice| 1 2
-*MatrixSplice| 3 4
-*MatrixSplice| |]
-*MatrixSplice| :}
-[[1,2],[3,4]]
-```
-
-be careful with blank lines!
-
-* Extend the expression simplifier with more rules.
-
-* Extend the expression quasiquoter to handle metavariables for
-  numeric constants, allowing to implement simplification rules like
-
-```
-simpl [expr|$int:n$ + $int:m$|] = [expr| $int:m+n$ |]
-```
-
-(you are welcome to invent your own syntax in place of `$int: ... $`)
-
-* generate expression quasiquoters using `bnfc-meta`

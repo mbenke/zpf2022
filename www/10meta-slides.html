@@ -24,8 +24,9 @@
       vertical-align: middle;
     }
     /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
     pre > code.sourceCode { white-space: pre; position: relative; }
-    pre > code.sourceCode > span { line-height: 1.25; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
     pre > code.sourceCode > span:empty { height: 1.2em; }
     .sourceCode { overflow: visible; }
     code.sourceCode > span { color: inherit; text-decoration: inherit; }
@@ -101,7 +102,7 @@ Quasiquotation</p>
   <p class="author">
 Marcin Benke
   </p>
-  <p class="date">Apr 29, 2025</p>
+  <p class="date">Mar 10, 2026</p>
 </div>
 <div id="metaprogramming---template-haskell"
 class="slide section level1">
@@ -158,7 +159,7 @@ class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a 
 <div id="perhaps-a-more-convincing-example"
 class="slide section level1">
 <h1>Perhaps a more convincing example</h1>
-<p>Building Web aps with Yesod:</p>
+<p>Building Web apps with Yesod:</p>
 <div class="sourceCode" id="cb4"><pre
 class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Links</span> <span class="ot">=</span> <span class="dt">Links</span></span>
 <span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a></span>
@@ -253,7 +254,7 @@ instance Monad Q</code></pre>
 <pre><code>&gt; :t runQ
 runQ :: Language.Haskell.TH.Syntax.Quasi m =&gt; Q a -&gt; m a
 
-&gt;: i Quasi
+&gt; :i Quasi
 class (MonadIO m, MonadFail m) =&gt; Quasi m where ...
 instance Quasi Q
 instance Quasi IO</code></pre>
@@ -348,7 +349,7 @@ mkName :: String -&gt; Name
 &gt; $(return (AppE (VarE (mkName &quot;succ&quot;)) (LitE (IntegerL 1))))
 2
 
--- or $(appE (varE (mkName &quot;succ&quot;)) (litE (IntegerL 1)))</code></pre>
+-- shorter: $(appE (varE &#39;succ) (litE (IntegerL 1)))</code></pre>
 </div>
 <div id="names-patterns-declarations" class="slide section level1">
 <h1>Names, patterns, declarations</h1>
@@ -540,6 +541,142 @@ class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb34-1"><a
 <span id="cb34-9"><a href="#cb34-9" tabindex="-1"></a>    ]</span></code></pre></div>
 <!-- [REPLit](https://replit.com/@mbenke/THProjections3) -->
 </div>
+<div id="reify---getting-type-and-function-info"
+class="slide section level1">
+<h1><code>reify</code> - getting type and function info</h1>
+<p>NB this is compile-time info, not runtime!</p>
+<div class="sourceCode" id="cb35"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb35-1"><a href="#cb35-1" tabindex="-1"></a><span class="ot">reify ::</span> <span class="dt">Name</span> <span class="ot">-&gt;</span> <span class="dt">Q</span> <span class="dt">Info</span></span></code></pre></div>
+<p>Info is a sum type with constructors for each kind of thing a name
+can refer to:</p>
+<div class="sourceCode" id="cb36"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb36-1"><a href="#cb36-1" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Info</span></span>
+<span id="cb36-2"><a href="#cb36-2" tabindex="-1"></a>  <span class="ot">=</span> <span class="dt">ClassI</span>     <span class="dt">Dec</span> [<span class="dt">InstanceDec</span>]       <span class="co">-- a typeclass</span></span>
+<span id="cb36-3"><a href="#cb36-3" tabindex="-1"></a>  <span class="op">|</span> <span class="dt">ClassOpI</span>   <span class="dt">Name</span> <span class="dt">Type</span> <span class="dt">ParentName</span>    <span class="co">-- a class method</span></span>
+<span id="cb36-4"><a href="#cb36-4" tabindex="-1"></a>  <span class="op">|</span> <span class="dt">TyConI</span>     <span class="dt">Dec</span>                     <span class="co">-- a type declaration</span></span>
+<span id="cb36-5"><a href="#cb36-5" tabindex="-1"></a>  <span class="op">|</span> <span class="dt">DataConI</span>   <span class="dt">Name</span> <span class="dt">Type</span> <span class="dt">ParentName</span>    <span class="co">-- a data constructor</span></span>
+<span id="cb36-6"><a href="#cb36-6" tabindex="-1"></a>  <span class="op">|</span> <span class="dt">VarI</span>       <span class="dt">Name</span> <span class="dt">Type</span> (<span class="dt">Maybe</span> <span class="dt">Dec</span>)   <span class="co">-- a function/value</span></span>
+<span id="cb36-7"><a href="#cb36-7" tabindex="-1"></a>  <span class="op">|</span> <span class="dt">TyVarI</span>     <span class="dt">Name</span> <span class="dt">Type</span>               <span class="co">-- a type variable</span></span>
+<span id="cb36-8"><a href="#cb36-8" tabindex="-1"></a>  <span class="co">-- ... plus a few more for primitives, patterns, etc.</span></span></code></pre></div>
+<p>So for a plain function you’d get VarI name type _, and the Type
+there is the full type signature as an AST.</p>
+</div>
+<div id="name-syntax" class="slide section level1">
+<h1>Name syntax</h1>
+<p>There are two tick conventions:</p>
+<div class="sourceCode" id="cb37"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb37-1"><a href="#cb37-1" tabindex="-1"></a>reify &#39;myFunction   <span class="co">-- single tick: refers to a VALUE name</span></span>
+<span id="cb37-2"><a href="#cb37-2" tabindex="-1"></a>reify &#39;<span class="dt">&#39;MyType</span>      <span class="co">-- double tick: refers to a TYPE name</span></span>
+<span id="cb37-3"><a href="#cb37-3" tabindex="-1"></a></span>
+<span id="cb37-4"><a href="#cb37-4" tabindex="-1"></a>ghci<span class="op">&gt;</span> <span class="dt">&#39;True</span></span>
+<span id="cb37-5"><a href="#cb37-5" tabindex="-1"></a><span class="dt">GHC.Types.True</span></span>
+<span id="cb37-6"><a href="#cb37-6" tabindex="-1"></a>ghci<span class="op">&gt;</span> nameBase <span class="dt">&#39;True</span></span>
+<span id="cb37-7"><a href="#cb37-7" tabindex="-1"></a><span class="st">&quot;True&quot;</span></span>
+<span id="cb37-8"><a href="#cb37-8" tabindex="-1"></a></span>
+<span id="cb37-9"><a href="#cb37-9" tabindex="-1"></a>ghci<span class="op">&gt;</span> &#39;<span class="dt">&#39;Bool</span></span>
+<span id="cb37-10"><a href="#cb37-10" tabindex="-1"></a><span class="dt">GHC.Types.Bool</span></span></code></pre></div>
+<p>Trap: <code>'foo</code> is not always the same as `mkName “foo”:</p>
+<div class="sourceCode" id="cb38"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb38-1"><a href="#cb38-1" tabindex="-1"></a>ghci<span class="op">&gt;</span> &#39;foo</span>
+<span id="cb38-2"><a href="#cb38-2" tabindex="-1"></a></span>
+<span id="cb38-3"><a href="#cb38-3" tabindex="-1"></a><span class="op">&lt;</span>interactive<span class="op">&gt;:</span><span class="dv">52</span><span class="op">:</span><span class="dv">1</span><span class="op">:</span> <span class="fu">error</span><span class="op">:</span> [<span class="dt">GHC</span><span class="op">-</span><span class="dv">76037</span>]</span>
+<span id="cb38-4"><a href="#cb38-4" tabindex="-1"></a>    • <span class="dt">Not</span> <span class="kw">in</span> scope<span class="op">:</span> ‘foo’</span>
+<span id="cb38-5"><a href="#cb38-5" tabindex="-1"></a>    • <span class="dt">In</span> the <span class="dt">Template</span> <span class="dt">Haskell</span> quotation &#39;foo</span>
+<span id="cb38-6"><a href="#cb38-6" tabindex="-1"></a>ghci<span class="op">&gt;</span> mkName <span class="st">&quot;foo&quot;</span></span>
+<span id="cb38-7"><a href="#cb38-7" tabindex="-1"></a>foo</span></code></pre></div>
+<p>(<code>'foo</code> works only if <code>foo</code> is unambiguously
+resolved)</p>
+</div>
+<div id="reify-usage-examples" class="slide section level1">
+<h1><code>reify</code> usage examples</h1>
+<p>reify a function</p>
+<div class="sourceCode" id="cb39"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb39-1"><a href="#cb39-1" tabindex="-1"></a>ghci<span class="op">&gt;</span> <span class="fu">putStrLn</span> <span class="op">$</span>(<span class="kw">do</span> { reify &#39;not <span class="op">&gt;&gt;=</span> stringE <span class="op">.</span> pprint })</span>
+<span id="cb39-2"><a href="#cb39-2" tabindex="-1"></a>GHC.Classes.not<span class="ot"> ::</span> <span class="dt">GHC.Types.Bool</span> <span class="ot">-&gt;</span> <span class="dt">GHC.Types.Bool</span></span>
+<span id="cb39-3"><a href="#cb39-3" tabindex="-1"></a></span>
+<span id="cb39-4"><a href="#cb39-4" tabindex="-1"></a>ghci<span class="op">&gt;</span> <span class="fu">putStrLn</span> <span class="op">$</span>(<span class="kw">do</span> { reify &#39;not <span class="op">&gt;&gt;=</span> stringE <span class="op">.</span> <span class="fu">show</span> })</span>
+<span id="cb39-5"><a href="#cb39-5" tabindex="-1"></a><span class="dt">VarI</span> GHC.Classes.not (<span class="dt">AppT</span> (<span class="dt">AppT</span> <span class="dt">ArrowT</span> (<span class="dt">ConT</span> <span class="dt">GHC.Types.Bool</span>)) (<span class="dt">ConT</span> <span class="dt">GHC.Types.Bool</span>)) <span class="dt">Nothing</span></span></code></pre></div>
+<p>reify a type:</p>
+<div class="sourceCode" id="cb40"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb40-1"><a href="#cb40-1" tabindex="-1"></a>ghci<span class="op">&gt;</span> writeln <span class="op">$</span>(<span class="kw">do</span> { reify &#39;<span class="dt">&#39;Bool</span> <span class="op">&gt;&gt;=</span> stringE <span class="op">.</span> pprint  })</span>
+<span id="cb40-2"><a href="#cb40-2" tabindex="-1"></a><span class="kw">data</span> <span class="dt">GHC.Types.Bool</span></span>
+<span id="cb40-3"><a href="#cb40-3" tabindex="-1"></a>    <span class="ot">=</span> <span class="dt">GHC.Types.False</span></span>
+<span id="cb40-4"><a href="#cb40-4" tabindex="-1"></a>    <span class="op">|</span> <span class="dt">GHC.Types.True</span></span>
+<span id="cb40-5"><a href="#cb40-5" tabindex="-1"></a></span>
+<span id="cb40-6"><a href="#cb40-6" tabindex="-1"></a>ghci<span class="op">&gt;</span> writeln <span class="op">$</span>(<span class="kw">do</span> { reify &#39;<span class="dt">&#39;Bool</span> <span class="op">&gt;&gt;=</span> stringE <span class="op">.</span> <span class="fu">show</span>  })</span>
+<span id="cb40-7"><a href="#cb40-7" tabindex="-1"></a><span class="dt">TyConI</span> (<span class="dt">DataD</span> [] <span class="dt">GHC.Types.Bool</span> [] <span class="dt">Nothing</span></span>
+<span id="cb40-8"><a href="#cb40-8" tabindex="-1"></a>              [ <span class="dt">NormalC</span> <span class="dt">GHC.Types.False</span> []</span>
+<span id="cb40-9"><a href="#cb40-9" tabindex="-1"></a>          , <span class="dt">NormalC</span> <span class="dt">GHC.Types.True</span> []</span>
+<span id="cb40-10"><a href="#cb40-10" tabindex="-1"></a>          ] [])</span></code></pre></div>
+</div>
+<div id="bigger-example" class="slide section level1">
+<h1>Bigger example</h1>
+<div class="sourceCode" id="cb41"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb41-1"><a href="#cb41-1" tabindex="-1"></a><span class="ot">{-# LANGUAGE TemplateHaskell #-}</span></span>
+<span id="cb41-2"><a href="#cb41-2" tabindex="-1"></a><span class="kw">module</span> <span class="dt">Derive</span> <span class="kw">where</span></span>
+<span id="cb41-3"><a href="#cb41-3" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Language.Haskell.TH</span></span>
+<span id="cb41-4"><a href="#cb41-4" tabindex="-1"></a></span>
+<span id="cb41-5"><a href="#cb41-5" tabindex="-1"></a><span class="co">-- | makeToFields &#39;&#39;Person</span></span>
+<span id="cb41-6"><a href="#cb41-6" tabindex="-1"></a><span class="co">-- generates:  fieldsOfPerson :: Person -&gt; [(String, String)]</span></span>
+<span id="cb41-7"><a href="#cb41-7" tabindex="-1"></a><span class="ot">makeFieldsOf ::</span> <span class="dt">Name</span> <span class="ot">-&gt;</span> <span class="dt">Q</span> [<span class="dt">Dec</span>]</span>
+<span id="cb41-8"><a href="#cb41-8" tabindex="-1"></a>makeFieldsOf typeName <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb41-9"><a href="#cb41-9" tabindex="-1"></a>  info <span class="ot">&lt;-</span> reify typeName</span>
+<span id="cb41-10"><a href="#cb41-10" tabindex="-1"></a>  fields <span class="ot">&lt;-</span> <span class="kw">case</span> info <span class="kw">of</span></span>
+<span id="cb41-11"><a href="#cb41-11" tabindex="-1"></a>    <span class="dt">TyConI</span> (<span class="dt">DataD</span> _ _ _ _ [<span class="dt">RecC</span> _ fs] _) <span class="ot">-&gt;</span> <span class="fu">return</span> fs</span>
+<span id="cb41-12"><a href="#cb41-12" tabindex="-1"></a>    _ <span class="ot">-&gt;</span> <span class="fu">fail</span> <span class="op">$</span> <span class="fu">show</span> typeName <span class="op">++</span> <span class="st">&quot; must be a single-constructor record&quot;</span></span>
+<span id="cb41-13"><a href="#cb41-13" tabindex="-1"></a></span>
+<span id="cb41-14"><a href="#cb41-14" tabindex="-1"></a>  xName <span class="ot">&lt;-</span> newName <span class="st">&quot;x&quot;</span></span>
+<span id="cb41-15"><a href="#cb41-15" tabindex="-1"></a></span>
+<span id="cb41-16"><a href="#cb41-16" tabindex="-1"></a>  <span class="co">-- derive &quot;fieldsOfPerson&quot; from &quot;Person&quot;</span></span>
+<span id="cb41-17"><a href="#cb41-17" tabindex="-1"></a>  <span class="kw">let</span> funName <span class="ot">=</span> mkName (<span class="st">&quot;fieldsOf&quot;</span> <span class="op">++</span> nameBase typeName)   <span class="co">-- nameBase :: Name -&gt; String</span></span>
+<span id="cb41-18"><a href="#cb41-18" tabindex="-1"></a></span>
+<span id="cb41-19"><a href="#cb41-19" tabindex="-1"></a>  <span class="co">-- each field becomes (&quot;fieldName&quot;, show (fieldAccessor x))</span></span>
+<span id="cb41-20"><a href="#cb41-20" tabindex="-1"></a>  <span class="kw">let</span> mkPair (fieldName, _, _) <span class="ot">=</span></span>
+<span id="cb41-21"><a href="#cb41-21" tabindex="-1"></a>        <span class="dt">TupE</span> [ <span class="dt">Just</span> (<span class="dt">LitE</span> (<span class="dt">StringL</span> (nameBase fieldName)))</span>
+<span id="cb41-22"><a href="#cb41-22" tabindex="-1"></a>             , <span class="dt">Just</span> (<span class="dt">AppE</span> (<span class="dt">VarE</span> &#39;show) (<span class="dt">AppE</span> (<span class="dt">VarE</span> fieldName) (<span class="dt">VarE</span> xName)))</span>
+<span id="cb41-23"><a href="#cb41-23" tabindex="-1"></a>             ]</span>
+<span id="cb41-24"><a href="#cb41-24" tabindex="-1"></a></span>
+<span id="cb41-25"><a href="#cb41-25" tabindex="-1"></a>  <span class="kw">let</span> body <span class="ot">=</span> <span class="dt">NormalB</span> (<span class="dt">ListE</span> (<span class="fu">map</span> mkPair fields))</span>
+<span id="cb41-26"><a href="#cb41-26" tabindex="-1"></a>  <span class="fu">return</span> [ <span class="dt">FunD</span> funName [ <span class="dt">Clause</span> [<span class="dt">VarP</span> xName] body [] ] ]</span></code></pre></div>
+<p>Note the use of <code>'show</code> as a shorthand for
+<code>mkName "show"</code></p>
+</div>
+<div id="usage" class="slide section level1">
+<h1>Usage</h1>
+<div class="sourceCode" id="cb42"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb42-1"><a href="#cb42-1" tabindex="-1"></a><span class="ot">{-# LANGUAGE TemplateHaskell #-}</span></span>
+<span id="cb42-2"><a href="#cb42-2" tabindex="-1"></a></span>
+<span id="cb42-3"><a href="#cb42-3" tabindex="-1"></a><span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span></span>
+<span id="cb42-4"><a href="#cb42-4" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Derive</span></span>
+<span id="cb42-5"><a href="#cb42-5" tabindex="-1"></a></span>
+<span id="cb42-6"><a href="#cb42-6" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Person</span> <span class="ot">=</span> <span class="dt">Person</span></span>
+<span id="cb42-7"><a href="#cb42-7" tabindex="-1"></a>  {<span class="ot"> personName ::</span> <span class="dt">String</span></span>
+<span id="cb42-8"><a href="#cb42-8" tabindex="-1"></a>  ,<span class="ot"> personAge  ::</span> <span class="dt">Int</span></span>
+<span id="cb42-9"><a href="#cb42-9" tabindex="-1"></a>  ,<span class="ot"> personCity ::</span> <span class="dt">String</span></span>
+<span id="cb42-10"><a href="#cb42-10" tabindex="-1"></a>  } <span class="kw">deriving</span> (<span class="dt">Show</span>)</span>
+<span id="cb42-11"><a href="#cb42-11" tabindex="-1"></a></span>
+<span id="cb42-12"><a href="#cb42-12" tabindex="-1"></a><span class="co">-- This splice calls the macro at compile time.</span></span>
+<span id="cb42-13"><a href="#cb42-13" tabindex="-1"></a><span class="co">-- reify &#39;&#39;Person sees the declaration above and generates:</span></span>
+<span id="cb42-14"><a href="#cb42-14" tabindex="-1"></a><span class="co">--</span></span>
+<span id="cb42-15"><a href="#cb42-15" tabindex="-1"></a><span class="co">--   fieldsOfPerson :: Person -&gt; [(String, String)]</span></span>
+<span id="cb42-16"><a href="#cb42-16" tabindex="-1"></a><span class="co">--   fieldsOfPerson x = [ (&quot;personName&quot;, show (personName x))</span></span>
+<span id="cb42-17"><a href="#cb42-17" tabindex="-1"></a><span class="co">--                       , (&quot;personAge&quot;,  show (personAge  x))</span></span>
+<span id="cb42-18"><a href="#cb42-18" tabindex="-1"></a><span class="co">--                       , (&quot;personCity&quot;, show (personCity x)) ]</span></span>
+<span id="cb42-19"><a href="#cb42-19" tabindex="-1"></a><span class="co">--</span></span>
+<span id="cb42-20"><a href="#cb42-20" tabindex="-1"></a>makeFieldsOf &#39;<span class="dt">&#39;Person</span></span>
+<span id="cb42-21"><a href="#cb42-21" tabindex="-1"></a></span>
+<span id="cb42-22"><a href="#cb42-22" tabindex="-1"></a><span class="ot">main ::</span> <span class="dt">IO</span> ()</span>
+<span id="cb42-23"><a href="#cb42-23" tabindex="-1"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb42-24"><a href="#cb42-24" tabindex="-1"></a>  <span class="kw">let</span> p <span class="ot">=</span> <span class="dt">Person</span> <span class="st">&quot;Alice&quot;</span> <span class="dv">30</span> <span class="st">&quot;Warsaw&quot;</span></span>
+<span id="cb42-25"><a href="#cb42-25" tabindex="-1"></a>  <span class="fu">mapM_</span> (\(k,v) <span class="ot">-&gt;</span> <span class="fu">putStrLn</span> (k <span class="op">++</span> <span class="st">&quot;: &quot;</span> <span class="op">++</span> v)) (fieldsOfPerson p)</span></code></pre></div>
+<pre><code>$ cabal run
+personName: &quot;Alice&quot;
+personAge: 30
+personCity: &quot;Warsaw&quot;</code></pre>
+<p><strong>Exercise:</strong> extend the <code>fieldsOf</code> to
+produce JSON from records where each field can be a base type, record,
+or a list.</p>
+</div>
 <div id="quote-eval-quasiquote" class="slide section level1">
 <h1>Quote, eval, quasiquote</h1>
 <p>In Lisp we have quote: <code>'</code> (<code>code -&gt; data</code>)
@@ -568,22 +705,22 @@ complex:</p>
 <p>We have seen the standard quasiquoters e, t, d, p
 (e.g. <code>[e| \x -&gt; x +1|]</code> ). We can also define our
 own:</p>
-<div class="sourceCode" id="cb37"><pre
-class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb37-1"><a href="#cb37-1" tabindex="-1"></a>longString <span class="ot">=</span> [str|This is a multiline string.</span>
-<span id="cb37-2"><a href="#cb37-2" tabindex="-1"></a>It contains embedded newlines. And Unicode:</span>
-<span id="cb37-3"><a href="#cb37-3" tabindex="-1"></a></span>
-<span id="cb37-4"><a href="#cb37-4" tabindex="-1"></a>Ἐν ἀρχῇ ἦν ὁ Λόγος</span>
-<span id="cb37-5"><a href="#cb37-5" tabindex="-1"></a></span>
-<span id="cb37-6"><a href="#cb37-6" tabindex="-1"></a>It ends here: |]</span>
-<span id="cb37-7"><a href="#cb37-7" tabindex="-1"></a></span>
-<span id="cb37-8"><a href="#cb37-8" tabindex="-1"></a>main <span class="ot">=</span> <span class="fu">putStrLn</span> longString</span></code></pre></div>
-<div class="sourceCode" id="cb38"><pre
-class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb38-1"><a href="#cb38-1" tabindex="-1"></a><span class="kw">module</span> <span class="dt">Str</span>(str) <span class="kw">where</span></span>
-<span id="cb38-2"><a href="#cb38-2" tabindex="-1"></a></span>
-<span id="cb38-3"><a href="#cb38-3" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Language.Haskell.TH</span></span>
-<span id="cb38-4"><a href="#cb38-4" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Language.Haskell.TH.Quote</span></span>
-<span id="cb38-5"><a href="#cb38-5" tabindex="-1"></a></span>
-<span id="cb38-6"><a href="#cb38-6" tabindex="-1"></a>str <span class="ot">=</span> <span class="dt">QuasiQuoter</span> { quoteExp <span class="ot">=</span> stringE }</span></code></pre></div>
+<div class="sourceCode" id="cb46"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb46-1"><a href="#cb46-1" tabindex="-1"></a>longString <span class="ot">=</span> [str|This is a multiline string.</span>
+<span id="cb46-2"><a href="#cb46-2" tabindex="-1"></a>It contains embedded newlines. And Unicode:</span>
+<span id="cb46-3"><a href="#cb46-3" tabindex="-1"></a></span>
+<span id="cb46-4"><a href="#cb46-4" tabindex="-1"></a>Ἐν ἀρχῇ ἦν ὁ Λόγος</span>
+<span id="cb46-5"><a href="#cb46-5" tabindex="-1"></a></span>
+<span id="cb46-6"><a href="#cb46-6" tabindex="-1"></a>It ends here: |]</span>
+<span id="cb46-7"><a href="#cb46-7" tabindex="-1"></a></span>
+<span id="cb46-8"><a href="#cb46-8" tabindex="-1"></a>main <span class="ot">=</span> <span class="fu">putStrLn</span> longString</span></code></pre></div>
+<div class="sourceCode" id="cb47"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb47-1"><a href="#cb47-1" tabindex="-1"></a><span class="kw">module</span> <span class="dt">Str</span>(str) <span class="kw">where</span></span>
+<span id="cb47-2"><a href="#cb47-2" tabindex="-1"></a></span>
+<span id="cb47-3"><a href="#cb47-3" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Language.Haskell.TH</span></span>
+<span id="cb47-4"><a href="#cb47-4" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Language.Haskell.TH.Quote</span></span>
+<span id="cb47-5"><a href="#cb47-5" tabindex="-1"></a></span>
+<span id="cb47-6"><a href="#cb47-6" tabindex="-1"></a>str <span class="ot">=</span> <span class="dt">QuasiQuoter</span> { quoteExp <span class="ot">=</span> stringE }</span></code></pre></div>
 <ul>
 <li><code>stringE</code> builds a string literal expression
 (<code>stringE :: String -&gt; Q Exp</code>)</li>
@@ -600,8 +737,8 @@ data QuasiQuoter
                  quoteType :: String -&gt; Q Type,
                  quoteDec :: String -&gt; Q [Dec]}
     -- Defined in ‘Language.Haskell.TH.Quote’</code></pre>
-<div class="sourceCode" id="cb40"><pre
-class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb40-1"><a href="#cb40-1" tabindex="-1"></a>str <span class="ot">=</span> <span class="dt">QuasiQuoter</span> { quoteExp <span class="ot">=</span> stringE }</span></code></pre></div>
+<div class="sourceCode" id="cb49"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb49-1"><a href="#cb49-1" tabindex="-1"></a>str <span class="ot">=</span> <span class="dt">QuasiQuoter</span> { quoteExp <span class="ot">=</span> stringE }</span></code></pre></div>
 <p>We intend to use <code>str</code> only in expression contexts, so we
 leave the other parts undefined.</p>
 </div>
@@ -609,24 +746,23 @@ leave the other parts undefined.</p>
 <h1>Parsing Expressions</h1>
 <p>Let’s start with a simple data type and parser for arithmetic
 expressions</p>
-<div class="sourceCode" id="cb41"><pre
-class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb41-1"><a href="#cb41-1" tabindex="-1"></a><span class="ot">{-# LANGUAGE DeriveDataTypeable #-}</span></span>
-<span id="cb41-2"><a href="#cb41-2" tabindex="-1"></a></span>
-<span id="cb41-3"><a href="#cb41-3" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Expr</span> <span class="ot">=</span> <span class="dt">EInt</span> <span class="dt">Int</span></span>
-<span id="cb41-4"><a href="#cb41-4" tabindex="-1"></a>  <span class="op">|</span> <span class="dt">EVar</span> <span class="dt">Var</span></span>
-<span id="cb41-5"><a href="#cb41-5" tabindex="-1"></a>  <span class="op">|</span> <span class="dt">EAdd</span> <span class="dt">Expr</span> <span class="dt">Expr</span></span>
-<span id="cb41-6"><a href="#cb41-6" tabindex="-1"></a>  <span class="op">|</span> <span class="dt">ESub</span> <span class="dt">Expr</span> <span class="dt">Expr</span></span>
-<span id="cb41-7"><a href="#cb41-7" tabindex="-1"></a>  <span class="op">|</span> <span class="dt">EMul</span> <span class="dt">Expr</span> <span class="dt">Expr</span></span>
-<span id="cb41-8"><a href="#cb41-8" tabindex="-1"></a>  <span class="op">|</span> <span class="dt">EDiv</span> <span class="dt">Expr</span> <span class="dt">Expr</span></span>
-<span id="cb41-9"><a href="#cb41-9" tabindex="-1"></a>    <span class="kw">deriving</span>(<span class="dt">Show</span>,<span class="dt">Typeable</span>,<span class="dt">Data</span>)</span>
-<span id="cb41-10"><a href="#cb41-10" tabindex="-1"></a><span class="co">-- deriving Data needed to use generic function</span></span>
-<span id="cb41-11"><a href="#cb41-11" tabindex="-1"></a><span class="co">-- liftData :: Data a =&gt; a -&gt; ExpQ</span></span>
-<span id="cb41-12"><a href="#cb41-12" tabindex="-1"></a></span>
-<span id="cb41-13"><a href="#cb41-13" tabindex="-1"></a><span class="ot">pExpr ::</span> <span class="dt">Parser</span> <span class="dt">Expr</span></span>
-<span id="cb41-14"><a href="#cb41-14" tabindex="-1"></a><span class="co">-- ...</span></span>
-<span id="cb41-15"><a href="#cb41-15" tabindex="-1"></a></span>
-<span id="cb41-16"><a href="#cb41-16" tabindex="-1"></a>test1 <span class="ot">=</span> parse pExpr <span class="st">&quot;test1&quot;</span> <span class="st">&quot;1 - 2 - 3 * 4 &quot;</span></span>
-<span id="cb41-17"><a href="#cb41-17" tabindex="-1"></a>main <span class="ot">=</span> <span class="fu">print</span> test1</span></code></pre></div>
+<div class="sourceCode" id="cb50"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb50-1"><a href="#cb50-1" tabindex="-1"></a><span class="ot">{-# LANGUAGE DeriveDataTypeable #-}</span></span>
+<span id="cb50-2"><a href="#cb50-2" tabindex="-1"></a></span>
+<span id="cb50-3"><a href="#cb50-3" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Expr</span> <span class="ot">=</span> <span class="dt">EInt</span> <span class="dt">Int</span></span>
+<span id="cb50-4"><a href="#cb50-4" tabindex="-1"></a>  <span class="op">|</span> <span class="dt">EAdd</span> <span class="dt">Expr</span> <span class="dt">Expr</span></span>
+<span id="cb50-5"><a href="#cb50-5" tabindex="-1"></a>  <span class="op">|</span> <span class="dt">ESub</span> <span class="dt">Expr</span> <span class="dt">Expr</span></span>
+<span id="cb50-6"><a href="#cb50-6" tabindex="-1"></a>  <span class="op">|</span> <span class="dt">EMul</span> <span class="dt">Expr</span> <span class="dt">Expr</span></span>
+<span id="cb50-7"><a href="#cb50-7" tabindex="-1"></a>  <span class="op">|</span> <span class="dt">EDiv</span> <span class="dt">Expr</span> <span class="dt">Expr</span></span>
+<span id="cb50-8"><a href="#cb50-8" tabindex="-1"></a>    <span class="kw">deriving</span>(<span class="dt">Show</span>,<span class="dt">Typeable</span>,<span class="dt">Data</span>)</span>
+<span id="cb50-9"><a href="#cb50-9" tabindex="-1"></a><span class="co">-- deriving Data needed to use generic function</span></span>
+<span id="cb50-10"><a href="#cb50-10" tabindex="-1"></a><span class="co">-- liftData :: Data a =&gt; a -&gt; ExpQ</span></span>
+<span id="cb50-11"><a href="#cb50-11" tabindex="-1"></a></span>
+<span id="cb50-12"><a href="#cb50-12" tabindex="-1"></a><span class="ot">pExpr ::</span> <span class="dt">Parser</span> <span class="dt">Expr</span></span>
+<span id="cb50-13"><a href="#cb50-13" tabindex="-1"></a><span class="co">-- ...</span></span>
+<span id="cb50-14"><a href="#cb50-14" tabindex="-1"></a></span>
+<span id="cb50-15"><a href="#cb50-15" tabindex="-1"></a>test1 <span class="ot">=</span> parse pExpr <span class="st">&quot;test1&quot;</span> <span class="st">&quot;1 - 2 - 3 * 4 &quot;</span></span>
+<span id="cb50-16"><a href="#cb50-16" tabindex="-1"></a>main <span class="ot">=</span> <span class="fu">print</span> test1</span></code></pre></div>
 <pre><code>Right (ESub (ESub (EInt 1) (EInt 2)) (EMul (EInt 3) (EInt 4)))</code></pre>
 </div>
 <div id="building-test-cases" class="slide section level1">
@@ -634,80 +770,80 @@ class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb41-1"><a
 <p>Now let’s say we need some expresion trees in our program. For this
 kind of expressions we could (almost) get by with <code>class Num</code>
 hack:</p>
-<div class="sourceCode" id="cb43"><pre
-class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb43-1"><a href="#cb43-1" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Num</span> <span class="dt">Expr</span> <span class="kw">where</span></span>
-<span id="cb43-2"><a href="#cb43-2" tabindex="-1"></a>  <span class="fu">fromInteger</span> <span class="ot">=</span> <span class="dt">EInt</span> <span class="op">.</span> <span class="fu">fromInteger</span></span>
-<span id="cb43-3"><a href="#cb43-3" tabindex="-1"></a>  (<span class="op">+</span>) <span class="ot">=</span> <span class="dt">EAdd</span></span>
-<span id="cb43-4"><a href="#cb43-4" tabindex="-1"></a>  (<span class="op">*</span>) <span class="ot">=</span> <span class="dt">EMul</span></span>
-<span id="cb43-5"><a href="#cb43-5" tabindex="-1"></a>  (<span class="op">-</span>) <span class="ot">=</span> <span class="dt">ESub</span></span>
-<span id="cb43-6"><a href="#cb43-6" tabindex="-1"></a></span>
-<span id="cb43-7"><a href="#cb43-7" tabindex="-1"></a><span class="ot">testExpr ::</span> <span class="dt">Expr</span></span>
-<span id="cb43-8"><a href="#cb43-8" tabindex="-1"></a>testExpr <span class="ot">=</span> (<span class="dv">2</span> <span class="op">+</span> <span class="dv">2</span>) <span class="op">*</span> <span class="dv">3</span></span></code></pre></div>
+<div class="sourceCode" id="cb52"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb52-1"><a href="#cb52-1" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Num</span> <span class="dt">Expr</span> <span class="kw">where</span></span>
+<span id="cb52-2"><a href="#cb52-2" tabindex="-1"></a>  <span class="fu">fromInteger</span> <span class="ot">=</span> <span class="dt">EInt</span> <span class="op">.</span> <span class="fu">fromInteger</span></span>
+<span id="cb52-3"><a href="#cb52-3" tabindex="-1"></a>  (<span class="op">+</span>) <span class="ot">=</span> <span class="dt">EAdd</span></span>
+<span id="cb52-4"><a href="#cb52-4" tabindex="-1"></a>  (<span class="op">*</span>) <span class="ot">=</span> <span class="dt">EMul</span></span>
+<span id="cb52-5"><a href="#cb52-5" tabindex="-1"></a>  (<span class="op">-</span>) <span class="ot">=</span> <span class="dt">ESub</span></span>
+<span id="cb52-6"><a href="#cb52-6" tabindex="-1"></a></span>
+<span id="cb52-7"><a href="#cb52-7" tabindex="-1"></a><span class="ot">testExpr ::</span> <span class="dt">Expr</span></span>
+<span id="cb52-8"><a href="#cb52-8" tabindex="-1"></a>testExpr <span class="ot">=</span> (<span class="dv">2</span> <span class="op">+</span> <span class="dv">2</span>) <span class="op">*</span> <span class="dv">3</span></span></code></pre></div>
 <p>…but it is neither extensible nor, in fact, nice.</p>
 </div>
 <div id="building-test-cases-via-parsing" class="slide section level1">
 <h1>Building test cases via parsing</h1>
 <p>Of course as soon as we have a parser ready we could use it to build
 expressions</p>
-<div class="sourceCode" id="cb44"><pre
-class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb44-1"><a href="#cb44-1" tabindex="-1"></a>testExpr <span class="ot">=</span> parse pExpr <span class="st">&quot;testExpr&quot;</span> <span class="st">&quot;1+2*3&quot;</span></span></code></pre></div>
+<div class="sourceCode" id="cb53"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb53-1"><a href="#cb53-1" tabindex="-1"></a>testExpr <span class="ot">=</span> parse pExpr <span class="st">&quot;testExpr&quot;</span> <span class="st">&quot;1+2*3&quot;</span></span></code></pre></div>
 <p>…but then potential errors in the expression texts remain undetected
 until runtime, and also this is not flexible enough: what if we wanted a
 simplifier for expressions, along the lines of</p>
-<div class="sourceCode" id="cb45"><pre
-class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb45-1"><a href="#cb45-1" tabindex="-1"></a><span class="ot">simpl ::</span> <span class="dt">Expr</span> <span class="ot">-&gt;</span> <span class="dt">Expr</span></span>
-<span id="cb45-2"><a href="#cb45-2" tabindex="-1"></a>simpl (<span class="dt">EAdd</span> (<span class="dt">EInt</span> <span class="dv">0</span>) x) <span class="ot">=</span> x</span></code></pre></div>
+<div class="sourceCode" id="cb54"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb54-1"><a href="#cb54-1" tabindex="-1"></a><span class="ot">simpl ::</span> <span class="dt">Expr</span> <span class="ot">-&gt;</span> <span class="dt">Expr</span></span>
+<span id="cb54-2"><a href="#cb54-2" tabindex="-1"></a>simpl (<span class="dt">EAdd</span> (<span class="dt">EInt</span> <span class="dv">0</span>) x) <span class="ot">=</span> x</span></code></pre></div>
 <p>wouldn’t it be nice to be able to write this instead:</p>
-<div class="sourceCode" id="cb46"><pre
-class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb46-1"><a href="#cb46-1" tabindex="-1"></a>simpl (<span class="dv">0</span> <span class="op">+</span> x) <span class="ot">=</span> x</span></code></pre></div>
+<div class="sourceCode" id="cb55"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb55-1"><a href="#cb55-1" tabindex="-1"></a>simpl (<span class="dv">0</span> <span class="op">+</span> x) <span class="ot">=</span> x</span></code></pre></div>
 </div>
 <div id="building-test-cases-with-th" class="slide section level1">
 <h1>Building test cases with TH</h1>
 <p>Using TH seemingly makes matters only worse:</p>
-<div class="sourceCode" id="cb47"><pre
-class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb47-1"><a href="#cb47-1" tabindex="-1"></a><span class="ot">testExpr ::</span> <span class="dt">Expr</span></span>
-<span id="cb47-2"><a href="#cb47-2" tabindex="-1"></a>testExpr <span class="ot">=</span> <span class="op">$</span>(<span class="fu">return</span> <span class="op">$</span> mkAdd (mkInt <span class="dv">0</span>) (mkInt <span class="dv">2</span>))</span>
-<span id="cb47-3"><a href="#cb47-3" tabindex="-1"></a></span>
-<span id="cb47-4"><a href="#cb47-4" tabindex="-1"></a><span class="ot">simpl ::</span> <span class="dt">Expr</span> <span class="ot">-&gt;</span> <span class="dt">Expr</span></span>
-<span id="cb47-5"><a href="#cb47-5" tabindex="-1"></a>simpl <span class="op">$</span>(<span class="fu">return</span> <span class="op">$</span> mkAddP (mkIntP <span class="dv">0</span>) (<span class="dt">VarP</span> (mkName <span class="st">&quot;x&quot;</span>))) <span class="ot">=</span> x</span>
-<span id="cb47-6"><a href="#cb47-6" tabindex="-1"></a></span>
-<span id="cb47-7"><a href="#cb47-7" tabindex="-1"></a><span class="ot">mkIntP ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Pat</span></span>
-<span id="cb47-8"><a href="#cb47-8" tabindex="-1"></a>mkIntP i <span class="ot">=</span> <span class="dt">ConP</span> (mkName <span class="st">&quot;EInt&quot;</span>) [<span class="dt">LitP</span> <span class="op">$</span> <span class="dt">IntegerL</span> i]</span>
-<span id="cb47-9"><a href="#cb47-9" tabindex="-1"></a></span>
-<span id="cb47-10"><a href="#cb47-10" tabindex="-1"></a><span class="ot">mkBinP ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Pat</span> <span class="ot">-&gt;</span> <span class="dt">Pat</span> <span class="ot">-&gt;</span> <span class="dt">Pat</span></span>
-<span id="cb47-11"><a href="#cb47-11" tabindex="-1"></a>mkBinP s p1 p2 <span class="ot">=</span> <span class="dt">ConP</span> (mkName s) [p1, p2]</span>
-<span id="cb47-12"><a href="#cb47-12" tabindex="-1"></a></span>
-<span id="cb47-13"><a href="#cb47-13" tabindex="-1"></a><span class="ot">mkAddP ::</span> <span class="dt">Pat</span> <span class="ot">-&gt;</span> <span class="dt">Pat</span> <span class="ot">-&gt;</span> <span class="dt">Pat</span></span>
-<span id="cb47-14"><a href="#cb47-14" tabindex="-1"></a>mkAddP <span class="ot">=</span> mkBinP <span class="st">&quot;EAdd&quot;</span></span></code></pre></div>
+<div class="sourceCode" id="cb56"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb56-1"><a href="#cb56-1" tabindex="-1"></a><span class="ot">testExpr ::</span> <span class="dt">Expr</span></span>
+<span id="cb56-2"><a href="#cb56-2" tabindex="-1"></a>testExpr <span class="ot">=</span> <span class="op">$</span>(<span class="fu">return</span> <span class="op">$</span> mkAdd (mkInt <span class="dv">0</span>) (mkInt <span class="dv">2</span>))</span>
+<span id="cb56-3"><a href="#cb56-3" tabindex="-1"></a></span>
+<span id="cb56-4"><a href="#cb56-4" tabindex="-1"></a><span class="ot">simpl ::</span> <span class="dt">Expr</span> <span class="ot">-&gt;</span> <span class="dt">Expr</span></span>
+<span id="cb56-5"><a href="#cb56-5" tabindex="-1"></a>simpl <span class="op">$</span>(<span class="fu">return</span> <span class="op">$</span> mkAddP (mkIntP <span class="dv">0</span>) (<span class="dt">VarP</span> (mkName <span class="st">&quot;x&quot;</span>))) <span class="ot">=</span> x</span>
+<span id="cb56-6"><a href="#cb56-6" tabindex="-1"></a></span>
+<span id="cb56-7"><a href="#cb56-7" tabindex="-1"></a><span class="ot">mkIntP ::</span> <span class="dt">Integer</span> <span class="ot">-&gt;</span> <span class="dt">Pat</span></span>
+<span id="cb56-8"><a href="#cb56-8" tabindex="-1"></a>mkIntP i <span class="ot">=</span> <span class="dt">ConP</span> (mkName <span class="st">&quot;EInt&quot;</span>) [] [<span class="dt">LitP</span> <span class="op">$</span> <span class="dt">IntegerL</span> i]</span>
+<span id="cb56-9"><a href="#cb56-9" tabindex="-1"></a></span>
+<span id="cb56-10"><a href="#cb56-10" tabindex="-1"></a><span class="ot">mkBinP ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Pat</span> <span class="ot">-&gt;</span> <span class="dt">Pat</span> <span class="ot">-&gt;</span> <span class="dt">Pat</span></span>
+<span id="cb56-11"><a href="#cb56-11" tabindex="-1"></a>mkBinP s p1 p2 <span class="ot">=</span> <span class="dt">ConP</span> (mkName s) [] [p1, p2]</span>
+<span id="cb56-12"><a href="#cb56-12" tabindex="-1"></a></span>
+<span id="cb56-13"><a href="#cb56-13" tabindex="-1"></a><span class="ot">mkAddP ::</span> <span class="dt">Pat</span> <span class="ot">-&gt;</span> <span class="dt">Pat</span> <span class="ot">-&gt;</span> <span class="dt">Pat</span></span>
+<span id="cb56-14"><a href="#cb56-14" tabindex="-1"></a>mkAddP <span class="ot">=</span> mkBinP <span class="st">&quot;EAdd&quot;</span></span></code></pre></div>
 <p>…but there’s a better way</p>
 </div>
 <div id="why-its-good-to-be-quasiquoted" class="slide section level1">
 <h1>Why it’s Good to be Quasiquoted</h1>
 <p>what if we could instead write</p>
-<div class="sourceCode" id="cb48"><pre
-class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb48-1"><a href="#cb48-1" tabindex="-1"></a><span class="ot">simpl ::</span> <span class="dt">Expr</span> <span class="ot">-&gt;</span> <span class="dt">Expr</span></span>
-<span id="cb48-2"><a href="#cb48-2" tabindex="-1"></a>simpl (<span class="dv">0</span> <span class="op">+</span> x) <span class="ot">=</span> x</span></code></pre></div>
+<div class="sourceCode" id="cb57"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb57-1"><a href="#cb57-1" tabindex="-1"></a><span class="ot">simpl ::</span> <span class="dt">Expr</span> <span class="ot">-&gt;</span> <span class="dt">Expr</span></span>
+<span id="cb57-2"><a href="#cb57-2" tabindex="-1"></a>simpl (<span class="dv">0</span> <span class="op">+</span> x) <span class="ot">=</span> x</span></code></pre></div>
 <p>turns out with quasiquotation we can do just that (albeit with a
 slightly different syntax), so to whet your appetite:</p>
-<div class="sourceCode" id="cb49"><pre
-class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb49-1"><a href="#cb49-1" tabindex="-1"></a><span class="ot">simpl ::</span> <span class="dt">Expr</span> <span class="ot">-&gt;</span> <span class="dt">Expr</span></span>
-<span id="cb49-2"><a href="#cb49-2" tabindex="-1"></a>simpl [expr|0 + $x|] <span class="ot">=</span> x</span>
-<span id="cb49-3"><a href="#cb49-3" tabindex="-1"></a></span>
-<span id="cb49-4"><a href="#cb49-4" tabindex="-1"></a>main <span class="ot">=</span> <span class="fu">print</span> <span class="op">$</span> simpl [expr|0+2|]</span>
-<span id="cb49-5"><a href="#cb49-5" tabindex="-1"></a><span class="co">-- ...</span></span>
-<span id="cb49-6"><a href="#cb49-6" tabindex="-1"></a><span class="ot">expr  ::</span> <span class="dt">QuasiQuoter</span></span>
-<span id="cb49-7"><a href="#cb49-7" tabindex="-1"></a>expr  <span class="ot">=</span>  <span class="dt">QuasiQuoter</span></span>
-<span id="cb49-8"><a href="#cb49-8" tabindex="-1"></a>  { quoteExp <span class="ot">=</span> quoteExprExp</span>
-<span id="cb49-9"><a href="#cb49-9" tabindex="-1"></a>  , quotePat <span class="ot">=</span> quoteExprPat</span>
-<span id="cb49-10"><a href="#cb49-10" tabindex="-1"></a>  }</span></code></pre></div>
+<div class="sourceCode" id="cb58"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb58-1"><a href="#cb58-1" tabindex="-1"></a><span class="ot">simpl ::</span> <span class="dt">Expr</span> <span class="ot">-&gt;</span> <span class="dt">Expr</span></span>
+<span id="cb58-2"><a href="#cb58-2" tabindex="-1"></a>simpl [expr|0 + $x|] <span class="ot">=</span> x</span>
+<span id="cb58-3"><a href="#cb58-3" tabindex="-1"></a></span>
+<span id="cb58-4"><a href="#cb58-4" tabindex="-1"></a>main <span class="ot">=</span> <span class="fu">print</span> <span class="op">$</span> simpl [expr|0+z|]</span>
+<span id="cb58-5"><a href="#cb58-5" tabindex="-1"></a><span class="co">-- ...</span></span>
+<span id="cb58-6"><a href="#cb58-6" tabindex="-1"></a><span class="ot">expr  ::</span> <span class="dt">QuasiQuoter</span></span>
+<span id="cb58-7"><a href="#cb58-7" tabindex="-1"></a>expr  <span class="ot">=</span>  <span class="dt">QuasiQuoter</span></span>
+<span id="cb58-8"><a href="#cb58-8" tabindex="-1"></a>  { quoteExp <span class="ot">=</span> quoteExprExp</span>
+<span id="cb58-9"><a href="#cb58-9" tabindex="-1"></a>  , quotePat <span class="ot">=</span> quoteExprPat</span>
+<span id="cb58-10"><a href="#cb58-10" tabindex="-1"></a>  }</span></code></pre></div>
 <p>Let us start with the (perhaps simplest) quasiquoter for
 expressions:</p>
-<div class="sourceCode" id="cb50"><pre
-class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb50-1"><a href="#cb50-1" tabindex="-1"></a><span class="ot">quoteExprExp ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Q</span> <span class="dt">Exp</span></span>
-<span id="cb50-2"><a href="#cb50-2" tabindex="-1"></a>quoteExprExp s <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb50-3"><a href="#cb50-3" tabindex="-1"></a>  pos <span class="ot">&lt;-</span> getPosition</span>
-<span id="cb50-4"><a href="#cb50-4" tabindex="-1"></a>  <span class="fu">exp</span> <span class="ot">&lt;-</span> parseExp pos s</span>
-<span id="cb50-5"><a href="#cb50-5" tabindex="-1"></a>  exprToExpQ <span class="fu">exp</span></span></code></pre></div>
+<div class="sourceCode" id="cb59"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb59-1"><a href="#cb59-1" tabindex="-1"></a><span class="ot">quoteExprExp ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Q</span> <span class="dt">Exp</span></span>
+<span id="cb59-2"><a href="#cb59-2" tabindex="-1"></a>quoteExprExp s <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb59-3"><a href="#cb59-3" tabindex="-1"></a>  pos <span class="ot">&lt;-</span> getPosition</span>
+<span id="cb59-4"><a href="#cb59-4" tabindex="-1"></a>  <span class="fu">exp</span> <span class="ot">&lt;-</span> parseExp pos s</span>
+<span id="cb59-5"><a href="#cb59-5" tabindex="-1"></a>  exprToExpQ <span class="fu">exp</span></span></code></pre></div>
 </div>
 <div id="quasiquoting-expressions" class="slide section level1">
 <h1>Quasiquoting Expressions</h1>
@@ -722,11 +858,11 @@ representation.</li>
 <p>The first step is accomplished using <a
 href="http://hackage.haskell.org/packages/archive/template-haskell/2.14.0.0/doc/html/Language-Haskell-TH.html#v:location">Language.Haskell.TH.location</a>
 and converting it to something usable by Parsec:</p>
-<div class="sourceCode" id="cb51"><pre
-class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb51-1"><a href="#cb51-1" tabindex="-1"></a>getPosition <span class="ot">=</span> <span class="fu">fmap</span> transPos location <span class="kw">where</span></span>
-<span id="cb51-2"><a href="#cb51-2" tabindex="-1"></a>  transPos loc <span class="ot">=</span> (loc_filename loc,</span>
-<span id="cb51-3"><a href="#cb51-3" tabindex="-1"></a>                  <span class="fu">fst</span> (loc_start loc),</span>
-<span id="cb51-4"><a href="#cb51-4" tabindex="-1"></a>                  <span class="fu">snd</span> (loc_start loc))</span></code></pre></div>
+<div class="sourceCode" id="cb60"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb60-1"><a href="#cb60-1" tabindex="-1"></a>getPosition <span class="ot">=</span> <span class="fu">fmap</span> transPos location <span class="kw">where</span></span>
+<span id="cb60-2"><a href="#cb60-2" tabindex="-1"></a>  transPos loc <span class="ot">=</span> (loc_filename loc,</span>
+<span id="cb60-3"><a href="#cb60-3" tabindex="-1"></a>                  <span class="fu">fst</span> (loc_start loc),</span>
+<span id="cb60-4"><a href="#cb60-4" tabindex="-1"></a>                  <span class="fu">snd</span> (loc_start loc))</span></code></pre></div>
 <p>Parsing is done with our expression parser, but building the Haskell
 AST is a bit of work.</p>
 </div>
@@ -734,20 +870,21 @@ AST is a bit of work.</p>
 <h1>Building AST</h1>
 <p>Next we need to build Haskell AST from expression tree built by our
 parser:</p>
-<div class="sourceCode" id="cb52"><pre
-class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb52-1"><a href="#cb52-1" tabindex="-1"></a><span class="ot">exprToExpQ ::</span> <span class="dt">Expr</span> <span class="ot">-&gt;</span> <span class="dt">Q</span> <span class="dt">Exp</span></span>
-<span id="cb52-2"><a href="#cb52-2" tabindex="-1"></a>exprToExpQ (<span class="dt">EInt</span> n) <span class="ot">=</span> <span class="fu">return</span> <span class="op">$</span> <span class="dt">ConE</span> (mkName <span class="st">&quot;EInt&quot;</span>) <span class="op">$$</span> (intLitE n)</span>
-<span id="cb52-3"><a href="#cb52-3" tabindex="-1"></a>exprToExpQ (<span class="dt">EAdd</span> e1 e2) <span class="ot">=</span> convertBinE <span class="st">&quot;EAdd&quot;</span> e1 e2</span>
-<span id="cb52-4"><a href="#cb52-4" tabindex="-1"></a>exprToExpQ (<span class="dt">ESub</span> e1 e2) <span class="ot">=</span> convertBinE <span class="st">&quot;ESub&quot;</span> e1 e2</span>
-<span id="cb52-5"><a href="#cb52-5" tabindex="-1"></a>exprToExpQ (<span class="dt">EMul</span> e1 e2) <span class="ot">=</span> convertBinE <span class="st">&quot;EMul&quot;</span> e1 e2</span>
-<span id="cb52-6"><a href="#cb52-6" tabindex="-1"></a>exprToExpQ (<span class="dt">EDiv</span> e1 e2) <span class="ot">=</span> convertBinE <span class="st">&quot;EDiv&quot;</span> e1 e2</span>
-<span id="cb52-7"><a href="#cb52-7" tabindex="-1"></a></span>
-<span id="cb52-8"><a href="#cb52-8" tabindex="-1"></a>convertBinE s e1 e2 <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb52-9"><a href="#cb52-9" tabindex="-1"></a>  e1&#39; <span class="ot">&lt;-</span> exprToExpQ e1</span>
-<span id="cb52-10"><a href="#cb52-10" tabindex="-1"></a>  e2&#39; <span class="ot">&lt;-</span> exprToExpQ e2</span>
-<span id="cb52-11"><a href="#cb52-11" tabindex="-1"></a>  <span class="fu">return</span> <span class="op">$</span> <span class="dt">ConE</span> (mkName s) <span class="op">$$</span> e1&#39; <span class="op">$$</span> e2&#39;</span>
-<span id="cb52-12"><a href="#cb52-12" tabindex="-1"></a></span>
-<span id="cb52-13"><a href="#cb52-13" tabindex="-1"></a>(<span class="op">$$</span>) <span class="ot">=</span> <span class="dt">AppE</span>  <span class="co">-- TH AST node for application</span></span></code></pre></div>
+<div class="sourceCode" id="cb61"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb61-1"><a href="#cb61-1" tabindex="-1"></a>(<span class="op">$$</span>) <span class="ot">=</span> <span class="dt">AppE</span>  <span class="co">-- TH AST node for application</span></span>
+<span id="cb61-2"><a href="#cb61-2" tabindex="-1"></a></span>
+<span id="cb61-3"><a href="#cb61-3" tabindex="-1"></a><span class="ot">exprToExpQ ::</span> <span class="dt">Expr</span> <span class="ot">-&gt;</span> <span class="dt">Q</span> <span class="dt">Exp</span></span>
+<span id="cb61-4"><a href="#cb61-4" tabindex="-1"></a>exprToExpQ (<span class="dt">EInt</span> n) <span class="ot">=</span> <span class="fu">return</span> <span class="op">$</span> <span class="dt">ConE</span> (mkName <span class="st">&quot;EInt&quot;</span>) <span class="op">$$</span> (intLitE n)</span>
+<span id="cb61-5"><a href="#cb61-5" tabindex="-1"></a>exprToExpQ (<span class="dt">EVar</span> s) <span class="ot">=</span> <span class="fu">return</span> <span class="op">$</span> <span class="dt">ConE</span> (mkName <span class="st">&quot;EVar&quot;</span>) <span class="op">$$</span> (stringLitE s)</span>
+<span id="cb61-6"><a href="#cb61-6" tabindex="-1"></a>exprToExpQ (<span class="dt">EAdd</span> e1 e2) <span class="ot">=</span> convertBinE <span class="st">&quot;EAdd&quot;</span> e1 e2</span>
+<span id="cb61-7"><a href="#cb61-7" tabindex="-1"></a>exprToExpQ (<span class="dt">ESub</span> e1 e2) <span class="ot">=</span> convertBinE <span class="st">&quot;ESub&quot;</span> e1 e2</span>
+<span id="cb61-8"><a href="#cb61-8" tabindex="-1"></a>exprToExpQ (<span class="dt">EMul</span> e1 e2) <span class="ot">=</span> convertBinE <span class="st">&quot;EMul&quot;</span> e1 e2</span>
+<span id="cb61-9"><a href="#cb61-9" tabindex="-1"></a>exprToExpQ (<span class="dt">EDiv</span> e1 e2) <span class="ot">=</span> convertBinE <span class="st">&quot;EDiv&quot;</span> e1 e2</span>
+<span id="cb61-10"><a href="#cb61-10" tabindex="-1"></a></span>
+<span id="cb61-11"><a href="#cb61-11" tabindex="-1"></a>convertBinE s e1 e2 <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb61-12"><a href="#cb61-12" tabindex="-1"></a>  e1&#39; <span class="ot">&lt;-</span> exprToExpQ e1</span>
+<span id="cb61-13"><a href="#cb61-13" tabindex="-1"></a>  e2&#39; <span class="ot">&lt;-</span> exprToExpQ e2</span>
+<span id="cb61-14"><a href="#cb61-14" tabindex="-1"></a>  <span class="fu">return</span> <span class="op">$</span> <span class="dt">ConE</span> (mkName s) <span class="op">$$</span> e1&#39; <span class="op">$$</span> e2&#39;</span></code></pre></div>
 <p>(alternatively we might make our parser return Haskell AST)</p>
 </div>
 <div id="scrap-your-boilerplate" class="slide section level1">
@@ -757,60 +894,61 @@ work use facilities for generic programming provided by <a
 href="http://hackage.haskell.org/package/base/docs/Data-Data.html">Data.Data</a>
 combined with the Template Haskell function <a
 href="http://hackage.haskell.org/package/template-haskell-2.20.0.0/docs/Language-Haskell-TH-Syntax.html#v:dataToExpQ"><code>dataToExpQ</code></a>,</p>
-<div class="sourceCode" id="cb53"><pre
-class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb53-1"><a href="#cb53-1" tabindex="-1"></a> exprToExpQ <span class="ot">=</span>  dataToExpQ (<span class="fu">const</span> <span class="dt">Nothing</span>) <span class="fu">exp</span></span>
-<span id="cb53-2"><a href="#cb53-2" tabindex="-1"></a><span class="co">-- dataToExpQ :: Data a</span></span>
-<span id="cb53-3"><a href="#cb53-3" tabindex="-1"></a><span class="co">--            =&gt; (forall b. Data b =&gt; b -&gt; Maybe (Q Exp))</span></span>
-<span id="cb53-4"><a href="#cb53-4" tabindex="-1"></a><span class="co">--            -&gt; a -&gt; Q Exp</span></span>
-<span id="cb53-5"><a href="#cb53-5" tabindex="-1"></a><span class="co">-- the first argument provides a way of extending the translation</span></span></code></pre></div>
+<div class="sourceCode" id="cb62"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb62-1"><a href="#cb62-1" tabindex="-1"></a> exprToExpQ <span class="ot">=</span>  dataToExpQ (<span class="fu">const</span> <span class="dt">Nothing</span>) <span class="fu">exp</span></span>
+<span id="cb62-2"><a href="#cb62-2" tabindex="-1"></a><span class="co">-- dataToExpQ :: Data a</span></span>
+<span id="cb62-3"><a href="#cb62-3" tabindex="-1"></a><span class="co">--            =&gt; (forall b. Data b =&gt; b -&gt; Maybe (Q Exp))</span></span>
+<span id="cb62-4"><a href="#cb62-4" tabindex="-1"></a><span class="co">--            -&gt; a -&gt; Q Exp</span></span>
+<span id="cb62-5"><a href="#cb62-5" tabindex="-1"></a><span class="co">-- the first argument provides a way of extending the translation</span></span></code></pre></div>
 <p>or a simpler <a
 href="https://hackage.haskell.org/package/template-haskell-2.20.0.0/docs/Language-Haskell-TH-Syntax.html#v:liftData">liftData</a></p>
-<div class="sourceCode" id="cb54"><pre
-class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb54-1"><a href="#cb54-1" tabindex="-1"></a><span class="ot">liftData ::</span> <span class="dt">Data</span> a <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Q</span> <span class="dt">Exp</span></span></code></pre></div>
+<div class="sourceCode" id="cb63"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb63-1"><a href="#cb63-1" tabindex="-1"></a><span class="ot">liftData ::</span> <span class="dt">Data</span> a <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Q</span> <span class="dt">Exp</span></span></code></pre></div>
 </div>
 <div id="data.data.data" class="slide section level1">
 <h1>Data.Data.Data</h1>
 <p>To use <code>dataToExpQ</code> or <code>liftData</code> we need a
 <code>Data.Data.Data</code> instance for <code>Expr</code>.</p>
 <p>This would be total bolerplate, luckily it can be derived:</p>
-<div class="sourceCode" id="cb55"><pre
-class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb55-1"><a href="#cb55-1" tabindex="-1"></a><span class="ot">{-# LANGUAGE DeriveDataTypeable #-}</span></span>
-<span id="cb55-2"><a href="#cb55-2" tabindex="-1"></a><span class="kw">module</span> <span class="dt">Expr</span> <span class="kw">where</span></span>
-<span id="cb55-3"><a href="#cb55-3" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Data.Typeable</span></span>
-<span id="cb55-4"><a href="#cb55-4" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Data.Data</span></span>
-<span id="cb55-5"><a href="#cb55-5" tabindex="-1"></a></span>
-<span id="cb55-6"><a href="#cb55-6" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Expr</span> <span class="ot">=</span> <span class="dt">EInt</span> <span class="dt">Int</span></span>
-<span id="cb55-7"><a href="#cb55-7" tabindex="-1"></a>         <span class="op">|</span> <span class="dt">EAdd</span> <span class="dt">Expr</span> <span class="dt">Expr</span></span>
-<span id="cb55-8"><a href="#cb55-8" tabindex="-1"></a>         <span class="op">|</span> <span class="dt">ESub</span> <span class="dt">Expr</span> <span class="dt">Expr</span></span>
-<span id="cb55-9"><a href="#cb55-9" tabindex="-1"></a>         <span class="op">|</span> <span class="dt">EMul</span> <span class="dt">Expr</span> <span class="dt">Expr</span></span>
-<span id="cb55-10"><a href="#cb55-10" tabindex="-1"></a>         <span class="op">|</span> <span class="dt">EDiv</span> <span class="dt">Expr</span> <span class="dt">Expr</span></span>
-<span id="cb55-11"><a href="#cb55-11" tabindex="-1"></a>           <span class="kw">deriving</span>(<span class="dt">Show</span>,<span class="dt">Typeable</span>,<span class="dt">Data</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb64"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb64-1"><a href="#cb64-1" tabindex="-1"></a><span class="ot">{-# LANGUAGE DeriveDataTypeable #-}</span></span>
+<span id="cb64-2"><a href="#cb64-2" tabindex="-1"></a><span class="kw">module</span> <span class="dt">Expr</span> <span class="kw">where</span></span>
+<span id="cb64-3"><a href="#cb64-3" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Data.Typeable</span></span>
+<span id="cb64-4"><a href="#cb64-4" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Data.Data</span></span>
+<span id="cb64-5"><a href="#cb64-5" tabindex="-1"></a></span>
+<span id="cb64-6"><a href="#cb64-6" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Expr</span> <span class="ot">=</span> <span class="dt">EInt</span> <span class="dt">Int</span></span>
+<span id="cb64-7"><a href="#cb64-7" tabindex="-1"></a>      <span class="op">|</span> <span class="dt">EAdd</span> <span class="dt">Expr</span> <span class="dt">Expr</span></span>
+<span id="cb64-8"><a href="#cb64-8" tabindex="-1"></a>      <span class="op">|</span> <span class="dt">ESub</span> <span class="dt">Expr</span> <span class="dt">Expr</span></span>
+<span id="cb64-9"><a href="#cb64-9" tabindex="-1"></a>      <span class="op">|</span> <span class="dt">EMul</span> <span class="dt">Expr</span> <span class="dt">Expr</span></span>
+<span id="cb64-10"><a href="#cb64-10" tabindex="-1"></a>      <span class="op">|</span> <span class="dt">EDiv</span> <span class="dt">Expr</span> <span class="dt">Expr</span></span>
+<span id="cb64-11"><a href="#cb64-11" tabindex="-1"></a>      <span class="op">|</span> <span class="dt">EVar</span> <span class="dt">String</span></span>
+<span id="cb64-12"><a href="#cb64-12" tabindex="-1"></a>      <span class="kw">deriving</span>(<span class="dt">Show</span>,<span class="dt">Typeable</span>,<span class="dt">Data</span>)</span></code></pre></div>
 </div>
 <div id="quasiquoting-patterns" class="slide section level1">
 <h1>Quasiquoting patterns</h1>
 <p>So far, we are halfway through to our goal: we can use the
 quasiquoter on the right hand side of function definitions:</p>
-<div class="sourceCode" id="cb56"><pre
-class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb56-1"><a href="#cb56-1" tabindex="-1"></a><span class="ot">testExpr ::</span> <span class="dt">Expr</span></span>
-<span id="cb56-2"><a href="#cb56-2" tabindex="-1"></a>testExpr <span class="ot">=</span> [expr|1+2*3|]</span></code></pre></div>
+<div class="sourceCode" id="cb65"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb65-1"><a href="#cb65-1" tabindex="-1"></a><span class="ot">testExpr ::</span> <span class="dt">Expr</span></span>
+<span id="cb65-2"><a href="#cb65-2" tabindex="-1"></a>testExpr <span class="ot">=</span> [expr|1+2*3|]</span></code></pre></div>
 <p>To be able to write things like</p>
-<div class="sourceCode" id="cb57"><pre
-class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb57-1"><a href="#cb57-1" tabindex="-1"></a>simpl [expr|0 + $x|] <span class="ot">=</span> x</span></code></pre></div>
+<div class="sourceCode" id="cb66"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb66-1"><a href="#cb66-1" tabindex="-1"></a>simpl [expr|0 + $x|] <span class="ot">=</span> x</span></code></pre></div>
 <p>we need to write a quasiquoter for patterns.</p>
 </div>
 <div id="quasiquoting-constant-patterns" class="slide section level1">
 <h1>Quasiquoting constant patterns</h1>
 <p>Let us start with something less ambitious - a quasiquoter for
 constant patterns, allowing us to write</p>
-<div class="sourceCode" id="cb58"><pre
-class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb58-1"><a href="#cb58-1" tabindex="-1"></a><span class="ot">testExpr ::</span> <span class="dt">Expr</span></span>
-<span id="cb58-2"><a href="#cb58-2" tabindex="-1"></a>testExpr <span class="ot">=</span> [expr|1+2*3|]</span>
-<span id="cb58-3"><a href="#cb58-3" tabindex="-1"></a></span>
-<span id="cb58-4"><a href="#cb58-4" tabindex="-1"></a><span class="ot">f1 ::</span> <span class="dt">Expr</span> <span class="ot">-&gt;</span> <span class="dt">String</span></span>
-<span id="cb58-5"><a href="#cb58-5" tabindex="-1"></a>f1 [expr| 1 + 2*3 |] <span class="ot">=</span> <span class="st">&quot;Bingo!&quot;</span></span>
-<span id="cb58-6"><a href="#cb58-6" tabindex="-1"></a>f1 _ <span class="ot">=</span> <span class="st">&quot;Sorry, no bonus&quot;</span></span>
-<span id="cb58-7"><a href="#cb58-7" tabindex="-1"></a></span>
-<span id="cb58-8"><a href="#cb58-8" tabindex="-1"></a>main <span class="ot">=</span> <span class="fu">putStrLn</span> <span class="op">$</span> f1 testExpr</span></code></pre></div>
+<div class="sourceCode" id="cb67"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb67-1"><a href="#cb67-1" tabindex="-1"></a><span class="ot">testExpr ::</span> <span class="dt">Expr</span></span>
+<span id="cb67-2"><a href="#cb67-2" tabindex="-1"></a>testExpr <span class="ot">=</span> [expr|1+2*3|]</span>
+<span id="cb67-3"><a href="#cb67-3" tabindex="-1"></a></span>
+<span id="cb67-4"><a href="#cb67-4" tabindex="-1"></a><span class="ot">f1 ::</span> <span class="dt">Expr</span> <span class="ot">-&gt;</span> <span class="dt">String</span></span>
+<span id="cb67-5"><a href="#cb67-5" tabindex="-1"></a>f1 [expr| 1 + 2*3 |] <span class="ot">=</span> <span class="st">&quot;Bingo!&quot;</span></span>
+<span id="cb67-6"><a href="#cb67-6" tabindex="-1"></a>f1 _ <span class="ot">=</span> <span class="st">&quot;Sorry, no bonus&quot;</span></span>
+<span id="cb67-7"><a href="#cb67-7" tabindex="-1"></a></span>
+<span id="cb67-8"><a href="#cb67-8" tabindex="-1"></a>main <span class="ot">=</span> <span class="fu">putStrLn</span> <span class="op">$</span> f1 testExpr</span></code></pre></div>
 <p>This can be done similarly to the quasiquoter for expressions:</p>
 <ul>
 <li>record the current position in Haskell file (for parse error
@@ -824,12 +962,12 @@ representation.</li>
 <h1>Building pattern AST</h1>
 <p>This time we need to construct Template Haskell pattern
 representation:</p>
-<div class="sourceCode" id="cb59"><pre
-class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb59-1"><a href="#cb59-1" tabindex="-1"></a><span class="ot">quoteExprPat ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Q</span> <span class="dt">Pat</span></span>
-<span id="cb59-2"><a href="#cb59-2" tabindex="-1"></a>quoteExprPat s <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb59-3"><a href="#cb59-3" tabindex="-1"></a>  pos <span class="ot">&lt;-</span> getPosition</span>
-<span id="cb59-4"><a href="#cb59-4" tabindex="-1"></a>  <span class="fu">exp</span> <span class="ot">&lt;-</span> parseExpr pos s</span>
-<span id="cb59-5"><a href="#cb59-5" tabindex="-1"></a>  dataToPatQ (<span class="fu">const</span> <span class="dt">Nothing</span>) <span class="fu">exp</span></span></code></pre></div>
+<div class="sourceCode" id="cb68"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb68-1"><a href="#cb68-1" tabindex="-1"></a><span class="ot">quoteExprPat ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Q</span> <span class="dt">Pat</span></span>
+<span id="cb68-2"><a href="#cb68-2" tabindex="-1"></a>quoteExprPat s <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb68-3"><a href="#cb68-3" tabindex="-1"></a>  pos <span class="ot">&lt;-</span> getPosition</span>
+<span id="cb68-4"><a href="#cb68-4" tabindex="-1"></a>  <span class="fu">exp</span> <span class="ot">&lt;-</span> parseExpr pos s</span>
+<span id="cb68-5"><a href="#cb68-5" tabindex="-1"></a>  dataToPatQ (<span class="fu">const</span> <span class="dt">Nothing</span>) <span class="fu">exp</span></span></code></pre></div>
 <p>The functions <code>quoteExprExp</code> and <code>quoteExprPat</code>
 differ in two respects:</p>
 <ul>
@@ -845,11 +983,11 @@ program.</p>
 <p>Antiquotation, as the name suggests goes in the opposite direction:
 embeds Haskell entities (e.g. variables) in our DSL.</p>
 <p>This sounds complicated, but isn’t really. Think HTML templates:</p>
-<div class="sourceCode" id="cb60"><pre
-class="sourceCode html"><code class="sourceCode html"><span id="cb60-1"><a href="#cb60-1" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">html</span><span class="dt">&gt;</span></span>
-<span id="cb60-2"><a href="#cb60-2" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">head</span><span class="dt">&gt;</span></span>
-<span id="cb60-3"><a href="#cb60-3" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">title</span><span class="dt">&gt;</span>#{pageTitle}</span>
-<span id="cb60-4"><a href="#cb60-4" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">body</span><span class="dt">&gt;&lt;</span><span class="kw">h1</span><span class="dt">&gt;</span>#{pageTitle}</span></code></pre></div>
+<div class="sourceCode" id="cb69"><pre
+class="sourceCode html"><code class="sourceCode html"><span id="cb69-1"><a href="#cb69-1" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">html</span><span class="dt">&gt;</span></span>
+<span id="cb69-2"><a href="#cb69-2" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">head</span><span class="dt">&gt;</span></span>
+<span id="cb69-3"><a href="#cb69-3" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">title</span><span class="dt">&gt;</span>#{pageTitle}</span>
+<span id="cb69-4"><a href="#cb69-4" tabindex="-1"></a>&lt;body&gt;&lt;h1&gt;#{pageTitle}</span></code></pre></div>
 <p>The meaning is hopefully obvious — the value of program variable
 <code>pageTitle</code> should be embedded in the indicated places. In
 our expression language we might want to write</p>
@@ -864,43 +1002,75 @@ patterns, and here the story becomes a little interesting.</p>
 <div id="extending-quasiquoters" class="slide section level1">
 <h1>Extending quasiquoters</h1>
 <p>Recall the pattern quasiquoter:</p>
-<div class="sourceCode" id="cb62"><pre
-class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb62-1"><a href="#cb62-1" tabindex="-1"></a><span class="ot">quoteExprPat ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Q</span> <span class="dt">Pat</span></span>
-<span id="cb62-2"><a href="#cb62-2" tabindex="-1"></a>quoteExprPat s <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb62-3"><a href="#cb62-3" tabindex="-1"></a>  pos <span class="ot">&lt;-</span> getPosition</span>
-<span id="cb62-4"><a href="#cb62-4" tabindex="-1"></a>  <span class="fu">exp</span> <span class="ot">&lt;-</span> parseExpr pos s</span>
-<span id="cb62-5"><a href="#cb62-5" tabindex="-1"></a>  dataToPatQ (<span class="fu">const</span> <span class="dt">Nothing</span>) <span class="fu">exp</span></span></code></pre></div>
+<div class="sourceCode" id="cb71"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb71-1"><a href="#cb71-1" tabindex="-1"></a><span class="ot">quoteExprPat ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Q</span> <span class="dt">Pat</span></span>
+<span id="cb71-2"><a href="#cb71-2" tabindex="-1"></a>quoteExprPat s <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb71-3"><a href="#cb71-3" tabindex="-1"></a>  pos <span class="ot">&lt;-</span> getPosition</span>
+<span id="cb71-4"><a href="#cb71-4" tabindex="-1"></a>  <span class="fu">exp</span> <span class="ot">&lt;-</span> parseExpr pos s</span>
+<span id="cb71-5"><a href="#cb71-5" tabindex="-1"></a>  dataToPatQ (<span class="fu">const</span> <span class="dt">Nothing</span>) <span class="fu">exp</span></span></code></pre></div>
 <p>The <code>(const Nothing)</code> is a placeholder for extensions to
 the standard <code>Data</code> to <code>Pat</code> translation:</p>
-<div class="sourceCode" id="cb63"><pre
-class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb63-1"><a href="#cb63-1" tabindex="-1"></a><span class="ot">quoteExprPat ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Q</span> <span class="dt">Pat</span></span>
-<span id="cb63-2"><a href="#cb63-2" tabindex="-1"></a>quoteExprPat s <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb63-3"><a href="#cb63-3" tabindex="-1"></a>  pos <span class="ot">&lt;-</span> getPosition</span>
-<span id="cb63-4"><a href="#cb63-4" tabindex="-1"></a>  <span class="fu">exp</span> <span class="ot">&lt;-</span> Expr.parseExpr pos s</span>
-<span id="cb63-5"><a href="#cb63-5" tabindex="-1"></a>  dataToPatQ (<span class="fu">const</span> <span class="dt">Nothing</span> <span class="ot">`extQ`</span> antiExprPat) <span class="fu">exp</span></span>
-<span id="cb63-6"><a href="#cb63-6" tabindex="-1"></a></span>
-<span id="cb63-7"><a href="#cb63-7" tabindex="-1"></a><span class="ot">antiExprPat ::</span> <span class="dt">Expr</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Q</span> <span class="dt">Pat</span>)</span>
-<span id="cb63-8"><a href="#cb63-8" tabindex="-1"></a>antiExprPat (<span class="dt">EMetaVar</span> v) <span class="ot">=</span> <span class="dt">Just</span> <span class="op">$</span> varP (mkName v)</span>
-<span id="cb63-9"><a href="#cb63-9" tabindex="-1"></a>antiExprPat _ <span class="ot">=</span> <span class="dt">Nothing</span></span></code></pre></div>
+<div class="sourceCode" id="cb72"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb72-1"><a href="#cb72-1" tabindex="-1"></a><span class="ot">quoteExprPat ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Q</span> <span class="dt">Pat</span></span>
+<span id="cb72-2"><a href="#cb72-2" tabindex="-1"></a>quoteExprPat s <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb72-3"><a href="#cb72-3" tabindex="-1"></a>  pos <span class="ot">&lt;-</span> getPosition</span>
+<span id="cb72-4"><a href="#cb72-4" tabindex="-1"></a>  <span class="fu">exp</span> <span class="ot">&lt;-</span> Expr.parseExpr pos s</span>
+<span id="cb72-5"><a href="#cb72-5" tabindex="-1"></a>  dataToPatQ (<span class="fu">const</span> <span class="dt">Nothing</span> <span class="ot">`extQ`</span> antiExprPat) <span class="fu">exp</span></span>
+<span id="cb72-6"><a href="#cb72-6" tabindex="-1"></a></span>
+<span id="cb72-7"><a href="#cb72-7" tabindex="-1"></a><span class="ot">antiExprPat ::</span> <span class="dt">Expr</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Q</span> <span class="dt">Pat</span>)</span>
+<span id="cb72-8"><a href="#cb72-8" tabindex="-1"></a>antiExprPat (<span class="dt">EMetaVar</span> v) <span class="ot">=</span> <span class="dt">Just</span> <span class="op">$</span> varP (mkName v)</span>
+<span id="cb72-9"><a href="#cb72-9" tabindex="-1"></a>antiExprPat _ <span class="ot">=</span> <span class="dt">Nothing</span></span>
+<span id="cb72-10"><a href="#cb72-10" tabindex="-1"></a></span>
+<span id="cb72-11"><a href="#cb72-11" tabindex="-1"></a><span class="co">-- antiExprExp analogous, mutatis mutandis (`varP/varE`)</span></span></code></pre></div>
 <p>What are the “extensions”?</p>
 </div>
-<div id="whats-a-function-extension" class="slide section level1">
-<h1>What’s a function extension?</h1>
-<p>You have</p>
-<ul>
-<li>a generic function, say</li>
-</ul>
-<pre><code>gen :: Data a =&gt; a -&gt; R</code></pre>
-<ul>
-<li>a type-specific function, say</li>
-</ul>
-<pre><code>spec :: T -&gt; R</code></pre>
-<p>You want a generic function which behaves like spec on values of type
-T, and like gen on all other values.</p>
-<p>The function <code>extQ</code> does just that.</p>
-<pre><code>extQ :: (Typeable a, Typeable t) =&gt; (a -&gt; r) -&gt; (t -&gt; r) -&gt; a -&gt; r
-
-gen `extQ` spec :: Data a =&gt; a -&gt; R  -- Data is a subclass of Typeable</code></pre>
+<div id="generic-programming-typeable-and-data"
+class="slide section level1">
+<h1>Generic programming — <code>Typeable</code> and
+<code>Data</code></h1>
+<p><code>Typeable</code> provides runtime type information — it lets us
+ask “what type is this value?”</p>
+<p><code>Data</code> (a subclass of <code>Typeable</code>) adds the
+ability to generically traverse and transform values — inspect
+constructors, access fields, etc.</p>
+<div class="sourceCode" id="cb73"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb73-1"><a href="#cb73-1" tabindex="-1"></a><span class="kw">class</span> <span class="dt">Typeable</span> a <span class="kw">where</span> <span class="op">...</span>              <span class="co">-- runtime type representation</span></span>
+<span id="cb73-2"><a href="#cb73-2" tabindex="-1"></a><span class="kw">class</span> <span class="dt">Typeable</span> a <span class="ot">=&gt;</span> <span class="dt">Data</span> a <span class="kw">where</span> <span class="op">...</span>    <span class="co">-- generic traversal/construction</span></span>
+<span id="cb73-3"><a href="#cb73-3" tabindex="-1"></a><span class="co">-- both can be derived automatically with DeriveDataTypeable</span></span></code></pre></div>
+<p>With <code>Data</code>, we can write functions that work on
+<em>any</em> type:</p>
+<div class="sourceCode" id="cb74"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb74-1"><a href="#cb74-1" tabindex="-1"></a><span class="ot">gsize ::</span> <span class="dt">Data</span> a <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Int</span></span>
+<span id="cb74-2"><a href="#cb74-2" tabindex="-1"></a>gsize x <span class="ot">=</span> <span class="dv">1</span> <span class="op">+</span> <span class="fu">sum</span> (gmapQ gsize x)</span>
+<span id="cb74-3"><a href="#cb74-3" tabindex="-1"></a><span class="co">-- counts all constructors in a value, recursively</span></span></code></pre></div>
+<p>But sometimes we want to override behavior for one specific type. For
+example, treat <code>String</code> as atomic (size 1) instead of
+traversing its characters:</p>
+<div class="sourceCode" id="cb75"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb75-1"><a href="#cb75-1" tabindex="-1"></a><span class="ot">gsize&#39; ::</span> <span class="dt">Data</span> a <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Int</span></span>
+<span id="cb75-2"><a href="#cb75-2" tabindex="-1"></a>gsize&#39; <span class="ot">=</span> gsize <span class="ot">`extQ`</span> stringSize</span>
+<span id="cb75-3"><a href="#cb75-3" tabindex="-1"></a>  <span class="kw">where</span><span class="ot"> stringSize ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Int</span></span>
+<span id="cb75-4"><a href="#cb75-4" tabindex="-1"></a>    stringSize _ <span class="ot">=</span> <span class="dv">1</span></span></code></pre></div>
+<div class="sourceCode" id="cb76"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb76-1"><a href="#cb76-1" tabindex="-1"></a>ghci<span class="op">&gt;</span> gsize  <span class="st">&quot;ab&quot;</span>    <span class="co">-- traverses list structure: (:) &#39;a&#39; ((:) &#39;b&#39; [])</span></span>
+<span id="cb76-2"><a href="#cb76-2" tabindex="-1"></a><span class="dv">5</span></span>
+<span id="cb76-3"><a href="#cb76-3" tabindex="-1"></a>ghci<span class="op">&gt;</span> gsize&#39; <span class="st">&quot;ab&quot;</span>    <span class="co">-- treats String as a single unit</span></span>
+<span id="cb76-4"><a href="#cb76-4" tabindex="-1"></a><span class="dv">1</span></span></code></pre></div>
+</div>
+<div id="extending-generic-functions" class="slide section level1">
+<h1>Extending generic functions</h1>
+<p><code>extQ</code> “extends” a generic query with a type-specific
+case:</p>
+<div class="sourceCode" id="cb77"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb77-1"><a href="#cb77-1" tabindex="-1"></a><span class="ot">extQ ::</span> (<span class="dt">Typeable</span> a, <span class="dt">Typeable</span> t)</span>
+<span id="cb77-2"><a href="#cb77-2" tabindex="-1"></a>     <span class="ot">=&gt;</span> (a <span class="ot">-&gt;</span> r) <span class="ot">-&gt;</span> (t <span class="ot">-&gt;</span> r) <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> r</span></code></pre></div>
+<p>At runtime, <code>extQ</code> checks whether the value’s type matches
+<code>t</code>. If yes, it applies the specific function; otherwise, it
+falls back to the generic one.</p>
+<p>This is exactly what we need for antiquotation:
+<code>dataToPatQ</code> provides the generic translation, and we extend
+it with a specific case for our <code>Expr</code> type that handles
+metavariables differently.</p>
 <p>(NB <code>extQ</code> comes from <code>Data.Generics</code> and the
 <code>Q</code> in the name has nothing to do with Template Haskell
 <code>Q</code> monad)</p>
@@ -928,78 +1098,74 @@ dataToPatQ (const Nothing `extQ` antiExprPat) :: Expr -&gt; Q Pat</code></pre>
 <h1>Metavariables</h1>
 <p>Let us extend our expression syntax and parser with metavariables
 (variables from the metalanguage):</p>
-<div class="sourceCode" id="cb68"><pre
-class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb68-1"><a href="#cb68-1" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Expr</span> <span class="ot">=</span>  <span class="op">...</span> <span class="op">|</span> <span class="dt">EMetaVar</span> <span class="dt">String</span></span>
-<span id="cb68-2"><a href="#cb68-2" tabindex="-1"></a>           <span class="kw">deriving</span>(<span class="dt">Show</span>,<span class="dt">Typeable</span>,<span class="dt">Data</span>)</span>
-<span id="cb68-3"><a href="#cb68-3" tabindex="-1"></a></span>
-<span id="cb68-4"><a href="#cb68-4" tabindex="-1"></a><span class="ot">pExpr ::</span> <span class="dt">Parser</span> <span class="dt">Expr</span></span>
-<span id="cb68-5"><a href="#cb68-5" tabindex="-1"></a>pExpr <span class="ot">=</span> pTerm <span class="ot">`chainl1`</span> spaced addop</span>
-<span id="cb68-6"><a href="#cb68-6" tabindex="-1"></a></span>
-<span id="cb68-7"><a href="#cb68-7" tabindex="-1"></a>pTerm <span class="ot">=</span> spaced pFactor <span class="ot">`chainl1`</span> spaced mulop</span>
-<span id="cb68-8"><a href="#cb68-8" tabindex="-1"></a>pFactor <span class="ot">=</span> pNum <span class="op">&lt;|&gt;</span> pMetaVar</span>
-<span id="cb68-9"><a href="#cb68-9" tabindex="-1"></a></span>
-<span id="cb68-10"><a href="#cb68-10" tabindex="-1"></a>pMetaVar <span class="ot">=</span> char <span class="ch">&#39;$&#39;</span> <span class="op">&gt;&gt;</span> <span class="dt">EMetaVar</span> <span class="op">&lt;$&gt;</span> ident</span>
-<span id="cb68-11"><a href="#cb68-11" tabindex="-1"></a></span>
-<span id="cb68-12"><a href="#cb68-12" tabindex="-1"></a>test1 <span class="ot">=</span> parse pExpr <span class="st">&quot;test1&quot;</span> <span class="st">&quot;1 - 2 - 3 * 4 &quot;</span></span>
-<span id="cb68-13"><a href="#cb68-13" tabindex="-1"></a>test2 <span class="ot">=</span> parse pExpr <span class="st">&quot;test2&quot;</span> <span class="st">&quot;$x - $y*$z&quot;</span></span>
-<span id="cb68-14"><a href="#cb68-14" tabindex="-1"></a></span>
-<span id="cb68-15"><a href="#cb68-15" tabindex="-1"></a>ghci<span class="op">&gt;</span> test1</span>
-<span id="cb68-16"><a href="#cb68-16" tabindex="-1"></a><span class="dt">Right</span> (<span class="dt">ESub</span> (<span class="dt">ESub</span> (<span class="dt">EInt</span> <span class="dv">1</span>) (<span class="dt">EInt</span> <span class="dv">2</span>)) (<span class="dt">EMul</span> (<span class="dt">EInt</span> <span class="dv">3</span>) (<span class="dt">EInt</span> <span class="dv">4</span>)))</span>
-<span id="cb68-17"><a href="#cb68-17" tabindex="-1"></a>ghci<span class="op">&gt;</span> test2</span>
-<span id="cb68-18"><a href="#cb68-18" tabindex="-1"></a><span class="dt">Right</span> (<span class="dt">ESub</span> (<span class="dt">EMetaVar</span> <span class="st">&quot;x&quot;</span>) (<span class="dt">EMul</span> (<span class="dt">EMetaVar</span> <span class="st">&quot;y&quot;</span>) (<span class="dt">EMetaVar</span> <span class="st">&quot;z&quot;</span>)))</span></code></pre></div>
+<div class="sourceCode" id="cb79"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb79-1"><a href="#cb79-1" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Expr</span> <span class="ot">=</span>  <span class="op">...</span> <span class="op">|</span> <span class="dt">EMetaVar</span> <span class="dt">String</span></span>
+<span id="cb79-2"><a href="#cb79-2" tabindex="-1"></a>           <span class="kw">deriving</span>(<span class="dt">Show</span>,<span class="dt">Typeable</span>,<span class="dt">Data</span>)</span>
+<span id="cb79-3"><a href="#cb79-3" tabindex="-1"></a></span>
+<span id="cb79-4"><a href="#cb79-4" tabindex="-1"></a><span class="ot">pExpr ::</span> <span class="dt">Parser</span> <span class="dt">Expr</span></span>
+<span id="cb79-5"><a href="#cb79-5" tabindex="-1"></a>pExpr <span class="ot">=</span> pTerm <span class="ot">`chainl1`</span> spaced addop</span>
+<span id="cb79-6"><a href="#cb79-6" tabindex="-1"></a></span>
+<span id="cb79-7"><a href="#cb79-7" tabindex="-1"></a>pTerm <span class="ot">=</span> spaced pFactor <span class="ot">`chainl1`</span> spaced mulop</span>
+<span id="cb79-8"><a href="#cb79-8" tabindex="-1"></a>pFactor <span class="ot">=</span> pNum <span class="op">&lt;|&gt;</span> pMetaVar</span>
+<span id="cb79-9"><a href="#cb79-9" tabindex="-1"></a></span>
+<span id="cb79-10"><a href="#cb79-10" tabindex="-1"></a>pMetaVar <span class="ot">=</span> char <span class="ch">&#39;$&#39;</span> <span class="op">&gt;&gt;</span> <span class="dt">EMetaVar</span> <span class="op">&lt;$&gt;</span> ident</span>
+<span id="cb79-11"><a href="#cb79-11" tabindex="-1"></a></span>
+<span id="cb79-12"><a href="#cb79-12" tabindex="-1"></a>test1 <span class="ot">=</span> parse pExpr <span class="st">&quot;test1&quot;</span> <span class="st">&quot;1 - 2 - 3 * 4 &quot;</span></span>
+<span id="cb79-13"><a href="#cb79-13" tabindex="-1"></a>test2 <span class="ot">=</span> parse pExpr <span class="st">&quot;test2&quot;</span> <span class="st">&quot;$x - $y*$z&quot;</span></span>
+<span id="cb79-14"><a href="#cb79-14" tabindex="-1"></a></span>
+<span id="cb79-15"><a href="#cb79-15" tabindex="-1"></a>ghci<span class="op">&gt;</span> test1</span>
+<span id="cb79-16"><a href="#cb79-16" tabindex="-1"></a><span class="dt">Right</span> (<span class="dt">ESub</span> (<span class="dt">ESub</span> (<span class="dt">EInt</span> <span class="dv">1</span>) (<span class="dt">EInt</span> <span class="dv">2</span>)) (<span class="dt">EMul</span> (<span class="dt">EInt</span> <span class="dv">3</span>) (<span class="dt">EInt</span> <span class="dv">4</span>)))</span>
+<span id="cb79-17"><a href="#cb79-17" tabindex="-1"></a>ghci<span class="op">&gt;</span> test2</span>
+<span id="cb79-18"><a href="#cb79-18" tabindex="-1"></a><span class="dt">Right</span> (<span class="dt">ESub</span> (<span class="dt">EMetaVar</span> <span class="st">&quot;x&quot;</span>) (<span class="dt">EMul</span> (<span class="dt">EMetaVar</span> <span class="st">&quot;y&quot;</span>) (<span class="dt">EMetaVar</span> <span class="st">&quot;z&quot;</span>)))</span></code></pre></div>
 </div>
 <div id="antiquoting-metavariables" class="slide section level1">
 <h1>Antiquoting metavariables</h1>
 <p>The antiquoter is defined as an extension for the
 <code>dataToPatQ</code>:</p>
-<div class="sourceCode" id="cb69"><pre
-class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb69-1"><a href="#cb69-1" tabindex="-1"></a><span class="ot">antiExprPat ::</span> <span class="dt">Expr</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Q</span> <span class="dt">Pat</span>)</span>
-<span id="cb69-2"><a href="#cb69-2" tabindex="-1"></a>antiExprPat (<span class="dt">EMetaVar</span> v) <span class="ot">=</span> <span class="dt">Just</span> <span class="op">$</span> varP (mkName v)</span>
-<span id="cb69-3"><a href="#cb69-3" tabindex="-1"></a>antiExprPat _ <span class="ot">=</span> <span class="dt">Nothing</span></span></code></pre></div>
+<div class="sourceCode" id="cb80"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb80-1"><a href="#cb80-1" tabindex="-1"></a><span class="ot">antiExprPat ::</span> <span class="dt">Expr</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Q</span> <span class="dt">Pat</span>)</span>
+<span id="cb80-2"><a href="#cb80-2" tabindex="-1"></a>antiExprPat (<span class="dt">EMetaVar</span> v) <span class="ot">=</span> <span class="dt">Just</span> <span class="op">$</span> varP (mkName v)</span>
+<span id="cb80-3"><a href="#cb80-3" tabindex="-1"></a>antiExprPat _ <span class="ot">=</span> <span class="dt">Nothing</span></span></code></pre></div>
 <ul>
 <li>metavariables are translated to <code>Just</code> TH variables</li>
 <li>for all the other cases we say <code>Nothing</code> - allowing
 <code>dataToPatQ</code> use its default rules</li>
 </ul>
 <p>And that’s it! Now we can write</p>
-<div class="sourceCode" id="cb70"><pre
-class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb70-1"><a href="#cb70-1" tabindex="-1"></a>eval [expr| $a + $b|] <span class="ot">=</span> eval a <span class="op">+</span> eval b</span>
-<span id="cb70-2"><a href="#cb70-2" tabindex="-1"></a>eval [expr| $a * $b|] <span class="ot">=</span> eval a <span class="op">*</span> eval b</span>
-<span id="cb70-3"><a href="#cb70-3" tabindex="-1"></a>eval (<span class="dt">EInt</span> n) <span class="ot">=</span> n</span></code></pre></div>
-</div>
-<div id="bnfc-meta" class="slide section level1">
-<h1>bnfc-meta</h1>
-<p>Instead of writing a parser by hand, we can use BNFC.</p>
-<p>Similarly we can use <code>bnfc-meta</code> to generate
-quasiquoters:</p>
-<div class="sourceCode" id="cb71"><pre
-class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb71-1"><a href="#cb71-1" tabindex="-1"></a><span class="kw">module</span> <span class="dt">Expr</span> <span class="kw">where</span></span>
-<span id="cb71-2"><a href="#cb71-2" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Language.LBNF.Compiletime</span></span>
-<span id="cb71-3"><a href="#cb71-3" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Language.LBNF</span>(lbnf, bnfc)</span>
-<span id="cb71-4"><a href="#cb71-4" tabindex="-1"></a></span>
-<span id="cb71-5"><a href="#cb71-5" tabindex="-1"></a>bnfc [lbnf|</span>
-<span id="cb71-6"><a href="#cb71-6" tabindex="-1"></a>EAdd . Expr1 ::= Expr1 &quot;+&quot; Expr2 ;</span>
-<span id="cb71-7"><a href="#cb71-7" tabindex="-1"></a>EMul . Expr2 ::= Expr2 &quot;*&quot; Expr3 ;</span>
-<span id="cb71-8"><a href="#cb71-8" tabindex="-1"></a>ELit . Expr3 ::= Integer ;</span>
-<span id="cb71-9"><a href="#cb71-9" tabindex="-1"></a>EVar . Expr3 ::= Ident ;</span>
-<span id="cb71-10"><a href="#cb71-10" tabindex="-1"></a>coercions Expr 3;</span>
-<span id="cb71-11"><a href="#cb71-11" tabindex="-1"></a>|]</span>
-<span id="cb71-12"><a href="#cb71-12" tabindex="-1"></a><span class="co">------------------------------------------------------------------</span></span>
-<span id="cb71-13"><a href="#cb71-13" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Expr</span></span>
-<span id="cb71-14"><a href="#cb71-14" tabindex="-1"></a></span>
-<span id="cb71-15"><a href="#cb71-15" tabindex="-1"></a><span class="ot">exp1 ::</span> <span class="dt">Expr</span></span>
-<span id="cb71-16"><a href="#cb71-16" tabindex="-1"></a>exp1 <span class="ot">=</span> [expr| 2 + 2 |]</span></code></pre></div>
+<div class="sourceCode" id="cb81"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb81-1"><a href="#cb81-1" tabindex="-1"></a>eval [expr| $a + $b|] <span class="ot">=</span> eval a <span class="op">+</span> eval b</span>
+<span id="cb81-2"><a href="#cb81-2" tabindex="-1"></a>eval [expr| $a * $b|] <span class="ot">=</span> eval a <span class="op">*</span> eval b</span>
+<span id="cb81-3"><a href="#cb81-3" tabindex="-1"></a>eval (<span class="dt">EInt</span> n) <span class="ot">=</span> n</span></code></pre></div>
 </div>
 <div id="exercises" class="slide section level1">
 <h1>Exercises</h1>
 <ul>
 <li>Write a function such that <code>build_ps n</code> generates all
 projections for n-tuples,</li>
-<li>Write a function <code>tupleFromList</code> such that</li>
+<li>Write a function <code>tupleFromList :: Int -&gt; ExpQ</code> such
+that</li>
 </ul>
 <pre><code>$(tupleFromList 8) [1..8] == (1,2,3,4,5,6,7,8)</code></pre>
 <ul>
-<li>W rite a <code>matrix</code> quasiquoter such that</li>
+<li><p>Extend the <code>fieldsOf</code> example to produce JSON from
+records where each field can be a base type, record, or a list.</p></li>
+<li><p>When using the State monad, we often write a lot of boilerplate
+of the form</p>
+<div class="sourceCode" id="cb83"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb83-1"><a href="#cb83-1" tabindex="-1"></a><span class="ot">getGenerateDefs ::</span> <span class="dt">TcM</span> <span class="dt">Bool</span></span>
+<span id="cb83-2"><a href="#cb83-2" tabindex="-1"></a>getGenerateDefs <span class="ot">=</span> gets generateDefs</span>
+<span id="cb83-3"><a href="#cb83-3" tabindex="-1"></a></span>
+<span id="cb83-4"><a href="#cb83-4" tabindex="-1"></a><span class="ot">setGenerateDefs ::</span> <span class="dt">Bool</span> <span class="ot">-&gt;</span> <span class="dt">TcM</span> ()</span>
+<span id="cb83-5"><a href="#cb83-5" tabindex="-1"></a>setGenerateDefs b <span class="ot">=</span></span>
+<span id="cb83-6"><a href="#cb83-6" tabindex="-1"></a>  modify (\env <span class="ot">-&gt;</span> env {generateDefs <span class="ot">=</span> b})</span></code></pre></div>
+<p>Write a function <code>makeStateAccessors</code> such that</p>
+<div class="sourceCode" id="cb84"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb84-1"><a href="#cb84-1" tabindex="-1"></a><span class="kw">data</span> <span class="dt">State</span> <span class="ot">=</span> {<span class="ot"> field1 ::</span> <span class="dt">T1</span>, <span class="op">...</span>,<span class="ot"> fieldN ::</span> <span class="dt">TN</span> }</span>
+<span id="cb84-2"><a href="#cb84-2" tabindex="-1"></a></span>
+<span id="cb84-3"><a href="#cb84-3" tabindex="-1"></a>makeStateAccessors &#39;<span class="dt">&#39;State</span></span></code></pre></div>
+<p>generates <code>getFieldK/setFieldK</code> for all fields (field
+names can be arbitrary, not necessarily <code>fieldK</code>)</p></li>
+<li><p>Write a <code>matrix</code> quasiquoter such that</p></li>
 </ul>
 <pre><code>*MatrixSplice&gt; :{
 *MatrixSplice| [matrix|
@@ -1010,17 +1176,51 @@ projections for n-tuples,</li>
 [[1,2],[3,4]]</code></pre>
 <p>be careful with blank lines!</p>
 <ul>
-<li><p>Extend the expression simplifier with more rules.</p></li>
-<li><p>Extend the expression quasiquoter to handle metavariables for
-numeric constants, allowing to implement simplification rules
-like</p></li>
+<li>Extend the expression simplifier with more rules.</li>
 </ul>
-<pre><code>simpl [expr|$int:n$ + $int:m$|] = [expr| $int:m+n$ |]</code></pre>
-<p>(you are welcome to invent your own syntax in place of
-<code>$int: ... $</code>)</p>
-<ul>
-<li>generate expression quasiquoters using <code>bnfc-meta</code></li>
-</ul>
+<!--
+* Extend the expression quasiquoter to handle metavariables for
+  numeric constants, allowing to implement simplification rules like
+
+    ```
+    simpl [expr|$int:n$ + $int:m$|] = [expr| $int:m+n$ |]
+    ```
+    (you are welcome to invent your own syntax in place of `$int: ... $`).
+    you'll need a new constructor like
+    `EMetaInt String` and corresponding `antiExprPat/antiExprExp` cases.
+-->
+<!--
+* generate expression quasiquoters using `bnfc-meta`
+-->
+</div>
+<div id="questions" class="slide section level1">
+<h1>Questions?</h1>
+</div>
+<div id="bonus" class="slide section level1">
+<h1>Bonus</h1>
+</div>
+<div id="bnfc-meta" class="slide section level1">
+<h1>bnfc-meta</h1>
+<p>Instead of writing a parser by hand, we can use BNFC.</p>
+<p>Similarly we can use <code>bnfc-meta</code> to generate
+quasiquoters:</p>
+<div class="sourceCode" id="cb86"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb86-1"><a href="#cb86-1" tabindex="-1"></a><span class="kw">module</span> <span class="dt">Expr</span> <span class="kw">where</span></span>
+<span id="cb86-2"><a href="#cb86-2" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Language.LBNF.Compiletime</span></span>
+<span id="cb86-3"><a href="#cb86-3" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Language.LBNF</span>(lbnf, bnfc)</span>
+<span id="cb86-4"><a href="#cb86-4" tabindex="-1"></a></span>
+<span id="cb86-5"><a href="#cb86-5" tabindex="-1"></a>bnfc [lbnf|</span>
+<span id="cb86-6"><a href="#cb86-6" tabindex="-1"></a>EAdd . Expr1 ::= Expr1 &quot;+&quot; Expr2 ;</span>
+<span id="cb86-7"><a href="#cb86-7" tabindex="-1"></a>EMul . Expr2 ::= Expr2 &quot;*&quot; Expr3 ;</span>
+<span id="cb86-8"><a href="#cb86-8" tabindex="-1"></a>ELit . Expr3 ::= Integer ;</span>
+<span id="cb86-9"><a href="#cb86-9" tabindex="-1"></a>EVar . Expr3 ::= Ident ;</span>
+<span id="cb86-10"><a href="#cb86-10" tabindex="-1"></a>coercions Expr 3;</span>
+<span id="cb86-11"><a href="#cb86-11" tabindex="-1"></a>|]</span>
+<span id="cb86-12"><a href="#cb86-12" tabindex="-1"></a><span class="co">------------------------------------------------------------------</span></span>
+<span id="cb86-13"><a href="#cb86-13" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Expr</span></span>
+<span id="cb86-14"><a href="#cb86-14" tabindex="-1"></a></span>
+<span id="cb86-15"><a href="#cb86-15" tabindex="-1"></a><span class="ot">exp1 ::</span> <span class="dt">Expr</span></span>
+<span id="cb86-16"><a href="#cb86-16" tabindex="-1"></a>exp1 <span class="ot">=</span> [expr| 2 + 2 |]</span></code></pre></div>
 </div>
 </body>
 </html>

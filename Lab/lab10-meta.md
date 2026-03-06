@@ -21,6 +21,30 @@ Write a function `tupleFromList` such that
 $(tupleFromList 8) [1..8] == (1,2,3,4,5,6,7,8) 
 ```
 
+# Reification
+
+Extend the `fieldsOf` to produce JSON from records where each field can be a base type, record, or a list.
+
+When using the State monad, we often write a lot of boilerplate of the form
+
+``` haskell
+getGenerateDefs :: TcM Bool
+getGenerateDefs = gets generateDefs
+
+setGenerateDefs :: Bool -> TcM ()
+setGenerateDefs b =
+  modify (\env -> env {generateDefs = b})
+```
+
+write a function `makeStateAccessors` such that
+
+``` haskell
+data State = { field1 :: T1, ..., fieldN :: TN }
+
+makeStateAccessors ''State
+```
+generates `getFieldK/setFieldK` for all fields (field names can be arbitrary, not necessarily `fieldK`)
+
 # Quasiquotation 1
 
 write a `matrix` quasiquoter such that
