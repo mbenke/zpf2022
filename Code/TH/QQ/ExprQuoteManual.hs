@@ -26,6 +26,7 @@ quoteExprExp s = do
 
 exprToExpQ :: Expr -> Q Exp
 exprToExpQ (EInt n) = return $ ConE (mkName "EInt") $$ (intLitE n)
+exprToExpQ (EVar s) = return $ ConE (mkName "EVar") $$ (stringLitE s)
 exprToExpQ (EAdd e1 e2) = convertBinE "EAdd" e1 e2
 exprToExpQ (ESub e1 e2) = convertBinE "ESub" e1 e2
 exprToExpQ (EMul e1 e2) = convertBinE "EMul" e1 e2
@@ -33,6 +34,9 @@ exprToExpQ (EDiv e1 e2) = convertBinE "EDiv" e1 e2
 
 intLitE :: Int -> TH.Exp
 intLitE = LitE . IntegerL . toInteger
+
+stringLitE :: String -> TH.Exp
+stringLitE = LitE . StringL
 
 convertBinE s e1 e2 = do
   e1' <- exprToExpQ e1
@@ -58,6 +62,7 @@ getPosition = fmap transPos location where
 
 exprToPatQ :: Expr -> Q Pat
 exprToPatQ (EInt n) = return $ ConP (mkName "EInt") [] [intLitP n]
+exprToPatQ (EVar s) = return $ ConP (mkName "EVar") [] [stringLitP s]
 exprToPatQ (EAdd e1 e2) = convertBinP "EAdd" e1 e2
 exprToPatQ (ESub e1 e2) = convertBinP "ESub" e1 e2
 exprToPatQ (EMul e1 e2) = convertBinP "EMul" e1 e2
@@ -65,6 +70,9 @@ exprToPatQ (EDiv e1 e2) = convertBinP "EDiv" e1 e2
 
 intLitP :: Int -> TH.Pat
 intLitP = LitP . IntegerL . toInteger
+
+stringLitP :: String -> TH.Pat
+stringLitP = LitP . StringL
 
 convertBinP s e1 e2 = do
   e1' <- exprToPatQ e1

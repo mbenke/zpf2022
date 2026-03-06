@@ -13,6 +13,7 @@ data Expr = EInt Int
          | ESub Expr Expr
          | EMul Expr Expr
          | EDiv Expr Expr
+         | EVar String
          | EMetaVar String
            deriving(Show,Typeable,Data)
 
@@ -20,8 +21,9 @@ pExpr :: Parser Expr
 pExpr = pTerm `chainl1` spaced addop
 
 pTerm = spaced pFactor `chainl1` spaced mulop
-pFactor = pNum <|> pMetaVar
+pFactor = pNum <|> pVar <|> pMetaVar
 
+pVar = EVar <$> ident <* spaces
 pMetaVar = char '$' >> EMetaVar <$> ident
 -- /show
 
