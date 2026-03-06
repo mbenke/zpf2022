@@ -4,7 +4,7 @@ import Language.Haskell.TH
 
 import Build1
 
-$(build_p1)
+build_p1
 
 pprLn :: Ppr a => a -> IO ()
 pprLn = putStrLn . pprint
