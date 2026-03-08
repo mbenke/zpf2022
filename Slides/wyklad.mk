@@ -15,7 +15,7 @@ all: $(DESTDIR)/$(L).html $(DESTDIR)/$(L)-slides.html
 
 $(DESTDIR)/$(L).html: $(L).md
 	@test -f $<
-	$(PANDOC) -s -t html -o $@ $<
+	$(PANDOC) -s -f markdown+emoji -t html -o $@ $<
 
 $(DESTDIR)/$(L)-slides.html: $(L).md Makefile # $(wildcard ./pandoc/slidy/*)
 	@test -f $<
