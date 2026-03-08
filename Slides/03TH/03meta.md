@@ -170,7 +170,7 @@ instance Quasi Q
 instance Quasi IO
 ```
 
-Basically `runQ` can be used to evaluate `Q` computations both in the `IO` context (useful for experimentation).
+Basically `runQ` can be used to evaluate `Q` computations in the `IO` context (useful for experimentation).
 
 <!--
 (curious about `type role Q nominal`? - see e.g. this [question](https://stackoverflow.com/questions/49209788/simplest-examples-demonstrating-the-need-for-nominal-type-role-in-haskell)
@@ -179,7 +179,7 @@ Basically `runQ` can be used to evaluate `Q` computations both in the `IO` conte
 For convenience, most AST constructors have ``smart'' variants, e.g.
 
 ``` haskell
-Quote m => Lit -> m Exp
+litE :: Quote m => Lit -> m Exp
 ```
 
 so instead of `return (LitE (IntegerL 42))` we can write `litE (IntegerL 42)`
@@ -219,7 +219,7 @@ where `fib 20` is computed at compilation time.
 
 Splicing and quoting can be interleaved:
 
-```
+``` haskell
 > $(let x = [| 2 + 3 |] in [| 2 + $(x) |])
 7
 
@@ -229,7 +229,7 @@ Splicing and quoting can be interleaved:
 
 This allows to unroll recursion at comptime:
 
-```
+``` haskell
 power 0 = [| const 1 |]
 power n = [| \k -> k * $(power (n-1)) k |]
 
@@ -239,6 +239,9 @@ power n = [| \k -> k * $(power (n-1)) k |]
 -- 32
 
 ```
+
+yes, staging rules are complex - see [GHC documentation](https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/template_haskell.html#declaration-groups)
+
 # Splicing structure trees into a program (3)
 
 ```
@@ -560,7 +563,7 @@ ghci> ''Bool
 GHC.Types.Bool
 ```
 
-Trap: `'foo` is not always the same as `mkName "foo":
+ ⚠️ Trap: `'foo` is not always the same as `mkName "foo":
 
 ``` haskell
 ghci> 'foo
@@ -572,7 +575,7 @@ ghci> mkName "foo"
 foo
 ```
 
-(`'foo` works only if `foo` is unambiguously resolved)
+ :warning: `'foo` works only if `foo` is unambiguously resolved)
 
 # `reify` usage examples
 

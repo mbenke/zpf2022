@@ -259,7 +259,7 @@ class (MonadIO m, MonadFail m) =&gt; Quasi m where ...
 instance Quasi Q
 instance Quasi IO</code></pre>
 <p>Basically <code>runQ</code> can be used to evaluate <code>Q</code>
-computations both in the <code>IO</code> context (useful for
+computations in the <code>IO</code> context (useful for
 experimentation).</p>
 <!--
 (curious about `type role Q nominal`? - see e.g. this [question](https://stackoverflow.com/questions/49209788/simplest-examples-demonstrating-the-need-for-nominal-type-role-in-haskell)
@@ -267,7 +267,7 @@ experimentation).</p>
 <p>For convenience, most AST constructors have ``smart’’ variants,
 e.g.</p>
 <div class="sourceCode" id="cb8"><pre
-class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="dt">Quote</span> m <span class="ot">=&gt;</span> <span class="dt">Lit</span> <span class="ot">-&gt;</span> m <span class="dt">Exp</span></span></code></pre></div>
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="ot">litE ::</span> <span class="dt">Quote</span> m <span class="ot">=&gt;</span> <span class="dt">Lit</span> <span class="ot">-&gt;</span> m <span class="dt">Exp</span></span></code></pre></div>
 <p>so instead of <code>return (LitE (IntegerL 42))</code> we can write
 <code>litE (IntegerL 42)</code></p>
 <p>NB in recent versions we have</p>
@@ -297,20 +297,24 @@ module)</p>
 class="slide section level1">
 <h1>Splicing structure trees into a program (2)</h1>
 <p>Splicing and quoting can be interleaved:</p>
-<pre><code>&gt; $(let x = [| 2 + 3 |] in [| 2 + $(x) |])
-7
-
-&gt; (let x = [| 2 + 3 |] in [| 2 + $(x) |]) &gt;&gt;= putStrLn . pprint
-2 GHC.Num.+ (2 GHC.Num.+ 3)</code></pre>
+<div class="sourceCode" id="cb12"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="op">&gt;</span> <span class="op">$</span>(<span class="kw">let</span> x <span class="ot">=</span> [<span class="op">|</span> <span class="dv">2</span> <span class="op">+</span> <span class="dv">3</span> <span class="op">|</span>] <span class="kw">in</span> [<span class="op">|</span> <span class="dv">2</span> <span class="op">+</span> <span class="op">$</span>(x) <span class="op">|</span>])</span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a><span class="dv">7</span></span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a></span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a><span class="op">&gt;</span> (<span class="kw">let</span> x <span class="ot">=</span> [<span class="op">|</span> <span class="dv">2</span> <span class="op">+</span> <span class="dv">3</span> <span class="op">|</span>] <span class="kw">in</span> [<span class="op">|</span> <span class="dv">2</span> <span class="op">+</span> <span class="op">$</span>(x) <span class="op">|</span>]) <span class="op">&gt;&gt;=</span> <span class="fu">putStrLn</span> <span class="op">.</span> pprint</span>
+<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a><span class="dv">2</span> <span class="op">GHC.Num.+</span> (<span class="dv">2</span> <span class="op">GHC.Num.+</span> <span class="dv">3</span>)</span></code></pre></div>
 <p>This allows to unroll recursion at comptime:</p>
-<pre><code>power 0 = [| const 1 |]
-power n = [| \k -&gt; k * $(power (n-1)) k |]
-
--- power 5 ~ \k -&gt; k * k * k * k * k * 1
-
--- &gt; $(power 5) 2
--- 32
-</code></pre>
+<div class="sourceCode" id="cb13"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a>power <span class="dv">0</span> <span class="ot">=</span> [<span class="op">|</span> <span class="fu">const</span> <span class="dv">1</span> <span class="op">|</span>]</span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a>power n <span class="ot">=</span> [<span class="op">|</span> \k <span class="ot">-&gt;</span> k <span class="op">*</span> <span class="op">$</span>(power (n<span class="op">-</span><span class="dv">1</span>)) k <span class="op">|</span>]</span>
+<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a></span>
+<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a><span class="co">-- power 5 ~ \k -&gt; k * k * k * k * k * 1</span></span>
+<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a></span>
+<span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a><span class="co">-- &gt; $(power 5) 2</span></span>
+<span id="cb13-7"><a href="#cb13-7" tabindex="-1"></a><span class="co">-- 32</span></span></code></pre></div>
+<p>yes, staging rules are complex - see <a
+href="https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/template_haskell.html#declaration-groups">GHC
+documentation</a></p>
 </div>
 <div id="splicing-structure-trees-into-a-program-3"
 class="slide section level1">
@@ -575,7 +579,8 @@ class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb37-1"><a
 <span id="cb37-8"><a href="#cb37-8" tabindex="-1"></a></span>
 <span id="cb37-9"><a href="#cb37-9" tabindex="-1"></a>ghci<span class="op">&gt;</span> &#39;<span class="dt">&#39;Bool</span></span>
 <span id="cb37-10"><a href="#cb37-10" tabindex="-1"></a><span class="dt">GHC.Types.Bool</span></span></code></pre></div>
-<p>Trap: <code>'foo</code> is not always the same as `mkName “foo”:</p>
+<p>⚠️ Trap: <code>'foo</code> is not always the same as `mkName
+“foo”:</p>
 <div class="sourceCode" id="cb38"><pre
 class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb38-1"><a href="#cb38-1" tabindex="-1"></a>ghci<span class="op">&gt;</span> &#39;foo</span>
 <span id="cb38-2"><a href="#cb38-2" tabindex="-1"></a></span>
@@ -584,8 +589,8 @@ class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb38-1"><a
 <span id="cb38-5"><a href="#cb38-5" tabindex="-1"></a>    • <span class="dt">In</span> the <span class="dt">Template</span> <span class="dt">Haskell</span> quotation &#39;foo</span>
 <span id="cb38-6"><a href="#cb38-6" tabindex="-1"></a>ghci<span class="op">&gt;</span> mkName <span class="st">&quot;foo&quot;</span></span>
 <span id="cb38-7"><a href="#cb38-7" tabindex="-1"></a>foo</span></code></pre></div>
-<p>(<code>'foo</code> works only if <code>foo</code> is unambiguously
-resolved)</p>
+<p>:warning: <code>'foo</code> works only if <code>foo</code> is
+unambiguously resolved)</p>
 </div>
 <div id="reify-usage-examples" class="slide section level1">
 <h1><code>reify</code> usage examples</h1>
