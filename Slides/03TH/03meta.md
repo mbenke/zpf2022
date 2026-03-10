@@ -563,7 +563,7 @@ ghci> ''Bool
 GHC.Types.Bool
 ```
 
- ⚠️ Trap: `'foo` is not always the same as `mkName "foo":
+ ⚠️ Trap: `'foo` is not always the same as `mkName "foo"`:
 
 ``` haskell
 ghci> 'foo
@@ -575,7 +575,7 @@ ghci> mkName "foo"
 foo
 ```
 
- :warning: `'foo` works only if `foo` is unambiguously resolved)
+ ⚠️ `'foo` works only if `foo` is unambiguously resolved)
 
 # `reify` usage examples
 

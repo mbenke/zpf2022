@@ -579,8 +579,8 @@ class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb37-1"><a
 <span id="cb37-8"><a href="#cb37-8" tabindex="-1"></a></span>
 <span id="cb37-9"><a href="#cb37-9" tabindex="-1"></a>ghci<span class="op">&gt;</span> &#39;<span class="dt">&#39;Bool</span></span>
 <span id="cb37-10"><a href="#cb37-10" tabindex="-1"></a><span class="dt">GHC.Types.Bool</span></span></code></pre></div>
-<p>⚠️ Trap: <code>'foo</code> is not always the same as `mkName
-“foo”:</p>
+<p>⚠️ Trap: <code>'foo</code> is not always the same as
+<code>mkName "foo"</code>:</p>
 <div class="sourceCode" id="cb38"><pre
 class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb38-1"><a href="#cb38-1" tabindex="-1"></a>ghci<span class="op">&gt;</span> &#39;foo</span>
 <span id="cb38-2"><a href="#cb38-2" tabindex="-1"></a></span>
@@ -589,8 +589,8 @@ class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb38-1"><a
 <span id="cb38-5"><a href="#cb38-5" tabindex="-1"></a>    • <span class="dt">In</span> the <span class="dt">Template</span> <span class="dt">Haskell</span> quotation &#39;foo</span>
 <span id="cb38-6"><a href="#cb38-6" tabindex="-1"></a>ghci<span class="op">&gt;</span> mkName <span class="st">&quot;foo&quot;</span></span>
 <span id="cb38-7"><a href="#cb38-7" tabindex="-1"></a>foo</span></code></pre></div>
-<p>:warning: <code>'foo</code> works only if <code>foo</code> is
-unambiguously resolved)</p>
+<p>⚠️ <code>'foo</code> works only if <code>foo</code> is unambiguously
+resolved)</p>
 </div>
 <div id="reify-usage-examples" class="slide section level1">
 <h1><code>reify</code> usage examples</h1>
