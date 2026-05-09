@@ -2,7 +2,7 @@
 title: Advanced Functional Programming
 subtitle: Parallelism and Concurrency
 author:  Marcin Benke
-date: May 6, 2025
+date: May 12, 2026
 ---
 
 # Parallelism vs concurrency
@@ -24,7 +24,7 @@ physical processors.''
 
 --- [Simon Marlow, *Parallel and Concurrent Programming in Haskell*](https://simonmar.github.io/pages/pcph.html)
 
-(recommended reading, free to read online; NB ignore the "Start Your Free Trial" nags)
+(recommended reading; some of the material available in [this tutorial](https://simonmar.github.io/bib/papers/par-tutorial-cefp-2012.pdf) )
 
 TL;DR:
 
@@ -67,11 +67,11 @@ The `:sprint` command prints expression without evaluating; `_` means "unevaluat
 y = (_,_)
 > fst y
 3
-> :sprint vv
-vv = (3,3)
+> :sprint y
+y = (3,3)
 ```
 
-Evaluating `fst vv` evaluated `x` which was both first and second component (was shared)
+Evaluating `fst y` evaluated `x` which was both first and second component (was shared)
 
 ![Sharing](sharing.png "Sharing example")
 
@@ -111,6 +111,8 @@ OTOH it may happen that none of them is needed/evaluated, e.g.
 * Head Normal Form - no redexes in the head, i.e. `\x1...xn -> cN1...Nk`
 * Weak Head Normal Form - `cN1...Nk` or a lambda
 
+where *c* denotes a constant/constructor and *N* any term.
+
 # WHNF - shallow evaluation
 
 `seq` evaluates to so called Weak Head Normal Form
@@ -142,15 +144,15 @@ We will discuss deep evaluation (normal form) later.
 
 `Control.Parallel.par` is supplied by the `parallel` package.
 
-`par` and `seq` have much in common. The function par let you start a computation in parallel and seq forces a computation to actually take place
+The functions *par* and *seq* share a type signature, but differ in intent: *par* let you start a computation in parallel and *seq* forces a computation to actually take place
 
 ``` haskell
 par :: a -> b -> b
 seq :: a -> b -> b
 ```
 
-* `seq a b` forces evaluation of `a` and returns b
-* `par a b` initiates evaluation of `a` and returns `b` immediately, not waiting until computation finishes
+* *seq a b* forces evaluation of *a* and when it's done, returns *b*
+* *par a b* initiates evaluation of *a* and returns *b* immediately, not waiting until computation finishes
 
 ```
 > import Control.Parallel
@@ -174,21 +176,22 @@ n = 1000000000
 xs = _ : _
 ```
 
-# `par`, `seq` and `pseq`
+# *par*, *seq* and *pseq*
 
-`seq` and `pseq` are almost equivalent, but differ in their runtime
-behaviour in a subtle way: `seq` can evaluate its arguments in either
-order, but `pseq` is required to evaluate its first argument before its
-second, which makes it more suitable for controlling the evaluation
-order in conjunction with `par`.
+*seq* is a *logical* dependency — it tells the compiler "the result requires `a` to have been evaluated", but the compiler may still reorder operations for optimisation.
+*pseq* is a *temporal* guarantee — it forces evaluation of its first argument *before* its second begins, suppressing reordering.
 
-Consider
+This distinction matters with `par`. Consider what we want:
 
-```
-(a `par` b) `pseq` (a + b)
+```haskell
+(par a b) `pseq` (a + b)
 ```
 
-in this example we want to fully compute a and b (in parallel) before adding them.
+The intent: spark *a* (let another core handle it), evaluate *b* on the main thread, then add the results.
+
+With *seq* instead of *pseq*, GHC might reorder to evaluate *a + b* first — which pulls *a* into the main thread before the spark gets scheduled. The spark is then a fizzle: *a* is already computed when the worker checks.
+
+*pseq* prevents this: the left-hand side *par a b* is guaranteed to be evaluated first, ensuring *a*'s spark is created and *b* is evaluated on the main thread before *a + b* is attempted.
 
 # The Evaluation-order Monad
 
@@ -205,11 +208,11 @@ rpar :: a -> Eval a  -- "my argument can be evaluated in parallel"
 Note:
 
 * the argument to rpar should be a thunk,
-  otherwise nothing happens, because there is no work to perform in parallel.
+  otherwise nothing happens - rpar is a no-op (a "dud" spark), because there is no work to perform in parallel.
 
 `Eval` is basically just a strict identity monad:
 
-```
+``` haskell
 data Eval a = Done a
 
 runEval :: Eval a -> a
@@ -223,6 +226,12 @@ instance Monad Eval where
 Hence `rseq` and `rpar` guide the evaluation order,
 but the computed value is the same it would be without them.
 
+Lazy identity monad:
+``` haskell
+newtype Identity a = Identity { runIdentity :: a }
+instance Monad Identity where
+    m >>= k  = k (runIdentity m)
+```    
 # deepseq & friends
 
 deepseq: fully evaluates the first argument, before returning the second.
@@ -292,15 +301,16 @@ $ ./sudoku1 problems.txt +RTS -s
 
 # Multicore?
 
+Same as above, for comparison:
 
-~~~~
+```
 $ ghc -O2 -threaded sudoku1.hs
 $ ./sudoku1 problems.txt +RTS -s
   TASKS: 3 (1 bound, 2 peak workers (2 total), using -N1)
   SPARKS: 0 (0 converted, 0 overflowed, 0 dud, 0 GC'd, 0 fizzled)
 
   Total   time    2.53s  (  2.56s elapsed)
-~~~~
+```
 
 We can specify the number of threads using -N
 
@@ -312,7 +322,7 @@ $ ./sudoku1 problems.txt +RTS -s -N16
   Total   time   16.84s  (  4.09s elapsed)
 ~~~~
 
-Our program works slower - we unnecessarily start N-1 additional threads that only get in the way.
+Our program works more slowly - we unnecessarily start N-1 additional threads that only get in the way.
 
 # A parallel program
 
@@ -363,7 +373,7 @@ Better, but we are still unable to use the whole power:
 
 * Whenever the system has a free computational unit (processor, core), it allocates it a new spark from the pool ("convert")
 
-* Computational unit - Haskelll Execution Context (HEC)
+* Computational unit - Haskell Execution Context (HEC)
 
 * One unit always occupied by the main thread.
 
@@ -383,7 +393,7 @@ sparks in the pool may be
 
 * garbage collected (GC)
 
-#
+# 
 
 ![spark lifecycle](spark-lifecycle800.png "Life cycle of a spark")
 
@@ -498,6 +508,8 @@ In our case P is about 0.97 (a lot!) so maximum possible speedups are
 - ~11 on 16 cores
 - ~27 on 128 cores
 
+(the value of P is an estimate from the ratio of parallel to sequential time at N=1 vs N=2)
+
 # Threadscope - sudoku3 -N2
 
 ![](sudoku3.png "sudoku3.eventlog")
@@ -522,7 +534,7 @@ rpar :: Strategy a
 rpar x = x `par` return x
 
 rdeepseq :: NFData a => Strategy a
-rdeepseq = rnf x `pseq` return x
+rdeepseq x = rnf x `pseq` return x
 
 using :: a -> Strategy a -> a
 x `using` s = runEval (s x)
@@ -532,7 +544,7 @@ rparWith strat x = rpar (x `using` strat)
 ~~~~
 
 The advantage is that  `using s` can be removed (almost) without changing semantics
-(at worst, the program will be ``more defined'')
+(at worst, the program will be ``more defined'' -  a previously-lazy computation might now be evaluated)
 
 # Parallel list processing
 
@@ -548,22 +560,29 @@ parList strat (x:xs) = do
 	return (x':xs')
 ~~~~
 
-The reason `using` works at all is that Haskell is lazy
+The reason *using* works at all is that Haskell is lazy:
 
-`map f xs` creates a thunk
+- *map f xs* creates a thunk
+- *runEval* shallowly evaluates the thunk, triggering `rpar` calls for all list elements:
 
 ``` haskell
 x `using` s = runEval (s x)
 
+runEval (Done x) = x       -- pattern-matching forces WHNF
+
 parMap f xs
 = map f xs `using` parList rseq
 = runEval (parList rseq (map f xs))
-~ case (map f xs) of
+≈ case (map f xs) of   -- expanding parList
     [] -> [];
-    (y:ys) -> runEval $ do ...
+    (y:ys) -> runEval $ do
+        y' <- rpar (y `using` rseq)
+        ys' <- parList rseq ys
+        return (y':ys')
 ```
 
-# Garbage parallelism
+
+# Pitfall: inaccessible sparks
 
 Do we really need to build a new list?
 
@@ -594,28 +613,6 @@ What happened? The sparks created have been GC'd as there was no outside referen
 
 If a large number of sparks are GC’d, it indicates sparks being removed from the spark pool before they can be used.
 
-# Spot the difference
-
-One of these implementations is good, the other is bad. Can you tell?
-
-~~~~ {.haskell}
-parList :: Strategy a -> Strategy [a]
-parList strat [] = return []
-parList strat (x:xs) = do
-	x' <- rpar (x `using` strat)
-	xs' <- parList strat xs
-	return (x':xs')
-~~~~
-
-~~~~ {.haskell}
-parList :: Strategy a -> Strategy [a]
-parList strat [] = return []
-parList strat (x:xs) = do
-	x' <- rpar (x `using` strat)
-	xs' <- parList strat xs
-	return (x':xs)
-~~~~
-
 # Cautionary note
 
 Although the sparks are really cheap, one should not create too many of them
@@ -643,6 +640,8 @@ N60:
                     140401503 GC'd, 47173155 fizzled)
   Total   time   65.95s  (  1.28s elapsed)
 ~~~~
+
+Only converted sparks represent useful work; others are just wasted energy.
 
 # Spark lifecycle
 
@@ -696,13 +695,15 @@ Write a function putting n queens on n*n chessboard
 
 * parallel
 
-* examine the execution on thradscope and consider resizing the work units
+* examine the execution on threadscope and consider resizing the work units
 
-# The end
+# Questions?
 
 ~~~~ {.haskell}
 
 ~~~~
+
+# Bonus
 
 # Threadscope - badfib
 
