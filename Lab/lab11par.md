@@ -14,16 +14,13 @@ make
 ./sudoku3b problems.txt +RTS -s -N2
 ```
 
-(you can also use the supplied cabal file and run `cabal build`)
-
-
 Install threadscope e.g/ from https://github.com/haskell/ThreadScope/releases
 (binaries available for Linux/Mac/Windows)
 
 Run example programs with `-l` to generate eventlog, and analyze it with threadscope:
 
 ```
-$ stack exec -- parfib +RTS -N2 -l -s
+$ cabal run -- parfib +RTS -N2 -l -s
 $ threadscope parfib.eventlog
 ```
 
