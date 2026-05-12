@@ -3,15 +3,15 @@
 Build/run the example programs in Code/Par e.g.
 
 ```
-$ stack build
-$ stack exec -- sudoku3b sudoku17.1000.txt +RTS -s -N2
+$ cabal build
+$ cabal exec -- sudoku3b problems.txt +RTS -s -N2
 ```
 
 or, if not using stack install the `parallel` package and
 
 ```
 make
-./sudoku3b sudoku17.1000.txt +RTS -s -N2
+./sudoku3b problems.txt +RTS -s -N2
 ```
 
 (you can also use the supplied cabal file and run `cabal build`)
