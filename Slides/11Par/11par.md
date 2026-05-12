@@ -109,7 +109,10 @@ OTOH it may happen that none of them is needed/evaluated, e.g.
 
 * Normal Form - there are no redexes
 * Head Normal Form - no redexes in the head, i.e. `\x1...xn -> cN1...Nk`
-* Weak Head Normal Form - `cN1...Nk` or a lambda
+* Weak Head Normal Form
+    - `cN1...Nk` e.g. (e1:e2)
+    - or any lambda `\x -> e` (*e* may be reducible)
+    - a builtin function applied to too few arguments
 
 where *c* denotes a constant/constructor and *N* any term.
 
@@ -179,7 +182,8 @@ xs = _ : _
 # *par*, *seq* and *pseq*
 
 *seq* is a *logical* dependency — it tells the compiler "the result requires `a` to have been evaluated", but the compiler may still reorder operations for optimisation.
-*pseq* is a *temporal* guarantee — it forces evaluation of its first argument *before* its second begins, suppressing reordering.
+
+OTOH, *pseq* is a *temporal* guarantee — it forces evaluation of its first argument *before* its second begins, suppressing reordering.
 
 This distinction matters with `par`. Consider what we want:
 
@@ -210,6 +214,8 @@ Note:
 * the argument to rpar should be a thunk,
   otherwise nothing happens - rpar is a no-op (a "dud" spark), because there is no work to perform in parallel.
 
+# The Evaluation-order Monad (2)
+
 `Eval` is basically just a strict identity monad:
 
 ``` haskell
@@ -226,7 +232,7 @@ instance Monad Eval where
 Hence `rseq` and `rpar` guide the evaluation order,
 but the computed value is the same it would be without them.
 
-Lazy identity monad:
+Lazy identity monad for comparison:
 ``` haskell
 newtype Identity a = Identity { runIdentity :: a }
 instance Monad Identity where
@@ -546,6 +552,12 @@ rparWith strat x = rpar (x `using` strat)
 The advantage is that  `using s` can be removed (almost) without changing semantics
 (at worst, the program will be ``more defined'' -  a previously-lazy computation might now be evaluated)
 
+Now we can for example express *parMap* in terms of *map*:
+
+``` haskell
+parMap f xs = map f xs `using` parList rseq
+```
+
 # Parallel list processing
 
 ~~~~ {.haskell}
@@ -562,7 +574,14 @@ parList strat (x:xs) = do
 
 The reason *using* works at all is that Haskell is lazy:
 
-- *map f xs* creates a thunk
+- *map f xs* creates a thunk;
+- *runEval* shallowly evaluates the thunk, triggering `rpar` calls for all list elements.
+
+# A closer look at *using*
+
+The reason *using* works at all is that Haskell is lazy:
+
+- *map f xs* creates a thunk;
 - *runEval* shallowly evaluates the thunk, triggering `rpar` calls for all list elements:
 
 ``` haskell

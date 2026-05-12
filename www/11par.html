@@ -337,7 +337,13 @@ forms</h1>
 <li>Normal Form - there are no redexes</li>
 <li>Head Normal Form - no redexes in the head,
 i.e. <code>\x1...xn -&gt; cN1...Nk</code></li>
-<li>Weak Head Normal Form - <code>cN1...Nk</code> or a lambda</li>
+<li>Weak Head Normal Form
+<ul>
+<li><code>cN1...Nk</code> e.g. (e1:e2)</li>
+<li>or any lambda <code>\x -&gt; e</code> (<em>e</em> may be
+reducible)</li>
+<li>a builtin function applied to too few arguments</li>
+</ul></li>
 </ul>
 <p>where <em>c</em> denotes a constant/constructor and <em>N</em> any
 term.</p>
@@ -396,9 +402,10 @@ xs = _ : _</code></pre>
 <em>pseq</em></h1>
 <p><em>seq</em> is a <em>logical</em> dependency — it tells the compiler
 “the result requires <code>a</code> to have been evaluated”, but the
-compiler may still reorder operations for optimisation. <em>pseq</em> is
-a <em>temporal</em> guarantee — it forces evaluation of its first
-argument <em>before</em> its second begins, suppressing reordering.</p>
+compiler may still reorder operations for optimisation.</p>
+<p>OTOH, <em>pseq</em> is a <em>temporal</em> guarantee — it forces
+evaluation of its first argument <em>before</em> its second begins,
+suppressing reordering.</p>
 <p>This distinction matters with <code>par</code>. Consider what we
 want:</p>
 <div class="sourceCode" id="cb10"><pre
@@ -428,6 +435,8 @@ class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a
 rpar is a no-op (a “dud” spark), because there is no work to perform in
 parallel.</li>
 </ul>
+<h1 id="the-evaluation-order-monad-2">The Evaluation-order Monad
+(2)</h1>
 <p><code>Eval</code> is basically just a strict identity monad:</p>
 <div class="sourceCode" id="cb12"><pre
 class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Eval</span> a <span class="ot">=</span> <span class="dt">Done</span> a</span>
@@ -440,7 +449,7 @@ class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a
 <span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Done</span> x <span class="op">&gt;&gt;=</span> k <span class="ot">=</span> k x   <span class="co">-- Note: pattern &#39;Done x&#39; makes &#39;&gt;&gt;=&#39; strict</span></span></code></pre></div>
 <p>Hence <code>rseq</code> and <code>rpar</code> guide the evaluation
 order, but the computed value is the same it would be without them.</p>
-<p>Lazy identity monad:</p>
+<p>Lazy identity monad for comparison:</p>
 <div class="sourceCode" id="cb13"><pre
 class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">newtype</span> <span class="dt">Identity</span> a <span class="ot">=</span> <span class="dt">Identity</span> {<span class="ot"> runIdentity ::</span> a }</span>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Monad</span> <span class="dt">Identity</span> <span class="kw">where</span></span>
@@ -678,50 +687,61 @@ class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb31-1"><a
 <p>The advantage is that <code>using s</code> can be removed (almost)
 without changing semantics (at worst, the program will be ``more
 defined’’ - a previously-lazy computation might now be evaluated)</p>
-<h1 id="parallel-list-processing">Parallel list processing</h1>
+<p>Now we can for example express <em>parMap</em> in terms of
+<em>map</em>:</p>
 <div class="sourceCode" id="cb32"><pre
-class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>parMap f xs <span class="ot">=</span> <span class="fu">map</span> f xs <span class="ot">`using`</span> parList rseq</span>
-<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a><span class="co">-- Control.Parallel.Strategies</span></span>
-<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a><span class="ot">parList ::</span> <span class="dt">Strategy</span> a <span class="ot">-&gt;</span> <span class="dt">Strategy</span> [a]</span>
-<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a>parList strat [] <span class="ot">=</span> <span class="fu">return</span> []</span>
-<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a>parList strat (x<span class="op">:</span>xs) <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb32-7"><a href="#cb32-7" aria-hidden="true" tabindex="-1"></a>    x&#39; <span class="ot">&lt;-</span> rpar (x <span class="ot">`using`</span> strat)</span>
-<span id="cb32-8"><a href="#cb32-8" aria-hidden="true" tabindex="-1"></a>    xs&#39; <span class="ot">&lt;-</span> parList strat xs</span>
-<span id="cb32-9"><a href="#cb32-9" aria-hidden="true" tabindex="-1"></a>    <span class="fu">return</span> (x&#39;<span class="op">:</span>xs&#39;)</span></code></pre></div>
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>parMap f xs <span class="ot">=</span> <span class="fu">map</span> f xs <span class="ot">`using`</span> parList rseq</span></code></pre></div>
+<h1 id="parallel-list-processing">Parallel list processing</h1>
+<div class="sourceCode" id="cb33"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>parMap f xs <span class="ot">=</span> <span class="fu">map</span> f xs <span class="ot">`using`</span> parList rseq</span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a><span class="co">-- Control.Parallel.Strategies</span></span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a><span class="ot">parList ::</span> <span class="dt">Strategy</span> a <span class="ot">-&gt;</span> <span class="dt">Strategy</span> [a]</span>
+<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a>parList strat [] <span class="ot">=</span> <span class="fu">return</span> []</span>
+<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a>parList strat (x<span class="op">:</span>xs) <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb33-7"><a href="#cb33-7" aria-hidden="true" tabindex="-1"></a>    x&#39; <span class="ot">&lt;-</span> rpar (x <span class="ot">`using`</span> strat)</span>
+<span id="cb33-8"><a href="#cb33-8" aria-hidden="true" tabindex="-1"></a>    xs&#39; <span class="ot">&lt;-</span> parList strat xs</span>
+<span id="cb33-9"><a href="#cb33-9" aria-hidden="true" tabindex="-1"></a>    <span class="fu">return</span> (x&#39;<span class="op">:</span>xs&#39;)</span></code></pre></div>
 <p>The reason <em>using</em> works at all is that Haskell is lazy:</p>
 <ul>
-<li><em>map f xs</em> creates a thunk</li>
+<li><em>map f xs</em> creates a thunk;</li>
+<li><em>runEval</em> shallowly evaluates the thunk, triggering
+<code>rpar</code> calls for all list elements.</li>
+</ul>
+<h1 id="a-closer-look-at-using">A closer look at <em>using</em></h1>
+<p>The reason <em>using</em> works at all is that Haskell is lazy:</p>
+<ul>
+<li><em>map f xs</em> creates a thunk;</li>
 <li><em>runEval</em> shallowly evaluates the thunk, triggering
 <code>rpar</code> calls for all list elements:</li>
 </ul>
-<div class="sourceCode" id="cb33"><pre
-class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>x <span class="ot">`using`</span> s <span class="ot">=</span> runEval (s x)</span>
-<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>runEval (<span class="dt">Done</span> x) <span class="ot">=</span> x       <span class="co">-- pattern-matching forces WHNF</span></span>
-<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a>parMap f xs</span>
-<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a><span class="ot">=</span> <span class="fu">map</span> f xs <span class="ot">`using`</span> parList rseq</span>
-<span id="cb33-7"><a href="#cb33-7" aria-hidden="true" tabindex="-1"></a><span class="ot">=</span> runEval (parList rseq (<span class="fu">map</span> f xs))</span>
-<span id="cb33-8"><a href="#cb33-8" aria-hidden="true" tabindex="-1"></a>≈ <span class="kw">case</span> (<span class="fu">map</span> f xs) <span class="kw">of</span>   <span class="co">-- expanding parList</span></span>
-<span id="cb33-9"><a href="#cb33-9" aria-hidden="true" tabindex="-1"></a>    [] <span class="ot">-&gt;</span> [];</span>
-<span id="cb33-10"><a href="#cb33-10" aria-hidden="true" tabindex="-1"></a>    (y<span class="op">:</span>ys) <span class="ot">-&gt;</span> runEval <span class="op">$</span> <span class="kw">do</span></span>
-<span id="cb33-11"><a href="#cb33-11" aria-hidden="true" tabindex="-1"></a>        y&#39; <span class="ot">&lt;-</span> rpar (rseq y)</span>
-<span id="cb33-12"><a href="#cb33-12" aria-hidden="true" tabindex="-1"></a>        ys&#39; <span class="ot">&lt;-</span> parList rseq ys</span>
-<span id="cb33-13"><a href="#cb33-13" aria-hidden="true" tabindex="-1"></a>        <span class="fu">return</span> (y&#39;<span class="op">:</span>ys&#39;)</span></code></pre></div>
+<div class="sourceCode" id="cb34"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>x <span class="ot">`using`</span> s <span class="ot">=</span> runEval (s x)</span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>runEval (<span class="dt">Done</span> x) <span class="ot">=</span> x       <span class="co">-- pattern-matching forces WHNF</span></span>
+<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a>parMap f xs</span>
+<span id="cb34-6"><a href="#cb34-6" aria-hidden="true" tabindex="-1"></a><span class="ot">=</span> <span class="fu">map</span> f xs <span class="ot">`using`</span> parList rseq</span>
+<span id="cb34-7"><a href="#cb34-7" aria-hidden="true" tabindex="-1"></a><span class="ot">=</span> runEval (parList rseq (<span class="fu">map</span> f xs))</span>
+<span id="cb34-8"><a href="#cb34-8" aria-hidden="true" tabindex="-1"></a>≈ <span class="kw">case</span> (<span class="fu">map</span> f xs) <span class="kw">of</span>   <span class="co">-- expanding parList</span></span>
+<span id="cb34-9"><a href="#cb34-9" aria-hidden="true" tabindex="-1"></a>    [] <span class="ot">-&gt;</span> [];</span>
+<span id="cb34-10"><a href="#cb34-10" aria-hidden="true" tabindex="-1"></a>    (y<span class="op">:</span>ys) <span class="ot">-&gt;</span> runEval <span class="op">$</span> <span class="kw">do</span></span>
+<span id="cb34-11"><a href="#cb34-11" aria-hidden="true" tabindex="-1"></a>        y&#39; <span class="ot">&lt;-</span> rpar (y <span class="ot">`using`</span> rseq)</span>
+<span id="cb34-12"><a href="#cb34-12" aria-hidden="true" tabindex="-1"></a>        ys&#39; <span class="ot">&lt;-</span> parList rseq ys</span>
+<span id="cb34-13"><a href="#cb34-13" aria-hidden="true" tabindex="-1"></a>        <span class="fu">return</span> (y&#39;<span class="op">:</span>ys&#39;)</span></code></pre></div>
 <h1 id="pitfall-inaccessible-sparks">Pitfall: inaccessible sparks</h1>
 <p>Do we really need to build a new list?</p>
 <p>Couldn’t we just write a tail-recursive version of parList instead?
 Perhaps like this:</p>
-<div class="sourceCode" id="cb34"><pre
-class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="ot">parList ::</span> <span class="dt">Strategy</span> a <span class="ot">-&gt;</span> <span class="dt">Strategy</span> [a]</span>
-<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>parList strat xs <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>  go xs</span>
-<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span> xs</span>
-<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a> <span class="kw">where</span></span>
-<span id="cb34-6"><a href="#cb34-6" aria-hidden="true" tabindex="-1"></a>  go []     <span class="ot">=</span> <span class="fu">return</span> ()</span>
-<span id="cb34-7"><a href="#cb34-7" aria-hidden="true" tabindex="-1"></a>  go (x<span class="op">:</span>xs) <span class="ot">=</span> <span class="kw">do</span> rparWith strat x</span>
-<span id="cb34-8"><a href="#cb34-8" aria-hidden="true" tabindex="-1"></a>                 go xs</span></code></pre></div>
+<div class="sourceCode" id="cb35"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="ot">parList ::</span> <span class="dt">Strategy</span> a <span class="ot">-&gt;</span> <span class="dt">Strategy</span> [a]</span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>parList strat xs <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>  go xs</span>
+<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span> xs</span>
+<span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a> <span class="kw">where</span></span>
+<span id="cb35-6"><a href="#cb35-6" aria-hidden="true" tabindex="-1"></a>  go []     <span class="ot">=</span> <span class="fu">return</span> ()</span>
+<span id="cb35-7"><a href="#cb35-7" aria-hidden="true" tabindex="-1"></a>  go (x<span class="op">:</span>xs) <span class="ot">=</span> <span class="kw">do</span> rparWith strat x</span>
+<span id="cb35-8"><a href="#cb35-8" aria-hidden="true" tabindex="-1"></a>                 go xs</span></code></pre></div>
 <p>After all, this is type-correct and seems to call rparWith on each
 list element as required.</p>
 <p>Alas:</p>
@@ -735,15 +755,15 @@ removed from the spark pool before they can be used.</p>
 <h1 id="cautionary-note">Cautionary note</h1>
 <p>Although the sparks are really cheap, one should not create too many
 of them</p>
-<div class="sourceCode" id="cb36"><pre
-class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>parFib n <span class="op">|</span> n <span class="op">&lt;</span> <span class="dv">2</span> <span class="ot">=</span> n</span>
-<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>parFib n <span class="ot">=</span> p <span class="ot">`par`</span> q <span class="ot">`pseq`</span> (p <span class="op">+</span> q)</span>
-<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">where</span></span>
-<span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a>      p <span class="ot">=</span> parFib <span class="op">$</span> n <span class="op">-</span> <span class="dv">1</span></span>
-<span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a>      q <span class="ot">=</span> parFib <span class="op">$</span> n <span class="op">-</span> <span class="dv">2</span></span>
-<span id="cb36-6"><a href="#cb36-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-7"><a href="#cb36-7" aria-hidden="true" tabindex="-1"></a><span class="ot">main ::</span> <span class="dt">IO</span> ()</span>
-<span id="cb36-8"><a href="#cb36-8" aria-hidden="true" tabindex="-1"></a>main <span class="ot">=</span> <span class="fu">print</span> <span class="op">$</span> parFib <span class="dv">40</span></span></code></pre></div>
+<div class="sourceCode" id="cb37"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>parFib n <span class="op">|</span> n <span class="op">&lt;</span> <span class="dv">2</span> <span class="ot">=</span> n</span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a>parFib n <span class="ot">=</span> p <span class="ot">`par`</span> q <span class="ot">`pseq`</span> (p <span class="op">+</span> q)</span>
+<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">where</span></span>
+<span id="cb37-4"><a href="#cb37-4" aria-hidden="true" tabindex="-1"></a>      p <span class="ot">=</span> parFib <span class="op">$</span> n <span class="op">-</span> <span class="dv">1</span></span>
+<span id="cb37-5"><a href="#cb37-5" aria-hidden="true" tabindex="-1"></a>      q <span class="ot">=</span> parFib <span class="op">$</span> n <span class="op">-</span> <span class="dv">2</span></span>
+<span id="cb37-6"><a href="#cb37-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-7"><a href="#cb37-7" aria-hidden="true" tabindex="-1"></a><span class="ot">main ::</span> <span class="dt">IO</span> ()</span>
+<span id="cb37-8"><a href="#cb37-8" aria-hidden="true" tabindex="-1"></a>main <span class="ot">=</span> <span class="fu">print</span> <span class="op">$</span> parFib <span class="dv">40</span></span></code></pre></div>
 <pre><code>@azor (64 cores):
 ./badfib +RTS -N2 -s -RTS
   SPARKS: 165597322 (16 converted, 14860689 overflowed, 0 dud,
@@ -763,18 +783,18 @@ alt="spark lifecycle" />
 <figcaption aria-hidden="true">spark lifecycle</figcaption>
 </figure>
 <h1 id="better">Better</h1>
-<div class="sourceCode" id="cb38"><pre
-class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="ot">cutoff ::</span> <span class="dt">Int</span></span>
-<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a>cutoff <span class="ot">=</span> <span class="dv">20</span></span>
-<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-4"><a href="#cb38-4" aria-hidden="true" tabindex="-1"></a>parFib n <span class="op">|</span> n <span class="op">&lt;</span> cutoff <span class="ot">=</span> fib n</span>
-<span id="cb38-5"><a href="#cb38-5" aria-hidden="true" tabindex="-1"></a>parFib n <span class="ot">=</span> p <span class="ot">`par`</span> q <span class="ot">`pseq`</span> (p <span class="op">+</span> q)</span>
-<span id="cb38-6"><a href="#cb38-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">where</span></span>
-<span id="cb38-7"><a href="#cb38-7" aria-hidden="true" tabindex="-1"></a>      p <span class="ot">=</span> parFib <span class="op">$</span> n <span class="op">-</span> <span class="dv">1</span></span>
-<span id="cb38-8"><a href="#cb38-8" aria-hidden="true" tabindex="-1"></a>      q <span class="ot">=</span> parFib <span class="op">$</span> n <span class="op">-</span> <span class="dv">2</span></span>
-<span id="cb38-9"><a href="#cb38-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-10"><a href="#cb38-10" aria-hidden="true" tabindex="-1"></a>fib n <span class="op">|</span> n<span class="op">&lt;</span><span class="dv">2</span> <span class="ot">=</span> n</span>
-<span id="cb38-11"><a href="#cb38-11" aria-hidden="true" tabindex="-1"></a>fib n <span class="ot">=</span> fib (n <span class="op">-</span> <span class="dv">1</span>) <span class="op">+</span> fib (n <span class="op">-</span> <span class="dv">2</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb39"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="ot">cutoff ::</span> <span class="dt">Int</span></span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a>cutoff <span class="ot">=</span> <span class="dv">20</span></span>
+<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb39-4"><a href="#cb39-4" aria-hidden="true" tabindex="-1"></a>parFib n <span class="op">|</span> n <span class="op">&lt;</span> cutoff <span class="ot">=</span> fib n</span>
+<span id="cb39-5"><a href="#cb39-5" aria-hidden="true" tabindex="-1"></a>parFib n <span class="ot">=</span> p <span class="ot">`par`</span> q <span class="ot">`pseq`</span> (p <span class="op">+</span> q)</span>
+<span id="cb39-6"><a href="#cb39-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">where</span></span>
+<span id="cb39-7"><a href="#cb39-7" aria-hidden="true" tabindex="-1"></a>      p <span class="ot">=</span> parFib <span class="op">$</span> n <span class="op">-</span> <span class="dv">1</span></span>
+<span id="cb39-8"><a href="#cb39-8" aria-hidden="true" tabindex="-1"></a>      q <span class="ot">=</span> parFib <span class="op">$</span> n <span class="op">-</span> <span class="dv">2</span></span>
+<span id="cb39-9"><a href="#cb39-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb39-10"><a href="#cb39-10" aria-hidden="true" tabindex="-1"></a>fib n <span class="op">|</span> n<span class="op">&lt;</span><span class="dv">2</span> <span class="ot">=</span> n</span>
+<span id="cb39-11"><a href="#cb39-11" aria-hidden="true" tabindex="-1"></a>fib n <span class="ot">=</span> fib (n <span class="op">-</span> <span class="dv">1</span>) <span class="op">+</span> fib (n <span class="op">-</span> <span class="dv">2</span>)</span></code></pre></div>
 <pre><code>./parfib +RTS -N60 -s -RTS
  SPARKS: 118393 (42619 converted, 0 overflowed, 0 dud,
                  11241 GC&#39;d, 64533 fizzled)
@@ -802,7 +822,7 @@ factors</p></li>
 work units</p></li>
 </ul>
 <h1 id="questions">Questions?</h1>
-<div class="sourceCode" id="cb40"><pre
+<div class="sourceCode" id="cb41"><pre
 class="sourceCode haskell"><code class="sourceCode haskell"></code></pre></div>
 <h1 id="bonus">Bonus</h1>
 <h1 id="threadscope---badfib">Threadscope - badfib</h1>
