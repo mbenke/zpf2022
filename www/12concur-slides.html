@@ -7,7 +7,7 @@
   <meta http-equiv="Content-Style-Type" content="text/css" />
   <meta name="generator" content="pandoc" />
   <meta name="author" content="Marcin Benke" />
-  <meta name="date" content="2025-05-13" />
+  <meta name="date" content="2026-05-19" />
   <title>Advanced Functional Programming</title>
   <style type="text/css">
     code{white-space: pre-wrap;}
@@ -25,8 +25,9 @@
       vertical-align: middle;
     }
     /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
     pre > code.sourceCode { white-space: pre; position: relative; }
-    pre > code.sourceCode > span { line-height: 1.25; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
     pre > code.sourceCode > span:empty { height: 1.2em; }
     .sourceCode { overflow: visible; }
     code.sourceCode > span { color: inherit; text-decoration: inherit; }
@@ -101,7 +102,7 @@
   <p class="author">
 Marcin Benke
   </p>
-  <p class="date">May 13, 2025</p>
+  <p class="date">May 19, 2026</p>
 </div>
 <div id="parallelism-and-concurrency" class="slide section level1">
 <h1>Parallelism and concurrency</h1>
@@ -311,7 +312,7 @@ class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb14-1"><a
 class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a>main2 atomically <span class="ot">=</span> <span class="kw">do</span></span>
 <span id="cb16-2"><a href="#cb16-2" tabindex="-1"></a>  px <span class="ot">&lt;-</span> newIORef <span class="dv">0</span></span>
 <span id="cb16-3"><a href="#cb16-3" tabindex="-1"></a>  forkIO <span class="op">$</span> atomically <span class="op">$</span> incRef px</span>
-<span id="cb16-4"><a href="#cb16-4" tabindex="-1"></a>  forkIO <span class="op">$</span> atomicaly  <span class="op">$</span> incRef px</span>
+<span id="cb16-4"><a href="#cb16-4" tabindex="-1"></a>  forkIO <span class="op">$</span> atomically2 <span class="op">$</span> incRef px</span>
 <span id="cb16-5"><a href="#cb16-5" tabindex="-1"></a>  threadDelay <span class="dv">3000</span></span>
 <span id="cb16-6"><a href="#cb16-6" tabindex="-1"></a>  readIORef px <span class="op">&gt;&gt;=</span> <span class="fu">print</span></span></code></pre></div>
 <pre><code>$ runghc IORef4.hs
@@ -329,7 +330,7 @@ class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb18-1"><a
 <span id="cb18-6"><a href="#cb18-6" tabindex="-1"></a><span class="ot">locking ::</span> <span class="dt">IO</span> a <span class="ot">-&gt;</span> <span class="dt">MVar</span> () <span class="ot">-&gt;</span> <span class="dt">IO</span> a</span>
 <span id="cb18-7"><a href="#cb18-7" tabindex="-1"></a>action <span class="ot">`locking`</span> l <span class="ot">=</span> lock l <span class="op">&gt;&gt;</span> (action <span class="op">&lt;*</span> unlock l)</span>
 <span id="cb18-8"><a href="#cb18-8" tabindex="-1"></a></span>
-<span id="cb18-9"><a href="#cb18-9" tabindex="-1"></a>atomicaly <span class="ot">=</span> <span class="fu">id</span></span>
+<span id="cb18-9"><a href="#cb18-9" tabindex="-1"></a>atomically2 <span class="ot">=</span> <span class="fu">id</span></span>
 <span id="cb18-10"><a href="#cb18-10" tabindex="-1"></a></span>
 <span id="cb18-11"><a href="#cb18-11" tabindex="-1"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
 <span id="cb18-12"><a href="#cb18-12" tabindex="-1"></a>  gil <span class="ot">&lt;-</span> newMVar ()</span>
@@ -416,7 +417,7 @@ class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb24-1"><a
 <p>where <code>STM</code> has no direct access to <code>IORef</code>,
 only to transaction variables:</p>
 <div class="sourceCode" id="cb25"><pre
-class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb25-1"><a href="#cb25-1" tabindex="-1"></a><span class="kw">data</span> <span class="dt">TVar</span></span>
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb25-1"><a href="#cb25-1" tabindex="-1"></a><span class="kw">data</span> <span class="dt">TVar</span> a</span>
 <span id="cb25-2"><a href="#cb25-2" tabindex="-1"></a><span class="ot">newTVar ::</span> a <span class="ot">-&gt;</span> <span class="dt">STM</span> (<span class="dt">TVar</span> a)</span>
 <span id="cb25-3"><a href="#cb25-3" tabindex="-1"></a><span class="ot">readTVar ::</span> <span class="dt">TVar</span> a <span class="ot">-&gt;</span> <span class="dt">STM</span> a</span>
 <span id="cb25-4"><a href="#cb25-4" tabindex="-1"></a><span class="ot">writeTVar ::</span> <span class="dt">TVar</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">STM</span> ()</span></code></pre></div>
@@ -460,22 +461,26 @@ class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb26-1"><a
 class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb27-1"><a href="#cb27-1" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Control.Concurrent</span></span>
 <span id="cb27-2"><a href="#cb27-2" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Control.Concurrent.STM</span></span>
 <span id="cb27-3"><a href="#cb27-3" tabindex="-1"></a></span>
-<span id="cb27-4"><a href="#cb27-4" tabindex="-1"></a><span class="ot">incRef ::</span> <span class="dt">TVar</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</span>
-<span id="cb27-5"><a href="#cb27-5" tabindex="-1"></a>incRef var <span class="ot">=</span> atomically <span class="op">$</span> <span class="kw">do</span></span>
+<span id="cb27-4"><a href="#cb27-4" tabindex="-1"></a><span class="ot">incRefSTM ::</span> <span class="dt">TVar</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">STM</span> ()</span>
+<span id="cb27-5"><a href="#cb27-5" tabindex="-1"></a>incRefSTM var <span class="ot">=</span> <span class="kw">do</span></span>
 <span id="cb27-6"><a href="#cb27-6" tabindex="-1"></a>                val <span class="ot">&lt;-</span> readTVar var</span>
 <span id="cb27-7"><a href="#cb27-7" tabindex="-1"></a>                <span class="kw">let</span> x <span class="ot">=</span> <span class="fu">fromInteger</span> <span class="op">$</span> delay baseDelay</span>
 <span id="cb27-8"><a href="#cb27-8" tabindex="-1"></a>                writeTVar var (val<span class="op">+</span><span class="dv">1</span><span class="op">+</span>x)</span>
 <span id="cb27-9"><a href="#cb27-9" tabindex="-1"></a></span>
-<span id="cb27-10"><a href="#cb27-10" tabindex="-1"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb27-11"><a href="#cb27-11" tabindex="-1"></a>  px <span class="ot">&lt;-</span> newTVarIO <span class="dv">0</span>     <span class="co">-- create top-level TVar</span></span>
-<span id="cb27-12"><a href="#cb27-12" tabindex="-1"></a>  <span class="fu">mapM</span> forkIO <span class="op">$</span> <span class="fu">replicate</span> <span class="dv">20</span> (incRef px)</span>
-<span id="cb27-13"><a href="#cb27-13" tabindex="-1"></a>  delay (<span class="dv">30</span><span class="op">*</span>baseDelay) <span class="ot">`seq`</span> <span class="fu">return</span> ()</span>
-<span id="cb27-14"><a href="#cb27-14" tabindex="-1"></a>  atomically (readTVar px) <span class="op">&gt;&gt;=</span> <span class="fu">print</span></span></code></pre></div>
+<span id="cb27-10"><a href="#cb27-10" tabindex="-1"></a><span class="ot">incRef ::</span> <span class="dt">TVar</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</span>
+<span id="cb27-11"><a href="#cb27-11" tabindex="-1"></a>incRef <span class="ot">=</span> atomically <span class="op">.</span> incRefSTM</span>
+<span id="cb27-12"><a href="#cb27-12" tabindex="-1"></a></span>
+<span id="cb27-13"><a href="#cb27-13" tabindex="-1"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb27-14"><a href="#cb27-14" tabindex="-1"></a>  px <span class="ot">&lt;-</span> newTVarIO <span class="dv">0</span>                       <span class="co">-- create top-level TVar</span></span>
+<span id="cb27-15"><a href="#cb27-15" tabindex="-1"></a>  <span class="fu">mapM</span> forkIO <span class="op">$</span> <span class="fu">replicate</span> <span class="dv">20</span> (incRef px)  <span class="co">-- start 20 incRef threads</span></span>
+<span id="cb27-16"><a href="#cb27-16" tabindex="-1"></a>  delay (<span class="dv">30</span><span class="op">*</span>baseDelay) <span class="ot">`seq`</span> <span class="fu">return</span> ()</span>
+<span id="cb27-17"><a href="#cb27-17" tabindex="-1"></a>  atomically (readTVar px) <span class="op">&gt;&gt;=</span> <span class="fu">print</span></span></code></pre></div>
 <pre><code>./stm1 +RTS -N2
 20</code></pre>
 </div>
 <div id="delay" class="slide section level1">
 <h1>Delay</h1>
+<p>Simulate a substantial amount of computation</p>
 <pre><code>baseDelay :: Integer
 baseDelay = 10^7
 
@@ -498,7 +503,7 @@ class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb30-1"><a
 <span id="cb30-8"><a href="#cb30-8" tabindex="-1"></a>      <span class="kw">else</span> writeTVar acc (balance <span class="op">-</span> amount)</span></code></pre></div>
 <p>When not enough funds, stop the transaction and retry later.</p>
 <p>The system knows which variables are read and can retry when one of
-them changes (here: <code>amount</code>).</p>
+them changes (here: <code>acc</code>).</p>
 </div>
 <div id="better-check" class="slide section level1">
 <h1>Better: <code>check</code></h1>
@@ -506,12 +511,13 @@ them changes (here: <code>amount</code>).</p>
 class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb31-1"><a href="#cb31-1" tabindex="-1"></a><span class="ot">limitedWithdraw ::</span> <span class="dt">Account</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">STM</span> ()</span>
 <span id="cb31-2"><a href="#cb31-2" tabindex="-1"></a>limitedWithdraw acc amount <span class="ot">=</span> <span class="kw">do</span></span>
 <span id="cb31-3"><a href="#cb31-3" tabindex="-1"></a>   balance <span class="ot">&lt;-</span> readTVar acc</span>
-<span id="cb31-4"><a href="#cb31-4" tabindex="-1"></a>   check (amount <span class="op">&gt;</span> balance)</span>
+<span id="cb31-4"><a href="#cb31-4" tabindex="-1"></a>   check (balance <span class="op">&gt;=</span> amount)</span>
 <span id="cb31-5"><a href="#cb31-5" tabindex="-1"></a>   writeTVar acc (balance <span class="op">-</span> amount)</span>
 <span id="cb31-6"><a href="#cb31-6" tabindex="-1"></a></span>
-<span id="cb31-7"><a href="#cb31-7" tabindex="-1"></a><span class="ot">check ::</span> <span class="dt">Bool</span> <span class="ot">-&gt;</span> <span class="dt">STM</span> ()</span>
-<span id="cb31-8"><a href="#cb31-8" tabindex="-1"></a>check <span class="dt">True</span> <span class="ot">=</span> <span class="fu">return</span> ()</span>
-<span id="cb31-9"><a href="#cb31-9" tabindex="-1"></a>check <span class="dt">False</span> <span class="ot">=</span> retry</span></code></pre></div>
+<span id="cb31-7"><a href="#cb31-7" tabindex="-1"></a><span class="co">-- defined in Control.Concurrent.STM</span></span>
+<span id="cb31-8"><a href="#cb31-8" tabindex="-1"></a><span class="ot">check ::</span> <span class="dt">Bool</span> <span class="ot">-&gt;</span> <span class="dt">STM</span> ()</span>
+<span id="cb31-9"><a href="#cb31-9" tabindex="-1"></a>check <span class="dt">True</span> <span class="ot">=</span> <span class="fu">return</span> ()</span>
+<span id="cb31-10"><a href="#cb31-10" tabindex="-1"></a>check <span class="dt">False</span> <span class="ot">=</span> retry</span></code></pre></div>
 <p>NB</p>
 <div class="sourceCode" id="cb32"><pre
 class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb32-1"><a href="#cb32-1" tabindex="-1"></a><span class="ot">guard           ::</span> (<span class="dt">MonadPlus</span> m) <span class="ot">=&gt;</span> <span class="dt">Bool</span> <span class="ot">-&gt;</span> m ()</span>
@@ -609,16 +615,15 @@ once)</p></li>
 <h1>Example: Fibonacci</h1>
 <div class="sourceCode" id="cb38"><pre
 class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb38-1"><a href="#cb38-1" tabindex="-1"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb38-2"><a href="#cb38-2" tabindex="-1"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb38-3"><a href="#cb38-3" tabindex="-1"></a>  [n,m] <span class="ot">&lt;-</span> <span class="fu">map</span> <span class="fu">read</span> <span class="op">&lt;$&gt;</span> getArgs</span>
-<span id="cb38-4"><a href="#cb38-4" tabindex="-1"></a>  <span class="fu">print</span> <span class="op">$</span> runPar <span class="op">$</span> <span class="kw">do</span></span>
-<span id="cb38-5"><a href="#cb38-5" tabindex="-1"></a>      i <span class="ot">&lt;-</span> new                          <span class="co">-- &lt;1&gt;</span></span>
-<span id="cb38-6"><a href="#cb38-6" tabindex="-1"></a>      j <span class="ot">&lt;-</span> new                          <span class="co">-- &lt;1&gt;</span></span>
-<span id="cb38-7"><a href="#cb38-7" tabindex="-1"></a>      fork (put i (fib n))              <span class="co">-- &lt;2&gt;</span></span>
-<span id="cb38-8"><a href="#cb38-8" tabindex="-1"></a>      fork (put j (fib m))              <span class="co">-- &lt;2&gt;</span></span>
-<span id="cb38-9"><a href="#cb38-9" tabindex="-1"></a>      a <span class="ot">&lt;-</span> get i                        <span class="co">-- &lt;3&gt;</span></span>
-<span id="cb38-10"><a href="#cb38-10" tabindex="-1"></a>      b <span class="ot">&lt;-</span> get j                        <span class="co">-- &lt;3&gt;</span></span>
-<span id="cb38-11"><a href="#cb38-11" tabindex="-1"></a>      <span class="fu">return</span> (a<span class="op">+</span>b)                      <span class="co">-- &lt;4&gt;</span></span></code></pre></div>
+<span id="cb38-2"><a href="#cb38-2" tabindex="-1"></a>  [n,m] <span class="ot">&lt;-</span> <span class="fu">map</span> <span class="fu">read</span> <span class="op">&lt;$&gt;</span> getArgs</span>
+<span id="cb38-3"><a href="#cb38-3" tabindex="-1"></a>  <span class="fu">print</span> <span class="op">$</span> runPar <span class="op">$</span> <span class="kw">do</span></span>
+<span id="cb38-4"><a href="#cb38-4" tabindex="-1"></a>      i <span class="ot">&lt;-</span> new                          <span class="co">-- &lt;1&gt;</span></span>
+<span id="cb38-5"><a href="#cb38-5" tabindex="-1"></a>      j <span class="ot">&lt;-</span> new                          <span class="co">-- &lt;1&gt;</span></span>
+<span id="cb38-6"><a href="#cb38-6" tabindex="-1"></a>      fork (put i (fib n))              <span class="co">-- &lt;2&gt;</span></span>
+<span id="cb38-7"><a href="#cb38-7" tabindex="-1"></a>      fork (put j (fib m))              <span class="co">-- &lt;2&gt;</span></span>
+<span id="cb38-8"><a href="#cb38-8" tabindex="-1"></a>      a <span class="ot">&lt;-</span> get i                        <span class="co">-- &lt;3&gt;</span></span>
+<span id="cb38-9"><a href="#cb38-9" tabindex="-1"></a>      b <span class="ot">&lt;-</span> get j                        <span class="co">-- &lt;3&gt;</span></span>
+<span id="cb38-10"><a href="#cb38-10" tabindex="-1"></a>      <span class="fu">return</span> (a<span class="op">+</span>b)                      <span class="co">-- &lt;4&gt;</span></span></code></pre></div>
 <p>1: create two new <code>IVar</code>s to hold the results</p>
 <p>2: fork two independent <code>Par</code> computations</p>
 <p>3: wait for the results</p>

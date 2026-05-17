@@ -2,7 +2,7 @@
 title: Advanced Functional Programming
 subtitle: Parallelism and Concurrency
 author:  Marcin Benke
-date: May 13, 2025
+date: May 19, 2026
 ---
 
 # Parallelism and concurrency
@@ -246,7 +246,7 @@ $ runghc IORef3.hs
 main2 atomically = do
   px <- newIORef 0
   forkIO $ atomically $ incRef px
-  forkIO $ atomicaly  $ incRef px
+  forkIO $ atomically2 $ incRef px
   threadDelay 3000
   readIORef px >>= print
 ~~~~
@@ -269,7 +269,7 @@ incRef var = do { val <- readIORef var
 locking :: IO a -> MVar () -> IO a
 action `locking` l = lock l >> (action <* unlock l)
 
-atomicaly = id
+atomically2 = id
 
 main = do
   gil <- newMVar ()
@@ -375,7 +375,7 @@ atomically :: STM a -> IO a
 where `STM` has no direct access to `IORef`, only to transaction variables:
 
 ~~~~ {.haskell}
-data TVar
+data TVar a
 newTVar :: a -> STM (TVar a)
 readTVar :: TVar a -> STM a
 writeTVar :: TVar a -> a -> STM ()
@@ -417,22 +417,26 @@ better not to launch missiles...
 
 STM is implemented in `Control.Concurrent.STM` (package `stm`)
 
-~~~~ {.haskell}
+``` haskell
 import Control.Concurrent
 import Control.Concurrent.STM
 
-incRef :: TVar Int -> IO ()
-incRef var = atomically $ do
+incRefSTM :: TVar Int -> STM ()
+incRefSTM var = do
                 val <- readTVar var
                 let x = fromInteger $ delay baseDelay
-       	        writeTVar var (val+1+x)
+                writeTVar var (val+1+x)
+
+incRef :: TVar Int -> IO ()
+incRef = atomically . incRefSTM
 
 main = do
-  px <- newTVarIO 0     -- create top-level TVar
-  mapM forkIO $ replicate 20 (incRef px)
+  px <- newTVarIO 0                       -- create top-level TVar
+  mapM forkIO $ replicate 20 (incRef px)  -- start 20 incRef threads
   delay (30*baseDelay) `seq` return ()
   atomically (readTVar px) >>= print
-~~~~
+```
+
 
 ```
 ./stm1 +RTS -N2
@@ -440,6 +444,8 @@ main = do
 ```
 
 # Delay
+
+Simulate a substantial amount of computation
 
 ```
 baseDelay :: Integer
@@ -455,7 +461,6 @@ See also `Control.Concurrent.STM.Delay`
 
 # Blocking: `retry`
 
-
 ~~~~ {.haskell}
 retry :: STM a
 
@@ -470,7 +475,7 @@ limitedWithdraw acc amount = do
 When not enough funds, stop the transaction and retry later.
 
 The system knows which variables are read and can retry
-when one of them changes (here: `amount`).
+when one of them changes (here: `acc`).
 
 
 # Better: `check`
@@ -479,9 +484,10 @@ when one of them changes (here: `amount`).
 limitedWithdraw :: Account -> Int -> STM ()
 limitedWithdraw acc amount = do
    balance <- readTVar acc
-   check (amount > balance)
+   check (balance >= amount)
    writeTVar acc (balance - amount)
 
+-- defined in Control.Concurrent.STM
 check :: Bool -> STM ()
 check True = return ()
 check False = retry
@@ -597,7 +603,6 @@ get :: IVar a -> Par a
 # Example: Fibonacci
 
 ~~~~ {.haskell}
-main = do
 main = do
   [n,m] <- map read <$> getArgs
   print $ runPar $ do

@@ -1,15 +1,18 @@
 import Control.Concurrent
 import Control.Concurrent.STM
 
-incRef :: TVar Int -> IO ()
-incRef var = atomically $ do
+incRefSTM :: TVar Int -> STM ()
+incRefSTM var = do
                 val <- readTVar var
                 let x = fromInteger $ delay baseDelay
                 writeTVar var (val+1+x)
 
+incRef :: TVar Int -> IO ()
+incRef = atomically . incRefSTM
+
 main = do
-  px <- newTVarIO 0
-  mapM forkIO $ replicate 20 (incRef px)
+  px <- newTVarIO 0                       -- create top-level TVar
+  mapM forkIO $ replicate 20 (incRef px)  -- start 20 incRef threads
   delay (30*baseDelay) `seq` return ()
   atomically (readTVar px) >>= print
 
