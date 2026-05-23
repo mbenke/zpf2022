@@ -2,7 +2,7 @@
 title: Advanced Functional Programming
 subtitle: The Pleasure and Pain of Dependent Types in Haskell
 author:  Marcin Benke
-date: May 20, 2025
+date: May 26, 2026
 ---
 
 <meta name="duration" content="80" />
@@ -13,23 +13,23 @@ date: May 20, 2025
 
 1. Kinds
 2. GADT - [https://en.wikibooks.org/wiki/Haskell/GADT](https://en.wikibooks.org/wiki/Haskell/GADT)
-3. Type promotion - [https://github.com/slindley/dependent-haskell](https://github.com/slindley/dependent-haskell)
-<!--
+3. Type promotion - [https://github.com/slindley/dependent-haskell](https://github.com/slindley/dependent-haskell)<br />
+In Haskell, types cannot depend on terms, only on other types/ But we can promote terms to types and types to kinds:
 ``` {.haskell}
     data Nat = Z | S Nat
     data Vec :: Nat -> * -> * where
     vhead :: Vec (S n) a -> a
 ```
--->
 
-4. Type Families
+
+4. Type Families - compile time computation on types:
 ``` {.haskell}
    type family (m::Nat) :+ (n::Nat) :: Nat
    vappend :: Vec m a -> Vec n a -> Vec (m :+ n) a
    ? :: Vec(m :+ n) a -> (Vec m a, Vec n a)
 ```
 
-5. Dynamic dependencies, singletons
+5. Dynamic (i.e. runtime) dependencies, singletons
 ``` {.haskell}
    data SNat :: Nat -> *
    vchop :: SNat m -> Vec (m :+ n) a -> (Vec m a, Vec n a)
@@ -38,7 +38,7 @@ date: May 20, 2025
 
 # Plan B
 
-6. Static dependencies, Proxy
+6. Static (comptime) dependencies, Proxy
 ``` haskell
    data NP :: Nat -> * where NP :: NP n
    vtake1 :: SNat m -> NP n -> Vec (m :+ n) -> Vec m a

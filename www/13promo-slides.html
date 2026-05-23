@@ -7,7 +7,7 @@
   <meta http-equiv="Content-Style-Type" content="text/css" />
   <meta name="generator" content="pandoc" />
   <meta name="author" content="Marcin Benke" />
-  <meta name="date" content="2025-05-20" />
+  <meta name="date" content="2026-05-26" />
   <title>Advanced Functional Programming</title>
   <style type="text/css">
     code{white-space: pre-wrap;}
@@ -106,7 +106,7 @@ Haskell</p>
   <p class="author">
 Marcin Benke
   </p>
-  <p class="date">May 20, 2025</p>
+  <p class="date">May 26, 2026</p>
 </div>
 <div class="slide section level1">
 
@@ -123,23 +123,23 @@ href="http://homepages.inf.ed.ac.uk/slindley/papers/hasochism.pdf">Hasochism
 <li>GADT - <a
 href="https://en.wikibooks.org/wiki/Haskell/GADT">https://en.wikibooks.org/wiki/Haskell/GADT</a></li>
 <li>Type promotion - <a
-href="https://github.com/slindley/dependent-haskell">https://github.com/slindley/dependent-haskell</a>
-&lt;!–</li>
+href="https://github.com/slindley/dependent-haskell">https://github.com/slindley/dependent-haskell</a><br />
+In Haskell, types cannot depend on terms, only on other types/ But we
+can promote terms to types and types to kinds:</li>
 </ol>
 <div class="sourceCode" id="cb1"><pre
 class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a>    <span class="kw">data</span> <span class="dt">Nat</span> <span class="ot">=</span> <span class="dt">Z</span> <span class="op">|</span> <span class="dt">S</span> <span class="dt">Nat</span></span>
 <span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a>    <span class="kw">data</span> <span class="dt">Vec</span><span class="ot"> ::</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="op">*</span> <span class="ot">-&gt;</span> <span class="op">*</span> <span class="kw">where</span></span>
 <span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a><span class="ot">    vhead ::</span> <span class="dt">Vec</span> (<span class="dt">S</span> n) a <span class="ot">-&gt;</span> a</span></code></pre></div>
-<p>–&gt;</p>
 <ol start="4" style="list-style-type: decimal">
-<li>Type Families</li>
+<li>Type Families - compile time computation on types:</li>
 </ol>
 <div class="sourceCode" id="cb2"><pre
 class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>   <span class="kw">type</span> <span class="kw">family</span> (<span class="ot">m::</span><span class="dt">Nat</span>) <span class="op">:+</span> (<span class="ot">n::</span><span class="dt">Nat</span>)<span class="ot"> ::</span> <span class="dt">Nat</span></span>
 <span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="ot">   vappend ::</span> <span class="dt">Vec</span> m a <span class="ot">-&gt;</span> <span class="dt">Vec</span> n a <span class="ot">-&gt;</span> <span class="dt">Vec</span> (m <span class="op">:+</span> n) a</span>
 <span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>   <span class="op">?</span><span class="ot"> ::</span> <span class="dt">Vec</span>(m <span class="op">:+</span> n) a <span class="ot">-&gt;</span> (<span class="dt">Vec</span> m a, <span class="dt">Vec</span> n a)</span></code></pre></div>
 <ol start="5" style="list-style-type: decimal">
-<li>Dynamic dependencies, singletons</li>
+<li>Dynamic (i.e. runtime) dependencies, singletons</li>
 </ol>
 <div class="sourceCode" id="cb3"><pre
 class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>   <span class="kw">data</span> <span class="dt">SNat</span><span class="ot"> ::</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="op">*</span></span>
@@ -149,7 +149,7 @@ class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a 
 <div id="plan-b" class="slide section level1">
 <h1>Plan B</h1>
 <ol start="6" style="list-style-type: decimal">
-<li>Static dependencies, Proxy</li>
+<li>Static (comptime) dependencies, Proxy</li>
 </ol>
 <div class="sourceCode" id="cb4"><pre
 class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>   <span class="kw">data</span> <span class="dt">NP</span><span class="ot"> ::</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="op">*</span> <span class="kw">where</span> <span class="dt">NP</span><span class="ot"> ::</span> <span class="dt">NP</span> n</span>
